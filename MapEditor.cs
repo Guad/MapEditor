@@ -177,82 +177,52 @@ namespace MapEditor
 				        switch (indx)
 				        {
 					        case 0: // XML
-								//foreach (int prop in _currentProps)
-								foreach (int prop in )
-								{
-									Entity tmpProp = new Prop(0);
-									if (Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, prop))
-										tmpProp = new Vehicle(prop);
-									else if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, prop))
-										tmpProp = new Prop(prop);
-									else if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, prop))
-										tmpProp = new Ped(prop);
-
-									tmpmap.Objects.Add(new MapObject()
-									{
-										Hash = tmpProp.Model.Hash,
-										Position = tmpProp.Position,
-										Rotation = tmpProp.Rotation,
-										Type = (tmpProp is Vehicle ? ObjectTypes.Vehicle : tmpProp is Ped ? ObjectTypes.Ped : ObjectTypes.Prop)
-									});
-								}
+								tmpmap.Objects.AddRange(PropStreamer.GetAllEntities());
 								ser.Serialize(filename, tmpmap, MapSerializer.Format.NormalXml);
 								UI.Notify("~b~~h~Map Editor~h~~w~~n~Saved current map as ~h~" + filename + "~h~.");
 								break;
 							case 1: // objects.ini
-								foreach (int prop in _currentProps)
-								{
-									if (Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, prop) || Function.Call<bool>(Hash.IS_ENTITY_A_PED, prop)) continue;
-									var tmpProp = new Prop(prop);
-									tmpmap.Objects.Add(new MapObject()
-									{
-										Hash = tmpProp.Model.Hash,
-										Position = tmpProp.Position,
-										Rotation = tmpProp.Rotation,
-										Quaternion = Quaternion.GetEntityQuaternion(tmpProp)
-									});
-								}
+								tmpmap.Objects.AddRange(PropStreamer.GetAllEntities().Where(p => p.Type == ObjectTypes.Prop));
 								ser.Serialize(filename, tmpmap, MapSerializer.Format.SimpleTrainer);
 								UI.Notify("~b~~h~Map Editor~h~~w~~n~Saved current map as ~h~" + filename + "~h~.");
 								break;
 							case 2: // C#
 						        string output = "";
-								foreach (int prop in _currentProps)
+								foreach (var prop in PropStreamer.GetAllEntities())
 								{
-									var p = new Prop(prop);
-									if (p.Position == new Vector3(0, 0, 0)) continue;
+									if (prop.Position == new Vector3(0, 0, 0)) continue;
 									string cmd = "";
 									
-									if (Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, prop))
+									if (prop.Type == ObjectTypes.Vehicle)
 									{
 										cmd = String.Format("GTA.World.CreateVehicle(new Model({0}).Request(100), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);",
-											p.Model.Hash,
-											p.Position.X,
-											p.Position.Y,
-											p.Position.Z,
-											p.Rotation.Z
+											prop.Hash,
+											prop.Position.X,
+											prop.Position.Y,
+											prop.Position.Z,
+											prop.Rotation.Z
                                         );
 									}
-									if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, prop))
+									if (prop.Type == ObjectTypes.Ped)
 									{
 										cmd = String.Format("GTA.World.CreatePed(new Model({0}).Request(100), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);",
-											p.Model.Hash,
-											p.Position.X,
-											p.Position.Y,
-											p.Position.Z,
-											p.Rotation.Z
+											prop.Hash,
+											prop.Position.X,
+											prop.Position.Y,
+											prop.Position.Z,
+											prop.Rotation.Z
 										);
 									}
-									if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, prop))
+									if (prop.Type == ObjectTypes.Prop)
 									{
 										cmd = String.Format("GTA.World.CreateProp(new Model({0}).Request(100), new GTA.Math.Vector3({1}f, {2}f, {3}f), new GTA.Math.Vector3({4}f, {5}f, {6}f), false, false);",
-											p.Model.Hash,
-											p.Position.X,
-											p.Position.Y,
-											p.Position.Z,
-											p.Rotation.X,
-											p.Rotation.Y,
-											p.Rotation.Z
+											prop.Hash,
+											prop.Position.X,
+											prop.Position.Y,
+											prop.Position.Z,
+											prop.Rotation.X,
+											prop.Rotation.Y,
+											prop.Rotation.Z
                                         );
 									}
 									output += cmd + "\r\n";
@@ -262,37 +232,36 @@ namespace MapEditor
 								break;
 							case 3: // Raw
 								string flush = "";
-								foreach (int prop in _currentProps)
+								foreach (var prop in PropStreamer.GetAllEntities())
 								{
-									var p = new Prop(prop);
-									if(p.Position == new Vector3(0, 0, 0)) continue;
+									if(prop.Position == new Vector3(0, 0, 0)) continue;
 									string name = "";
 									ObjectTypes thisType = ObjectTypes.Prop;
 
-									if (Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, prop))
+									if (prop.Type == ObjectTypes.Vehicle)
 									{
-										name = ObjectDatabase.VehicleDb.First(pair => pair.Value == p.Model.Hash).Key;
+										name = ObjectDatabase.VehicleDb.First(pair => pair.Value == prop.Hash).Key;
 										thisType = ObjectTypes.Vehicle;
 									}
-									if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, prop))
+									if (prop.Type == ObjectTypes.Ped)
 									{
-										name = ObjectDatabase.PedDb.First(pair => pair.Value == p.Model.Hash).Key;
+										name = ObjectDatabase.PedDb.First(pair => pair.Value == prop.Hash).Key;
 										thisType = ObjectTypes.Ped;
 									}
-									if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, prop))
+									if (prop.Type == ObjectTypes.Prop)
 									{
-										name = ObjectDatabase.MainDb.First(pair => pair.Value == p.Model.Hash).Key;
+										name = ObjectDatabase.MainDb.First(pair => pair.Value == prop.Hash).Key;
 										thisType = ObjectTypes.Prop;
 									}
 									flush += String.Format("{8} name = {0}, hash = {7}, x = {1}, y = {2}, z = {3}, rotationx = {4}, rotationy = {5}, rotationz = {6}\r\n",
 										name,
-										p.Position.X,
-										p.Position.Y,
-										p.Position.Z,
-										p.Rotation.X,
-										p.Rotation.Y,
-										p.Rotation.Z,
-										p.Model.Hash,
+										prop.Position.X,
+										prop.Position.Y,
+										prop.Position.Z,
+										prop.Rotation.X,
+										prop.Rotation.Y,
+										prop.Rotation.Z,
+										prop.Hash,
 										thisType
 									);
 								}
@@ -324,22 +293,12 @@ namespace MapEditor
 						        var map2Load = des.Deserialize(filename, MapSerializer.Format.NormalXml);
 						        foreach (MapObject o in map2Load.Objects)
 						        {
-							        Entity prop = new Prop(0);
 							        if (o.Type == ObjectTypes.Prop)
-								        //PropStreamer.AddProp((Prop)(prop = World.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, false)));
-								        prop = World.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, false);
+								        PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic);
                                     else if (o.Type == ObjectTypes.Vehicle)
-								        prop = World.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z);
-							        else if (o.Type == ObjectTypes.Ped)
-								        prop = World.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f),
-									        o.Rotation.Z);
-									if(prop == null) continue;
-							        if (!o.Dynamic)
-							        {
-								        prop.FreezePosition = true;
-										PropStreamer.StaticProps.Add(prop.Handle);
-							        }
-							        _currentProps.Add(prop.Handle);
+										PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic);
+									else if (o.Type == ObjectTypes.Ped)
+										PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic);
 						        }
 						        UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded map ~h~" + filename + "~h~.");
 						        break;
@@ -349,20 +308,11 @@ namespace MapEditor
 						        {
 							        Entity prop = new Prop(0);
 							        if (o.Type == ObjectTypes.Prop)
-								        //PropStreamer.AddProp((Prop)(prop = World.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, false)));
-								        prop = World.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, false);
+								        prop = PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, o.Quaternion);
                                     else if (o.Type == ObjectTypes.Vehicle)
-								        prop = World.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z);
+								        prop = PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic, o.Quaternion);
 							        else if (o.Type == ObjectTypes.Ped)
-								        prop = World.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f),
-									        o.Rotation.Z);
-							        Quaternion.SetEntityQuaternion(prop, o.Quaternion);
-							        if (!o.Dynamic)
-							        {
-								        prop.FreezePosition = true;
-										PropStreamer.StaticProps.Add(prop.Handle);
-									}
-							        _currentProps.Add(prop.Handle);
+								        prop = PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic, o.Quaternion);
 						        }
 						        UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded map ~h~" + filename + "~h~.");
 						        break;
@@ -407,7 +357,7 @@ namespace MapEditor
 			}
 			// */
 			_menuPool.ProcessMenus();
-			//PropStreamer.Tick();
+			PropStreamer.Tick();
 
 			if (Game.IsControlPressed(0, GTA.Control.LookBehind) && Game.IsControlJustPressed(0, GTA.Control.FrontendLb) && !_menuPool.IsAnyMenuOpen())
 			{
@@ -597,7 +547,7 @@ namespace MapEditor
                     if (Game.IsControlJustPressed(0, GTA.Control.Aim))
                     {
                         Entity hitEnt = VectorExtensions.RaycastEntity(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation);
-                        if (hitEnt != null && _currentProps.Contains(hitEnt.Handle))
+                        if (hitEnt != null && PropStreamer.GetAllHandles().Contains(hitEnt.Handle))
                         {
 							if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt.Handle))
 								_snappedProp = new Prop(hitEnt.Handle);
@@ -611,7 +561,7 @@ namespace MapEditor
                     if (Game.IsControlJustPressed(0, GTA.Control.Attack))
                     {
                         Entity hitEnt = VectorExtensions.RaycastEntity(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation);
-                        if (hitEnt != null && _currentProps.Contains(hitEnt.Handle))
+                        if (hitEnt != null && PropStreamer.GetAllHandles().Contains(hitEnt.Handle))
                         {
 							if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt.Handle))
 								_selectedProp = new Prop(hitEnt.Handle);
@@ -628,7 +578,7 @@ namespace MapEditor
 	                if (Game.IsControlJustReleased(0, GTA.Control.LookBehind))
 	                {
 						Entity hitEnt = VectorExtensions.RaycastEntity(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation);
-						if (hitEnt != null && _currentProps.Contains(hitEnt.Handle))
+						if (hitEnt != null && PropStreamer.GetAllHandles().Contains(hitEnt.Handle))
 						{
 							Entity tmpProp = new Prop(0);
 							if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt.Handle))
@@ -638,13 +588,6 @@ namespace MapEditor
 								tmpProp = World.CreateVehicle(hitEnt.Model, hitEnt.Position, hitEnt.Rotation.Z);
 							else if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, hitEnt.Handle))
 								tmpProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped)hitEnt).Handle, hitEnt.Rotation.Z, 1, 1);
-							//tmpProp = World.CreatePed(hitEnt.Model, hitEnt.Position, hitEnt.Rotation.Z);
-							_currentProps.Add(tmpProp.Handle);
-							if (PropStreamer.StaticProps.Contains(hitEnt.Handle))
-							{
-								PropStreamer.StaticProps.Add(tmpProp.Handle);
-								tmpProp.FreezePosition = true;
-							}
 							_snappedProp = tmpProp;
 						}
 					}
@@ -652,13 +595,9 @@ namespace MapEditor
 					if (Game.IsControlJustPressed(0, GTA.Control.CreatorDelete))
 					{
 						Entity hitEnt = VectorExtensions.RaycastEntity(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation);
-						if (hitEnt != null && _currentProps.Contains(hitEnt.Handle))
+						if (hitEnt != null && PropStreamer.GetAllHandles().Contains(hitEnt.Handle))
 						{
-							_currentProps.Remove(hitEnt.Handle);
-							if(PropStreamer.StaticProps.Contains(hitEnt.Handle)) PropStreamer.StaticProps.Remove(hitEnt.Handle);
-							//if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt))
-								//PropStreamer.RemoveProp((Prop)hitEnt);
-							hitEnt.Delete();
+							PropStreamer.RemoveEntity(hitEnt.Handle);
 						}
 					}
 					InstructionalButtonsStart();
@@ -751,28 +690,21 @@ namespace MapEditor
 					Entity mainProp = new Prop(0);
 					if (_selectedProp is Prop)
 						mainProp = PropStreamer.CreateProp(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation, !PropStreamer.StaticProps.Contains(_selectedProp.Handle));
-					//mainProp = World.CreateProp(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation, false, false);
 					else if (_selectedProp is Vehicle)
-						mainProp = World.CreateVehicle(_selectedProp.Model, _selectedProp.Position);
+						mainProp = PropStreamer.CreateVehicle(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation.Z, !PropStreamer.StaticProps.Contains(_selectedProp.Handle));
 					else if (_selectedProp is Ped)
-						mainProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped)_selectedProp).Handle, _selectedProp.Rotation.Z, 1, 1);
-					_currentProps.Add(mainProp.Handle);
-					if (PropStreamer.StaticProps.Contains(_selectedProp.Handle))
 					{
-						PropStreamer.StaticProps.Add(mainProp.Handle);
-						mainProp.FreezePosition = true;
+						mainProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped) _selectedProp).Handle, _selectedProp.Rotation.Z, 1, 1);
+						PropStreamer.Peds.Add(mainProp.Handle);
 					}
+
 					_selectedProp = mainProp;
 					RedrawObjectInfoMenu(_selectedProp);
 				}
 
 				if (Game.IsControlJustPressed(0, GTA.Control.CreatorDelete))
 				{
-					_currentProps.Remove(_selectedProp.Model.Hash);
-					//if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, _selectedProp))
-						//PropStreamer.RemoveProp((Prop)_selectedProp);
-					if (PropStreamer.StaticProps.Contains(_selectedProp.Handle)) PropStreamer.StaticProps.Remove(_selectedProp.Handle);
-					_selectedProp.Delete();
+					PropStreamer.RemoveEntity(_selectedProp.Handle);
 					_selectedProp = null;
 					_objectInfoMenu.Visible = false;
 				}
@@ -841,19 +773,17 @@ namespace MapEditor
 	        {
 			    case ObjectTypes.Prop:
 					objectHash = ObjectDatabase.MainDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
-					//_snappedProp = World.CreateProp(ObjectPreview.LoadObject(objectHash),VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), false, false);
 					_snappedProp = PropStreamer.CreateProp(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), new Vector3(0, 0, 0), true);
 					break;
 				case ObjectTypes.Vehicle:
 			        objectHash = ObjectDatabase.VehicleDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
-			        _snappedProp = World.CreateVehicle(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)));
+			        _snappedProp = PropStreamer.CreateVehicle(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true);
 					break;
 				case ObjectTypes.Ped:
 					objectHash = ObjectDatabase.PedDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
-			        _snappedProp = World.CreatePed(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)));
+			        _snappedProp = PropStreamer.CreatePed(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true);
 					break;
 	        }
-			_currentProps.Add(_snappedProp.Handle);
             _isChoosingObject = false;
             _objectsMenu.Visible = false;
 			_previewProp?.Delete();

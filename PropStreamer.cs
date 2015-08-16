@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace MapEditor
 {
@@ -17,18 +18,77 @@ namespace MapEditor
 
 		public static List<int> StaticProps = new List<int>();
 
-		public static Prop CreateProp(Model model, Vector3 position, Vector3 rotation, bool dynamic)
+		public static List<int> Vehicles = new List<int>(); // Not streamed in.
+
+		public static List<int> Peds = new List<int>(); // Not streamed in.
+
+		public static Prop CreateProp(Model model, Vector3 position, Vector3 rotation, bool dynamic, Quaternion q = null)
 		{
 			if (StreamedInHandles.Count >= 200)
 			{
-				MemoryObjects.Add(new MapObject() {Dynamic = dynamic, Hash = model.Hash, Position = position, Rotation = rotation});
+				MemoryObjects.Add(new MapObject() {Dynamic = dynamic, Hash = model.Hash, Position = position, Rotation = rotation, Type = ObjectTypes.Prop, Quaternion = q});
 				return null;
 			}
 			var prop = World.CreateProp(model, position, rotation, dynamic, false);
 			StreamedInHandles.Add(prop.Handle);
 			if (!dynamic)
+			{
 				StaticProps.Add(prop.Handle);
+				prop.FreezePosition = true;
+			}
+			if (q != null)
+				Quaternion.SetEntityQuaternion(prop, q);
 			return prop;
+		}
+
+		public static Vehicle CreateVehicle(Model model, Vector3 position, float heading, bool dynamic, Quaternion q = null)
+		{
+			var veh = World.CreateVehicle(model, position, heading);
+			Vehicles.Add(veh.Handle);
+			if (!dynamic)
+			{
+				StaticProps.Add(veh.Handle);
+				veh.FreezePosition = true;
+			}
+			if(q != null)
+				Quaternion.SetEntityQuaternion(veh, q);
+			return veh;
+		}
+
+		public static Ped CreatePed(Model model, Vector3 position, float heading, bool dynamic, Quaternion q = null)
+		{
+			var veh = World.CreatePed(model, position, heading);
+			Peds.Add(veh.Handle);
+			if (!dynamic)
+			{
+				StaticProps.Add(veh.Handle);
+				veh.FreezePosition = true;
+			}
+			if (q != null)
+				Quaternion.SetEntityQuaternion(veh, q);
+			return veh;
+		}
+
+		public static void RemoveVehicle(int handle)
+		{
+			new Vehicle(handle).Delete();
+			if (Vehicles.Contains(handle)) Vehicles.Remove(handle);
+			if (StaticProps.Contains(handle)) StaticProps.Remove(handle);
+		}
+
+		public static void RemovePed(int handle)
+		{
+			new Ped(handle).Delete();
+			if (Peds.Contains(handle)) Peds.Remove(handle);
+			if (StaticProps.Contains(handle)) StaticProps.Remove(handle);
+		}
+
+		public static void RemoveEntity(int handle)
+		{
+			if (Peds.Contains(handle)) Peds.Remove(handle);
+			if (Vehicles.Contains(handle)) Vehicles.Remove(handle);
+			if (StreamedInHandles.Contains(handle)) StreamedInHandles.Remove(handle);
+			Function.Call(Hash.DELETE_ENTITY, handle);
 		}
 
 		public static void AddProp(Prop prop, bool dynamic)
@@ -60,11 +120,22 @@ namespace MapEditor
 			StaticProps.Clear();
 		}
 
-		public static IEnumerable<MapObject> GetAllProps()
+		public static MapObject[] GetAllEntities()
 		{
 			List<MapObject> outList = StreamedInHandles.Select(handle => new MapObject() {Dynamic = !StaticProps.Contains(handle), Hash = new Prop(handle).Model.Hash, Position = new Prop(handle).Position, Quaternion = Quaternion.GetEntityQuaternion(new Prop(handle)), Rotation = new Prop(handle).Rotation, Type = ObjectTypes.Prop}).ToList();
 			outList.AddRange(MemoryObjects);
-			return (IEnumerable<MapObject>)outList;
+			Vehicles.ForEach(v => outList.Add(new MapObject() { Dynamic = !StaticProps.Contains(v), Hash = new Vehicle(v).Model.Hash, Position = new Vehicle(v).Position, Quaternion = Quaternion.GetEntityQuaternion(new Vehicle(v)), Rotation = new Vehicle(v).Rotation, Type = ObjectTypes.Vehicle}));
+			Peds.ForEach(v => outList.Add(new MapObject() { Dynamic = !StaticProps.Contains(v), Hash = new Ped(v).Model.Hash, Position = new Ped(v).Position, Quaternion = Quaternion.GetEntityQuaternion(new Ped(v)), Rotation = new Ped(v).Rotation, Type = ObjectTypes.Ped }));
+			return outList.ToArray();
+		}
+
+		public static int[] GetAllHandles()
+		{
+			List<int> outHandles = new List<int>();
+			outHandles.AddRange(StreamedInHandles);
+			outHandles.AddRange(Vehicles);
+			outHandles.AddRange(Peds);
+			return outHandles.ToArray();
 		}
 
 
@@ -90,7 +161,13 @@ namespace MapEditor
 				Prop newProp = World.CreateProp(ObjectPreview.LoadObject(prop.Hash), prop.Position, prop.Rotation, false, false);
 				newProp.FreezePosition = !prop.Dynamic;
 				StreamedInHandles.Add(newProp.Handle);
-				if(!prop.Dynamic) StaticProps.Add(newProp.Handle);
+				if (!prop.Dynamic)
+				{
+					StaticProps.Add(newProp.Handle);
+					newProp.FreezePosition = true;
+				}
+				if (prop.Quaternion != null)
+					Quaternion.SetEntityQuaternion(newProp, prop.Quaternion);
 				MemoryObjects.Remove(prop);
 			}
 		}
