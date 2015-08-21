@@ -51,7 +51,7 @@ namespace MapEditor
             {
                 string[] s = line.Split('=');
                 if(MainDb.ContainsKey(s[0])) continue;
-                //int val = unchecked((int)Convert.ToUInt32(s[1], 10));
+                //int val = unchecked((int)Convert.ToUInt32(s[1], 16));
                 int val = Convert.ToInt32(s[1]);
                 MainDb.Add(s[0], val);
             }

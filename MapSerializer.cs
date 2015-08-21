@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Xml;
 using System.Xml.Serialization;
 using GTA;
@@ -15,13 +16,14 @@ namespace MapEditor
 		{
 			NormalXml,
 			SimpleTrainer,
+			CSharpCode,
+			Raw,
 		}
 
 		public Map Deserialize(string path, Format format)
 		{
 			switch (format)
 			{
-				default:
 				case Format.NormalXml:
 					XmlSerializer reader = new XmlSerializer(typeof(Map));
 					var file = new StreamReader(path);
@@ -72,6 +74,8 @@ namespace MapEditor
 					int lastDyn = Convert.ToInt32(tmpData["Dynamic"], CultureInfo.InvariantCulture);
 					tmpMap.Objects.Add(new MapObject() { Hash = lastMod, Position = lastPos, Rotation = lastRot, Dynamic = lastDyn == 1, Quaternion = lastQ });
 					return tmpMap;
+				default:
+					throw new NotImplementedException("This is not implemented yet.");
 			}
 		}
 
@@ -112,6 +116,86 @@ namespace MapEditor
 						count++;
 					}
 					File.WriteAllText(path, mainOutput);
+					break;
+				case Format.CSharpCode:
+					string output = "";
+					foreach (var prop in PropStreamer.GetAllEntities())
+					{
+						if (prop.Position == new Vector3(0, 0, 0)) continue;
+						string cmd = "";
+
+						if (prop.Type == ObjectTypes.Vehicle)
+						{
+							cmd = String.Format("GTA.World.CreateVehicle(new Model({0}) new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);",
+								prop.Hash,
+								prop.Position.X,
+								prop.Position.Y,
+								prop.Position.Z,
+								prop.Rotation.Z
+							);
+						}
+						if (prop.Type == ObjectTypes.Ped)
+						{
+							cmd = String.Format("GTA.World.CreatePed(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);",
+								prop.Hash,
+								prop.Position.X,
+								prop.Position.Y,
+								prop.Position.Z,
+								prop.Rotation.Z
+							);
+						}
+						if (prop.Type == ObjectTypes.Prop)
+						{
+							cmd = String.Format("GTA.World.CreateProp(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), new GTA.Math.Vector3({4}f, {5}f, {6}f), false, false);",
+								prop.Hash,
+								prop.Position.X,
+								prop.Position.Y,
+								prop.Position.Z,
+								prop.Rotation.X,
+								prop.Rotation.Y,
+								prop.Rotation.Z
+							);
+						}
+						output += cmd + "\r\n";
+					}
+					File.WriteAllText(path, output);
+					break;
+				case Format.Raw:
+					string flush = "";
+					foreach (var prop in PropStreamer.GetAllEntities())
+					{
+						if (prop.Position == new Vector3(0, 0, 0)) continue;
+						string name = "";
+						ObjectTypes thisType = ObjectTypes.Prop;
+
+						if (prop.Type == ObjectTypes.Vehicle)
+						{
+							name = ObjectDatabase.VehicleDb.First(pair => pair.Value == prop.Hash).Key;
+							thisType = ObjectTypes.Vehicle;
+						}
+						if (prop.Type == ObjectTypes.Ped)
+						{
+							name = ObjectDatabase.PedDb.First(pair => pair.Value == prop.Hash).Key;
+							thisType = ObjectTypes.Ped;
+						}
+						if (prop.Type == ObjectTypes.Prop)
+						{
+							name = ObjectDatabase.MainDb.First(pair => pair.Value == prop.Hash).Key;
+							thisType = ObjectTypes.Prop;
+						}
+						flush += String.Format("{8} name = {0}, hash = {7}, x = {1}, y = {2}, z = {3}, rotationx = {4}, rotationy = {5}, rotationz = {6}\r\n",
+							name,
+							prop.Position.X,
+							prop.Position.Y,
+							prop.Position.Z,
+							prop.Rotation.X,
+							prop.Rotation.Y,
+							prop.Rotation.Z,
+							prop.Hash,
+							thisType
+						);
+					}
+					File.WriteAllText(path, flush);
 					break;
 			}
 		}

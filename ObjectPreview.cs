@@ -26,13 +26,14 @@ namespace MapEditor
 		        }
 		        return null;
 	        }
-            do
-            {
+
+			while (!m.IsLoaded && counter < 200)
+			{
                 m.Request();
                 Script.Yield();
                 counter++;
                 new UIResText("LOADING . . .", new Point(wid, hei), 2f, Color.White, GTA.Font.Pricedown, UIResText.Alignment.Centered).Draw();
-            } while (!m.IsLoaded && counter < 200);
+            }
             return m;
         }
     }

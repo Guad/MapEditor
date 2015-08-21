@@ -13,6 +13,7 @@ using GTA.Math;
 using GTA.Native;
 using NativeUI;
 using System.IO;
+using System.Xml.Serialization;
 using Control = GTA.Control;
 
 namespace MapEditor
@@ -27,6 +28,8 @@ namespace MapEditor
         private UIMenu _mainMenu;
 	    private UIMenu _formatMenu;
 	    private UIMenu _objectInfoMenu;
+	    private UIMenu _settingsMenu;
+
         private MenuPool _menuPool = new MenuPool();
 
         private Entity _previewProp;
@@ -44,14 +47,21 @@ namespace MapEditor
         //List<int> _currentProps = new List<int>();
 		
 	    private string _crosshairPath;
-	    private bool _showCrosshair = true;
 	    private bool _savingMap;
-	    private bool _drawInstructionalbuttons = true;
+	    private bool _hasLoaded = false;
+	    
 
 	    private ObjectTypes _currentObjectType;
+		
+	    private Settings _settings;
 
-	    private float _cameraSensitivity = 30f;
-
+	    public enum Marker
+	    {
+		    Crosshair,
+			Orb,
+			None,
+	    }
+		
         public MapEditor()
         {
             Tick += OnTick;
@@ -65,7 +75,8 @@ namespace MapEditor
 			_objectInfoMenu.DisableInstructionalButtons(true);
 			_objectInfoMenu.SetBannerType(new UIResRectangle(new Point(), new Size()));
 			_menuPool.Add(_objectInfoMenu);
-			
+
+			LoadSettings();
 
 			_objectsMenu = new UIMenu("Map Editor", "~b~PLACE OBJECT");
 
@@ -82,8 +93,7 @@ namespace MapEditor
 
 			_objectsMenu.ResetKey(UIMenu.MenuControls.Back);
             _objectsMenu.AddInstructionalButton(new InstructionalButton(GTA.Control.SelectWeapon, "Change Axis"));
-            _objectsMenu.AddInstructionalButton(new InstructionalButton(GTA.Control.MoveUpOnly, ""));
-            _objectsMenu.AddInstructionalButton(new InstructionalButton(GTA.Control.MoveDownOnly, "Zoom"));
+            _objectsMenu.AddInstructionalButton(new InstructionalButton(GTA.Control.MoveUpDown, "Zoom"));
             _objectsMenu.AddInstructionalButton(new InstructionalButton(GTA.Control.Jump, "Search"));
 
             _mainMenu = new UIMenu("Map Editor", "~b~MAIN MENU");
@@ -91,29 +101,14 @@ namespace MapEditor
             _mainMenu.AddItem(new UIMenuItem("New Map", "Remove all current objects and start a new map."));
             _mainMenu.AddItem(new UIMenuItem("Save Map", "Save all current objects to a file."));
 			_mainMenu.AddItem(new UIMenuItem("Load Map", "Load objects from a file and add them to the world."));
-	        var checkem = new UIMenuCheckboxItem("Show Crosshair", true);
-	        checkem.CheckboxEvent += (i, checkd) =>
-	        {
-		        _showCrosshair = checkd;
-	        };
-			List<dynamic> senslist = new List<dynamic>();
-	        for (int i = 1; i < 60; i++)
-	        {
-		        senslist.Add(i);
-	        }
-			var gamboy = new UIMenuListItem("Camera Sensitivity", senslist, 29);
-	        gamboy.OnListChanged += (item, index) =>
-	        {
-		        _cameraSensitivity = index + 1;
-	        };
-	        var butts = new UIMenuCheckboxItem("Instructional Buttons", true);
-	        butts.CheckboxEvent += (i, checkd) =>
-	        {
-		        _drawInstructionalbuttons = checkd;
-	        };
-			_mainMenu.AddItem(checkem);
-			_mainMenu.AddItem(gamboy);
-			_mainMenu.AddItem(butts);
+			
+
+	        var validate = new UIMenuItem("Validate Object Database",
+		        "This will update the current object database, removing any invalid objects. The changes will take effect after you restart the script." +
+		        " It will take a couple of minutes.");
+	        validate.Activated += (men, item) => ValidateDatabase();
+			
+			_mainMenu.AddItem(validate);
 			_mainMenu.RefreshIndex();
 			_mainMenu.DisableInstructionalButtons(true);
             _menuPool.Add(_mainMenu);
@@ -141,8 +136,6 @@ namespace MapEditor
                         break;
                     case 1:
 						PropStreamer.RemoveAll();
-						//_currentProps.ForEach(p => new Prop(p).Delete());
-                        //_currentProps.Clear();
 						UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded new map.");
 						break;
 					case 2:
@@ -165,207 +158,235 @@ namespace MapEditor
 		        if (_savingMap)
 		        {
 					string filename = Game.GetUserInput(255);
-					if (String.IsNullOrWhiteSpace(filename))
-					{
-						UI.Notify("~b~~h~Map Editor~h~~w~~n~The filename was empty!");
-						return;
-					}
-					var ser = new MapSerializer();
-					var tmpmap = new Map();
-			        try
+			        switch (indx)
 			        {
-				        switch (indx)
-				        {
-					        case 0: // XML
-								tmpmap.Objects.AddRange(PropStreamer.GetAllEntities());
-								ser.Serialize(filename, tmpmap, MapSerializer.Format.NormalXml);
-								UI.Notify("~b~~h~Map Editor~h~~w~~n~Saved current map as ~h~" + filename + "~h~.");
-								break;
-							case 1: // objects.ini
-								tmpmap.Objects.AddRange(PropStreamer.GetAllEntities().Where(p => p.Type == ObjectTypes.Prop));
-								ser.Serialize(filename, tmpmap, MapSerializer.Format.SimpleTrainer);
-								UI.Notify("~b~~h~Map Editor~h~~w~~n~Saved current map as ~h~" + filename + "~h~.");
-								break;
-							case 2: // C#
-						        string output = "";
-								foreach (var prop in PropStreamer.GetAllEntities())
-								{
-									if (prop.Position == new Vector3(0, 0, 0)) continue;
-									string cmd = "";
-									
-									if (prop.Type == ObjectTypes.Vehicle)
-									{
-										cmd = String.Format("GTA.World.CreateVehicle(new Model({0}).Request(100), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);",
-											prop.Hash,
-											prop.Position.X,
-											prop.Position.Y,
-											prop.Position.Z,
-											prop.Rotation.Z
-                                        );
-									}
-									if (prop.Type == ObjectTypes.Ped)
-									{
-										cmd = String.Format("GTA.World.CreatePed(new Model({0}).Request(100), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);",
-											prop.Hash,
-											prop.Position.X,
-											prop.Position.Y,
-											prop.Position.Z,
-											prop.Rotation.Z
-										);
-									}
-									if (prop.Type == ObjectTypes.Prop)
-									{
-										cmd = String.Format("GTA.World.CreateProp(new Model({0}).Request(100), new GTA.Math.Vector3({1}f, {2}f, {3}f), new GTA.Math.Vector3({4}f, {5}f, {6}f), false, false);",
-											prop.Hash,
-											prop.Position.X,
-											prop.Position.Y,
-											prop.Position.Z,
-											prop.Rotation.X,
-											prop.Rotation.Y,
-											prop.Rotation.Z
-                                        );
-									}
-									output += cmd + "\r\n";
-								}
-								File.WriteAllText(filename, output);
-								UI.Notify("~b~~h~Map Editor~h~~w~~n~Saved current map as ~h~" + filename + "~h~.");
-								break;
-							case 3: // Raw
-								string flush = "";
-								foreach (var prop in PropStreamer.GetAllEntities())
-								{
-									if(prop.Position == new Vector3(0, 0, 0)) continue;
-									string name = "";
-									ObjectTypes thisType = ObjectTypes.Prop;
-
-									if (prop.Type == ObjectTypes.Vehicle)
-									{
-										name = ObjectDatabase.VehicleDb.First(pair => pair.Value == prop.Hash).Key;
-										thisType = ObjectTypes.Vehicle;
-									}
-									if (prop.Type == ObjectTypes.Ped)
-									{
-										name = ObjectDatabase.PedDb.First(pair => pair.Value == prop.Hash).Key;
-										thisType = ObjectTypes.Ped;
-									}
-									if (prop.Type == ObjectTypes.Prop)
-									{
-										name = ObjectDatabase.MainDb.First(pair => pair.Value == prop.Hash).Key;
-										thisType = ObjectTypes.Prop;
-									}
-									flush += String.Format("{8} name = {0}, hash = {7}, x = {1}, y = {2}, z = {3}, rotationx = {4}, rotationy = {5}, rotationz = {6}\r\n",
-										name,
-										prop.Position.X,
-										prop.Position.Y,
-										prop.Position.Z,
-										prop.Rotation.X,
-										prop.Rotation.Y,
-										prop.Rotation.Z,
-										prop.Hash,
-										thisType
-									);
-								}
-								File.WriteAllText(filename, flush);
-								UI.Notify("~b~~h~Map Editor~h~~w~~n~Saved current map as ~h~" + filename + "~h~.");
-								break;
-						}
-					}
-					catch (Exception e)
-					{
-						UI.Notify("~r~~h~Map Editor~h~~w~~n~Map failed to save, see error below.");
-						UI.Notify(e.Message);
+						case 0: // XML
+					        if (!filename.EndsWith(".xml")) filename += ".xml";
+							SaveMap(filename, MapSerializer.Format.NormalXml);
+					        break;
+						case 1: // Objects.ini
+							if (!filename.EndsWith(".ini")) filename += ".ini";
+							SaveMap(filename, MapSerializer.Format.SimpleTrainer);
+							break;
+						case 2: // C#
+							SaveMap(filename, MapSerializer.Format.CSharpCode);
+							break;
+						case 3: // Raw
+							SaveMap(filename, MapSerializer.Format.Raw);
+							break;
 					}
 				}
 		        else
 		        {
 					string filename = Game.GetUserInput(255);
-					if (String.IsNullOrWhiteSpace(filename) || !File.Exists(filename))
-					{
-						UI.Notify("~b~~h~Map Editor~h~~w~~n~The filename was empty or the file does not exist!");
-						return;
-					}
-					var des = new MapSerializer();
-			        try
+			        MapSerializer.Format tmpFor = MapSerializer.Format.NormalXml;
+			        switch (indx)
 			        {
-				        switch (indx)
-				        {
-					        case 0: // XML
-						        var map2Load = des.Deserialize(filename, MapSerializer.Format.NormalXml);
-						        foreach (MapObject o in map2Load.Objects)
-						        {
-							        if (o.Type == ObjectTypes.Prop)
-								        PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic);
-                                    else if (o.Type == ObjectTypes.Vehicle)
-										PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic);
-									else if (o.Type == ObjectTypes.Ped)
-										PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic);
-						        }
-						        UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded map ~h~" + filename + "~h~.");
-						        break;
-					        case 1: // objects.ini
-						        var objectsinimap = des.Deserialize(filename, MapSerializer.Format.SimpleTrainer);
-						        foreach (MapObject o in objectsinimap.Objects)
-						        {
-							        Entity prop = new Prop(0);
-							        if (o.Type == ObjectTypes.Prop)
-								        prop = PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, o.Quaternion);
-                                    else if (o.Type == ObjectTypes.Vehicle)
-								        prop = PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic, o.Quaternion);
-							        else if (o.Type == ObjectTypes.Ped)
-								        prop = PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic, o.Quaternion);
-						        }
-						        UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded map ~h~" + filename + "~h~.");
-						        break;
-				        }
-					}
-					catch (Exception e)
-					{
-						UI.Notify("~r~~h~Map Editor~h~~w~~n~Map failed to load, see error below.");
-						UI.Notify(e.Message);
-					}
+						case 0: // XML
+							tmpFor = MapSerializer.Format.NormalXml;
+					        break;
+						case 1: // Objects.ini
+							tmpFor = MapSerializer.Format.SimpleTrainer;
+					        break;
+			        }
+					LoadMap(filename, tmpFor);
 				}
 		        _formatMenu.Visible = false;
 	        };
+
+			_settingsMenu = new UIMenu("Map Editor", "~b~SETTINGS");
+
+
+			var checkem = new UIMenuListItem("Marker", new List<dynamic>(Enum.GetNames(typeof(Marker))), Enum.GetNames(typeof(Marker)).ToList().FindIndex(x => x == _settings.Marker.ToString()));
+			checkem.OnListChanged += (i, indx) =>
+			{
+				Marker outHash;
+				Enum.TryParse(i.IndexToItem(indx).ToString(), out outHash);
+				_settings.Marker = outHash;
+				SaveSettings();
+			};
+			List<dynamic> senslist = new List<dynamic>();
+			for (int i = 1; i < 60; i++)
+			{
+				senslist.Add(i);
+			}
+			var gamboy = new UIMenuListItem("Camera Sensitivity", senslist, _settings.CameraSensivity - 1);
+			gamboy.OnListChanged += (item, index) =>
+			{
+				_settings.CameraSensivity = index + 1;
+				SaveSettings();
+			};
+			var butts = new UIMenuCheckboxItem("Instructional Buttons", _settings.InstructionalButtons);
+			butts.CheckboxEvent += (i, checkd) =>
+			{
+				_settings.InstructionalButtons = checkd;
+				SaveSettings();
+			};
+	        var gamepadItem = new UIMenuCheckboxItem("Use Gamepad", _settings.Gamepad);
+	        gamepadItem.CheckboxEvent += (i, checkd) =>
+	        {
+		        _settings.CameraSensivity = checkd ? 5 : 30;
+		        _settings.Gamepad = checkd;
+		        gamboy.Index = _settings.CameraSensivity - 1;
+				SaveSettings();
+	        };
+
+	        var tmplist = new List<dynamic>();
+	        for (int i = 10; i < 245; i++)
+	        {
+		        tmplist.Add(i);
+	        }
+
+	        var streamItem = new UIMenuListItem("Streamed Props", tmplist, _settings.StreamedPropsCount - 10);
+	        streamItem.OnListChanged += (it, index) =>
+	        {
+		        PropStreamer.MAX_OBJECTS = index + 10;
+		        _settings.StreamedPropsCount = index + 10;
+	        };
+
+			_settingsMenu.AddItem(gamepadItem);
+			_settingsMenu.AddItem(checkem);
+			_settingsMenu.AddItem(gamboy);
+			_settingsMenu.AddItem(butts);
+			_settingsMenu.AddItem(streamItem);
+			_settingsMenu.RefreshIndex();
+			_menuPool.Add(_settingsMenu);
+
+	        var binder = new UIMenuItem("Settings");
+            _mainMenu.AddItem(binder);
+			_mainMenu.BindMenuToItem(_settingsMenu, binder);
+			_mainMenu.RefreshIndex();
         }
 
-	    //private int counter = 0; 
-		//private Dictionary<string, int> tmpDict = new Dictionary<string, int>();
-	    //private bool written = false;
+	    private void LoadSettings()
+	    {
+		    if (File.Exists("scripts\\MapEditor.xml"))
+		    {
+			    XmlSerializer serializer = new XmlSerializer(typeof(Settings));
+			    var file = new StreamReader("scripts\\MapEditor.xml");
+			    _settings = (Settings) serializer.Deserialize(file);
+				file.Close();
+			    PropStreamer.MAX_OBJECTS = _settings.StreamedPropsCount;
+		    }
+		    else
+		    {
+			    _settings = new Settings()
+			    {
+				    CameraSensivity = 30,
+					Gamepad = true,
+					InstructionalButtons = true,
+					Marker = Marker.Crosshair,
+					StreamedPropsCount = 50,
+			    };
+				SaveSettings();
+		    }
+	    }
+
+	    private void SaveSettings()
+	    {
+		    XmlSerializer serializer = new XmlSerializer(typeof(Settings));
+		    var file = new StreamWriter("scripts\\MapEditor.xml");
+			serializer.Serialize(file, _settings);
+			file.Close();
+	    }
+
+	    private void AutoloadMaps()
+	    {
+		    if(!Directory.Exists("scripts\\AutoloadMaps")) return;
+		    foreach (string file in Directory.GetFiles("scripts\\AutoloadMaps", "*.xml"))
+		    {
+			    LoadMap(file, MapSerializer.Format.NormalXml);
+		    }
+			foreach (string file in Directory.GetFiles("scripts\\AutoloadMaps", "*.ini"))
+			{
+				LoadMap(file, MapSerializer.Format.SimpleTrainer);
+			}
+		}
+
+	    private void LoadMap(string filename, MapSerializer.Format format)
+	    {
+			if (String.IsNullOrWhiteSpace(filename) || !File.Exists(filename))
+			{
+				if (File.Exists(filename + ".xml") && format == MapSerializer.Format.NormalXml)
+				{
+					LoadMap(filename + ".xml", MapSerializer.Format.NormalXml);
+					return;
+				}
+
+				if(File.Exists(filename + ".ini") && format == MapSerializer.Format.SimpleTrainer)
+				{
+					LoadMap(filename + ".ini", MapSerializer.Format.SimpleTrainer);
+					return;
+				}
+					
+				UI.Notify("~b~~h~Map Editor~h~~w~~n~The filename was empty or the file does not exist!");
+				return;
+			}
+			var des = new MapSerializer();
+			try
+			{
+				var map2Load = des.Deserialize(filename, format);
+				foreach (MapObject o in map2Load.Objects)
+				{
+					if (o.Type == ObjectTypes.Prop)
+						PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, o.Quaternion == new Quaternion() { X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion);
+					else if (o.Type == ObjectTypes.Vehicle)
+						PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic);
+					else if (o.Type == ObjectTypes.Ped)
+						PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic);
+				}
+				UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded map ~h~" + filename + "~h~.");
+			}
+			catch (Exception e)
+			{
+				UI.Notify("~r~~h~Map Editor~h~~w~~n~Map failed to load, see error below.");
+				UI.Notify(e.Message);
+			}
+		}
+
+	    private void SaveMap(string filename, MapSerializer.Format format)
+	    {
+			if (String.IsNullOrWhiteSpace(filename))
+			{
+				UI.Notify("~b~~h~Map Editor~h~~w~~n~The filename was empty!");
+				return;
+			}
+			var ser = new MapSerializer();
+			var tmpmap = new Map();
+			try
+			{
+				tmpmap.Objects.AddRange(format == MapSerializer.Format.SimpleTrainer
+					? PropStreamer.GetAllEntities().Where(p => p.Type == ObjectTypes.Prop)
+					: PropStreamer.GetAllEntities());
+				ser.Serialize(filename, tmpmap, format);
+				UI.Notify("~b~~h~Map Editor~h~~w~~n~Saved current map as ~h~" + filename + "~h~.");
+			}
+			catch (Exception e)
+			{
+				UI.Notify("~r~~h~Map Editor~h~~w~~n~Map failed to save, see error below.");
+				UI.Notify(e.Message);
+			}
+		}
+	
 		
 		public void OnTick(object sender, EventArgs e)
         {
-			/* // Validate object list.
-			if (counter < ObjectDatabase.MainDb.Count)
+			// Load maps from "AutoloadMaps"
+			if (!_hasLoaded)
 			{
-				var pair = ObjectDatabase.MainDb.ElementAt(counter);
-				counter++;
-				new UIResText((counter) + "/" + ObjectDatabase.MainDb.Count + " done. (" + (counter/(float)ObjectDatabase.MainDb.Count)*100 + "%)\nValidDB size: " + tmpDict.Count, new Point(200, 200), 0.5f).Draw();
-				if(!new Model(pair.Value).IsValid || !new Model(pair.Value).IsInCdImage) return;
-				if(!tmpDict.ContainsKey(pair.Key))
-					tmpDict.Add(pair.Key, pair.Value);
-				return;
+				AutoloadMaps();
+				_hasLoaded = true;
 			}
-			else if(!written)
-			{
-				string output = "";
-				foreach (var pair in tmpDict)
-				{
-					output += pair.Key + "=" + pair.Value + "\r\n";
-				}
-				File.WriteAllText("scripts\\FixedObjects.ini", output);
-				written = true;
-			}
-			// */
 			_menuPool.ProcessMenus();
 			PropStreamer.Tick();
 
-			if (Game.IsControlPressed(0, GTA.Control.LookBehind) && Game.IsControlJustPressed(0, GTA.Control.FrontendLb) && !_menuPool.IsAnyMenuOpen())
+			if (Game.IsControlPressed(0, GTA.Control.LookBehind) && Game.IsControlJustPressed(0, GTA.Control.FrontendLb) && !_menuPool.IsAnyMenuOpen() && _settings.Gamepad)
 			{
 				_mainMenu.Visible = !_mainMenu.Visible;
 			}
 
             if (!_isInFreecam) return;
-			if(_drawInstructionalbuttons)
+			if(_settings.InstructionalButtons && !_objectsMenu.Visible)
 				_scaleform.Render2D();
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)GTA.Control.CharacterWheel);
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)GTA.Control.SelectWeapon);
@@ -380,6 +401,9 @@ namespace MapEditor
 					RedrawObjectsMenu(type: _currentObjectType);
                 World.CurrentDayTime = new TimeSpan(14, 0, 0);
                 _isChoosingObject = true;
+	            _snappedProp = null;
+	            _selectedProp = null;
+				_menuPool.CloseAllMenus();
                 _objectsMenu.Visible = true;
                 OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
 				_objectsMenu.Subtitle.Caption = "~b~PLACE " + _currentObjectType.ToString().ToUpper();
@@ -393,6 +417,9 @@ namespace MapEditor
 					RedrawObjectsMenu(type: _currentObjectType);
 				World.CurrentDayTime = new TimeSpan(14, 0, 0);
 				_isChoosingObject = true;
+				_snappedProp = null;
+				_selectedProp = null;
+				_menuPool.CloseAllMenus();
 				_objectsMenu.Visible = true;
 				OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
 				_objectsMenu.Subtitle.Caption = "~b~PLACE " + _currentObjectType.ToString().ToUpper();
@@ -406,6 +433,9 @@ namespace MapEditor
 					RedrawObjectsMenu(type: _currentObjectType);
 				World.CurrentDayTime = new TimeSpan(14, 0, 0);
 				_isChoosingObject = true;
+				_snappedProp = null;
+				_selectedProp = null;
+				_menuPool.CloseAllMenus();
 				_objectsMenu.Visible = true;
 				OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
 				_objectsMenu.Subtitle.Caption = "~b~PLACE " + _currentObjectType.ToString().ToUpper();
@@ -470,8 +500,8 @@ namespace MapEditor
 
 			int wi = Convert.ToInt32(res.Width*0.5);
 			int he = Convert.ToInt32(res.Height * 0.5);
-
-			if (_showCrosshair)
+			
+			if (_settings.Marker == Marker.Crosshair)
 				Sprite.DrawTexture(_crosshairPath, new Point(wi - 15, he - 15), new Size(30, 30));
 
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)GTA.Control.CharacterWheel);
@@ -485,8 +515,8 @@ namespace MapEditor
 			mouseX *= -1;
 			mouseY *= -1;
 
-            mouseX *= _cameraSensitivity;
-            mouseY *= _cameraSensitivity;
+            mouseX *= _settings.CameraSensivity;
+            mouseY *= _settings.CameraSensivity;
             
 
             float modifier = 1f;
@@ -498,13 +528,13 @@ namespace MapEditor
             if (_selectedProp == null)
             {
                 _mainCamera.Rotation = new Vector3(_mainCamera.Rotation.X + mouseY, _mainCamera.Rotation.Y, _mainCamera.Rotation.Z + mouseX);
+				
+	            var dir = VectorExtensions.RotationToDirection(_mainCamera.Rotation);
+				var rotLeft = _mainCamera.Rotation + new Vector3(0, 0, -10);
+				var rotRight = _mainCamera.Rotation + new Vector3(0, 0, 10);
+				var right = VectorExtensions.RotationToDirection(rotRight) - VectorExtensions.RotationToDirection(rotLeft);
 
-                //Cursor.Position = new Point(Game.ScreenResolution.Width/2, Game.ScreenResolution.Height/2);
-                Vector3 dir = (VectorExtensions.ScreenRelToWorld(_mainCamera.Position, _mainCamera.Rotation, new Vector2(0f, 0f)) -
-                     _mainCamera.Position);
-                dir.Normalize();
-                Vector3 right = VectorExtensions.CrossWith(dir, new Vector3(0, 0, 1));
-                if (Game.IsControlPressed(0, GTA.Control.MoveUpOnly))
+				if (Game.IsControlPressed(0, GTA.Control.MoveUpOnly))
                 {
                     _mainCamera.Position += dir*modifier;
                 }
@@ -514,11 +544,11 @@ namespace MapEditor
                 }
                 if (Game.IsControlPressed(0, GTA.Control.MoveLeftOnly))
                 {
-                    _mainCamera.Position -= right*modifier;
+                    _mainCamera.Position += right*modifier;
                 }
                 if (Game.IsControlPressed(0, GTA.Control.MoveRightOnly))
                 {
-                    _mainCamera.Position += right*modifier;
+                    _mainCamera.Position -= right*modifier;
                 }
                 Game.Player.Character.Position = _mainCamera.Position - dir*8f;
 
@@ -534,7 +564,14 @@ namespace MapEditor
                     {
                         _snappedProp.Rotation = _snappedProp.Rotation - new Vector3(0f, 0f, modifier);
                     }
-                    if (Game.IsControlJustPressed(0, GTA.Control.Attack))
+
+					if (Game.IsControlJustPressed(0, GTA.Control.CreatorDelete))
+					{
+						PropStreamer.RemoveEntity(_snappedProp.Handle);
+						_snappedProp = null;
+					}
+
+					if (Game.IsControlJustPressed(0, GTA.Control.Attack))
                     {
                         _snappedProp = null;
                     }
@@ -544,7 +581,13 @@ namespace MapEditor
 				}
                 else
                 {
-                    if (Game.IsControlJustPressed(0, GTA.Control.Aim))
+	                if (_settings.Marker == Marker.Orb)
+	                {
+		                var pos = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, Game.Player.Character);
+						Function.Call(Hash.DRAW_MARKER, 28, pos.X, pos.Y, pos.Z, 0f, 0f, 0f, 0f, 0f, 0f, 0.20f, 0.20f, 0.20f, 200, 20, 20, 255, false, true, 2, false, false, false, false);
+	                }
+
+	                if (Game.IsControlJustPressed(0, GTA.Control.Aim))
                     {
                         Entity hitEnt = VectorExtensions.RaycastEntity(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation);
                         if (hitEnt != null && PropStreamer.GetAllHandles().Contains(hitEnt.Handle))
@@ -582,8 +625,7 @@ namespace MapEditor
 						{
 							Entity tmpProp = new Prop(0);
 							if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt.Handle))
-								tmpProp = PropStreamer.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, !PropStreamer.StaticProps.Contains(hitEnt.Handle));
-							//tmpProp = World.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, false, false);
+								tmpProp = PropStreamer.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, !PropStreamer.StaticProps.Contains(hitEnt.Handle), force: true);
 							else if (Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, hitEnt.Handle))
 								tmpProp = World.CreateVehicle(hitEnt.Model, hitEnt.Position, hitEnt.Rotation.Z);
 							else if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, hitEnt.Handle))
@@ -634,24 +676,30 @@ namespace MapEditor
 	                else
 		                _selectedProp.Rotation -= new Vector3(0f, 0f, modifier);
 				}
-
+				
                 if (Game.IsControlPressed(0, GTA.Control.MoveUpOnly))
                 {
-	                float pedMod = 0f;
+					float pedMod = 0f;
 	                if (_selectedProp is Ped)
 		                pedMod = -1f;
-					if(!_controlsRotate)
-						_selectedProp.Position += new Vector3(modifier/4, 0f, pedMod);
-					else
-						_selectedProp.Rotation += new Vector3(modifier, 0f, 0f);
-				}
+	                if (!_controlsRotate)
+	                {
+						var dir = VectorExtensions.RotationToDirection(_mainCamera.Rotation) * (modifier/4);
+						_selectedProp.Position += new Vector3(dir.X, dir.Y, pedMod);
+	                }
+	                else
+		                _selectedProp.Rotation += new Vector3(modifier, 0f, 0f);
+                }
                 if (Game.IsControlPressed(0, GTA.Control.MoveDownOnly))
                 {
 					float pedMod = 0f;
 					if (_selectedProp is Ped)
 						pedMod = 1f;
 					if (!_controlsRotate)
-						_selectedProp.Position -= new Vector3(modifier/4, 0f, pedMod);
+					{
+						var dir = VectorExtensions.RotationToDirection(_mainCamera.Rotation) * (modifier / 4);
+						_selectedProp.Position -= new Vector3(dir.X, dir.Y, pedMod);
+					}
 					else
 						_selectedProp.Rotation -= new Vector3(modifier, 0f, 0f);
 				}
@@ -661,25 +709,37 @@ namespace MapEditor
 					float pedMod = 0f;
 					if (_selectedProp is Ped)
 						pedMod = -1f;
-					if (!_controlsRotate)
-						_selectedProp.Position += new Vector3(0f, modifier/4, pedMod);
+	                if (!_controlsRotate)
+	                {
+						var rotLeft = _mainCamera.Rotation + new Vector3(0, 0, -10);
+						var rotRight = _mainCamera.Rotation + new Vector3(0, 0, 10);
+						var right = (VectorExtensions.RotationToDirection(rotRight) - VectorExtensions.RotationToDirection(rotLeft)) * (modifier/2);
+						_selectedProp.Position += new Vector3(right.X, right.Y, pedMod);
+					}
 					else
-						_selectedProp.Rotation += new Vector3(0f, modifier, 0f);
-				}
+		                _selectedProp.Rotation += new Vector3(0f, modifier, 0f);
+                }
                 if (Game.IsControlPressed(0, GTA.Control.MoveRightOnly))
                 {
 					float pedMod = 0f;
 					if (_selectedProp is Ped)
 						pedMod = 1f;
-					if (!_controlsRotate)
-						_selectedProp.Position -= new Vector3(0f, modifier / 4, pedMod);
+	                if (!_controlsRotate)
+	                {
+						var rotLeft = _mainCamera.Rotation + new Vector3(0, 0, -10);
+						var rotRight = _mainCamera.Rotation + new Vector3(0, 0, 10);
+						var right = (VectorExtensions.RotationToDirection(rotRight) - VectorExtensions.RotationToDirection(rotLeft)) * (modifier/2);
+						_selectedProp.Position -= new Vector3(right.X, right.Y, pedMod);
+					}
 					else
 						_selectedProp.Rotation -= new Vector3(0f, modifier, 0f);
 				}
 
-	            if (Game.IsControlJustReleased(0, GTA.Control.MoveLeftRight) ||
-	                Game.IsControlJustReleased(0, GTA.Control.MoveUpDown) ||
-	                Game.IsControlJustReleased(0, GTA.Control.FrontendLb) ||
+	            if (Game.IsControlJustReleased(0, GTA.Control.MoveLeft) ||
+					Game.IsControlJustReleased(0, GTA.Control.MoveRight) ||
+                    Game.IsControlJustReleased(0, GTA.Control.MoveUp) ||
+					Game.IsControlJustReleased(0, GTA.Control.MoveDown) ||
+                    Game.IsControlJustReleased(0, GTA.Control.FrontendLb) ||
 	                Game.IsControlJustReleased(0, GTA.Control.FrontendRb))
 	            {
 					RedrawObjectInfoMenu(_selectedProp);
@@ -689,7 +749,7 @@ namespace MapEditor
 				{
 					Entity mainProp = new Prop(0);
 					if (_selectedProp is Prop)
-						mainProp = PropStreamer.CreateProp(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation, !PropStreamer.StaticProps.Contains(_selectedProp.Handle));
+						mainProp = PropStreamer.CreateProp(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation, !PropStreamer.StaticProps.Contains(_selectedProp.Handle), force: true);
 					else if (_selectedProp is Vehicle)
 						mainProp = PropStreamer.CreateVehicle(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation.Z, !PropStreamer.StaticProps.Contains(_selectedProp.Handle));
 					else if (_selectedProp is Ped)
@@ -699,7 +759,7 @@ namespace MapEditor
 					}
 
 					_selectedProp = mainProp;
-					RedrawObjectInfoMenu(_selectedProp);
+					if(_selectedProp != null) RedrawObjectInfoMenu(_selectedProp);
 				}
 
 				if (Game.IsControlJustPressed(0, GTA.Control.CreatorDelete))
@@ -773,7 +833,7 @@ namespace MapEditor
 	        {
 			    case ObjectTypes.Prop:
 					objectHash = ObjectDatabase.MainDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
-					_snappedProp = PropStreamer.CreateProp(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), new Vector3(0, 0, 0), true);
+					_snappedProp = PropStreamer.CreateProp(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), new Vector3(0, 0, 0), false, force: true);
 					break;
 				case ObjectTypes.Vehicle:
 			        objectHash = ObjectDatabase.VehicleDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
@@ -858,13 +918,16 @@ namespace MapEditor
 	    {
 			_formatMenu.Clear();
 			_formatMenu.AddItem(new UIMenuItem("XML", "Default format for Map Editor. Choose this one if you have no idea. This saves props, vehicles and peds."));
-			_formatMenu.AddItem(new UIMenuItem("Simple Trainer", "Format used in Simple Trainer mod (objects.ini). Only saves props."));
+		    var simple = new UIMenuItem("Simple Trainer", "Format used in Simple Trainer mod (objects.ini). Only saves props.");
+		    if (PropStreamer.PropCount > PropStreamer.MAX_OBJECTS && _savingMap)
+			    simple.Enabled = false;
+            _formatMenu.AddItem(simple);
 		    if (_savingMap)
 		    {
 			    _formatMenu.AddItem(new UIMenuItem("C# Code",
 				    "Directly outputs to C# code to spawn your entities. Saves props, vehicles and peds."));
 			    _formatMenu.AddItem(new UIMenuItem("Raw",
-				    "Writes the entity and their position and rotation. Useful for taking coordinates."));
+				"Writes the entity and their position and rotation. Useful for taking coordinates."));
 		    }
 		    _formatMenu.RefreshIndex();
 		}
@@ -872,7 +935,7 @@ namespace MapEditor
 	    private Scaleform _scaleform;
 	    private void InstructionalButtonsStart()
 	    {
-		    if(!_drawInstructionalbuttons) return;
+		    if(!_settings.InstructionalButtons) return;
 			_scaleform.CallFunction("CLEAR_ALL");
 			_scaleform.CallFunction("TOGGLE_MOUSE_BUTTONS", 0);
 			_scaleform.CallFunction("CREATE_CONTAINER");
@@ -880,7 +943,7 @@ namespace MapEditor
 
 	    private void InstructionalButtonsFreelook()
 	    {
-			if (!_drawInstructionalbuttons) return;
+			if (!_settings.InstructionalButtons) return;
 			_scaleform.CallFunction("SET_DATA_SLOT", 0, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Enter, 0), "Spawn Prop");
 			_scaleform.CallFunction("SET_DATA_SLOT", 1, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendPause, 0), "Spawn Ped");
 			_scaleform.CallFunction("SET_DATA_SLOT", 2, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.NextCamera, 0), "Spawn Vehicle");
@@ -892,7 +955,7 @@ namespace MapEditor
 
 		private void InstructionalButtonsSelected()
 		{
-			if (!_drawInstructionalbuttons) return;
+			if (!_settings.InstructionalButtons) return;
 			_scaleform.CallFunction("SET_DATA_SLOT", 0, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.MoveLeftRight, 0), "");
 			_scaleform.CallFunction("SET_DATA_SLOT", 1, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.MoveUpDown, 0), "");
 			_scaleform.CallFunction("SET_DATA_SLOT", 2, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendRb, 0), "");
@@ -905,15 +968,16 @@ namespace MapEditor
 
 		private void InstructionalButtonsSnapped()
 		{
-			if (!_drawInstructionalbuttons) return;
+			if (!_settings.InstructionalButtons) return;
 			_scaleform.CallFunction("SET_DATA_SLOT", 0, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendRb, 0), "");
 			_scaleform.CallFunction("SET_DATA_SLOT", 1, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendLb, 0), "Rotate Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 2, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Attack, 0), "Accept");
+			_scaleform.CallFunction("SET_DATA_SLOT", 2, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.CreatorDelete, 0), "Delete Entity");
+			_scaleform.CallFunction("SET_DATA_SLOT", 3, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Attack, 0), "Accept");
 		}
 
 		private void InstructionalButtonsEnd()
 		{
-			if (!_drawInstructionalbuttons) return;
+			if (!_settings.InstructionalButtons) return;
 			_scaleform.CallFunction("DRAW_INSTRUCTIONAL_BUTTONS", -1);
 		}
 
@@ -931,17 +995,17 @@ namespace MapEditor
 		    _objectInfoMenu.Subtitle.Caption = "~b~" + name + " PROPERTIES";
 			_objectInfoMenu.Clear();
 			List<dynamic> possiblePositions = new List<dynamic>();
-		    for (int i = -50000; i <= 50000; i++)
+		    for (int i = -500000; i <= 500000; i++)
 		    {
-			    possiblePositions.Add(i * 0.1);
+			    possiblePositions.Add(i * 0.01);
 		    }
-		    var posXitem = new UIMenuListItem("Position X", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 10) + 50000)));
-			var posYitem = new UIMenuListItem("Position Y", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 10) + 50000)));
-			var posZitem = new UIMenuListItem("Position Z", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 10) + 50000)));
+		    var posXitem = new UIMenuListItem("Position X", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 100) + 500000)));
+			var posYitem = new UIMenuListItem("Position Y", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 100) + 500000)));
+			var posZitem = new UIMenuListItem("Position Z", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 100) + 500000)));
 
-			var rotXitem = new UIMenuListItem("Rotation X", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.X * 10) + 50000)));
-			var rotYitem = new UIMenuListItem("Rotation Y", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Y * 10) + 50000)));
-			var rotZitem = new UIMenuListItem("Rotation Z", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Z * 10) + 50000)));
+			var rotXitem = new UIMenuListItem("Rotation X", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.X * 100) + 500000)));
+			var rotYitem = new UIMenuListItem("Rotation Y", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Y * 100) + 500000)));
+			var rotZitem = new UIMenuListItem("Rotation Z", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Z * 100) + 500000)));
 
 		    var dynamic = new UIMenuCheckboxItem("Dynamic", !PropStreamer.StaticProps.Contains(ent.Handle));
 		    dynamic.CheckboxEvent += (ite, checkd) =>
@@ -969,5 +1033,26 @@ namespace MapEditor
 			rotYitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, (float)item.IndexToItem(index), ent.Rotation.Z);
 			rotZitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, ent.Rotation.Y, (float)item.IndexToItem(index));
 		}
-	}
+
+	    public void ValidateDatabase()
+	    {
+		    // Validate object list.
+		    Dictionary<string, int> tmpDict = new Dictionary<string, int>();
+
+		    int counter = 0;
+		    while (counter < ObjectDatabase.MainDb.Count)
+		    {
+			    var pair = ObjectDatabase.MainDb.ElementAt(counter);
+			    counter++;
+			    new UIResText((counter) + "/" + ObjectDatabase.MainDb.Count + " done. (" + (counter/(float) ObjectDatabase.MainDb.Count)*100 +
+				    "%)\nValid objects: " + tmpDict.Count, new Point(200, 200), 0.5f).Draw();
+			    Yield();
+			    if (!new Model(pair.Value).IsValid || !new Model(pair.Value).IsInCdImage) continue;
+			    if (!tmpDict.ContainsKey(pair.Key))
+				    tmpDict.Add(pair.Key, pair.Value);
+		    }
+			string output = tmpDict.Aggregate("", (current, pair) => current + (pair.Key + "=" + pair.Value + "\r\n"));
+		    File.WriteAllText("scripts\\ObjectList.ini", output);
+	    }
+    }
 }

@@ -1,4 +1,5 @@
-﻿using GTA.Math;
+﻿using System;
+using GTA.Math;
 
 namespace MapEditor
 {
@@ -11,6 +12,9 @@ namespace MapEditor
 		public bool Dynamic;
 
 		public Quaternion Quaternion;
+
+		[NonSerialized]
+		public int Id = -1;
 	}
 
 	public enum ObjectTypes
