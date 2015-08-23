@@ -258,6 +258,7 @@ namespace MapEditor
 
 			_currentObjectsMenu = new UIMenu("Map Editor", "~b~CURRENT ENTITES");
 	        _currentObjectsMenu.OnItemSelect += OnEntityTeleport;
+			_currentObjectsMenu.DisableInstructionalButtons(true);
             _menuPool.Add(_currentObjectsMenu);
 
 
@@ -337,27 +338,18 @@ namespace MapEditor
 				return;
 			}
 			var des = new MapSerializer();
-			try
+			var map2Load = des.Deserialize(filename, format);
+			if(map2Load == null) return;
+			foreach (MapObject o in map2Load.Objects)
 			{
-				var map2Load = des.Deserialize(filename, format);
-				foreach (MapObject o in map2Load.Objects)
-				{
-					if (o.Type == ObjectTypes.Prop)
-						AddItemToEntityMenu(PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, o.Quaternion == new Quaternion() { X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion));
-					else if (o.Type == ObjectTypes.Vehicle)
-						AddItemToEntityMenu(PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic));
-					else if (o.Type == ObjectTypes.Ped)
-						AddItemToEntityMenu(PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic));
-				}
-				UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded map ~h~" + filename + "~h~.");
+				if (o.Type == ObjectTypes.Prop)
+					AddItemToEntityMenu(PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, o.Quaternion == new Quaternion() { X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion));
+				else if (o.Type == ObjectTypes.Vehicle)
+					AddItemToEntityMenu(PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic));
+				else if (o.Type == ObjectTypes.Ped)
+					AddItemToEntityMenu(PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic));
 			}
-			catch (Exception e)
-			{
-				UI.Notify("~r~~h~Map Editor~h~~w~~n~Map failed to load, see error below.");
-				UI.Notify(e.Message);
-			}
-
-
+			UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded map ~h~" + filename + "~h~.");
 		}
 
 	    private void SaveMap(string filename, MapSerializer.Format format)
@@ -673,12 +665,15 @@ namespace MapEditor
 						{
 							Entity tmpProp = new Prop(0);
 							if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt.Handle))
-								AddItemToEntityMenu(tmpProp = PropStreamer.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, !PropStreamer.StaticProps.Contains(hitEnt.Handle), force: true));
+								AddItemToEntityMenu(_snappedProp = PropStreamer.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, !PropStreamer.StaticProps.Contains(hitEnt.Handle), force: true));
 							else if (Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, hitEnt.Handle))
-								AddItemToEntityMenu(tmpProp = World.CreateVehicle(hitEnt.Model, hitEnt.Position, hitEnt.Rotation.Z));
+								AddItemToEntityMenu(_snappedProp = PropStreamer.CreateVehicle(hitEnt.Model, hitEnt.Position, hitEnt.Rotation.Z, !PropStreamer.StaticProps.Contains(hitEnt.Handle)));
 							else if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, hitEnt.Handle))
-								AddItemToEntityMenu(tmpProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped)hitEnt).Handle, hitEnt.Rotation.Z, 1, 1));
-							_snappedProp = tmpProp;
+							{
+								AddItemToEntityMenu(_snappedProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped)hitEnt).Handle, hitEnt.Rotation.Z, 1, 1));
+								if(_snappedProp != null)
+									PropStreamer.Peds.Add(_snappedProp.Handle);
+							}
 						}
 					}
 
@@ -1037,11 +1032,13 @@ namespace MapEditor
 			if(ent == null) return;
 		    string name = "";
 		    if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, ent.Handle))
-			    name = ObjectDatabase.MainDb.First(x => x.Value == ent.Model.Hash).Key.ToUpper();
+		    {
+			    name = ObjectDatabase.MainDb.ContainsValue(ent.Model.Hash) ? ObjectDatabase.MainDb.First(x => x.Value == ent.Model.Hash).Key.ToUpper() : "Unknown Prop";
+		    }
 			if (Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, ent.Handle))
-				name = ObjectDatabase.VehicleDb.First(x => x.Value == ent.Model.Hash).Key.ToUpper();
+				name = ObjectDatabase.VehicleDb.ContainsValue(ent.Model.Hash) ? ObjectDatabase.VehicleDb.First(x => x.Value == ent.Model.Hash).Key.ToUpper() : "Unknown Vehicle";
 			if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent.Handle))
-				name = ObjectDatabase.PedDb.First(x => x.Value == ent.Model.Hash).Key.ToUpper();
+				name = ObjectDatabase.PedDb.ContainsValue(ent.Model.Hash) ? ObjectDatabase.PedDb.First(x => x.Value == ent.Model.Hash).Key.ToUpper() : "Unknown Ped";
 
 		    _objectInfoMenu.Subtitle.Caption = "~b~" + name;
 			_objectInfoMenu.Clear();
@@ -1113,30 +1110,30 @@ namespace MapEditor
 		    var type = "";
 		    if (ent is Prop)
 		    {
-			    name = ObjectDatabase.MainDb.First(pair => pair.Value == ent.Model.Hash).Key;
+			    name = ObjectDatabase.MainDb.ContainsValue(ent.Model.Hash) ? ObjectDatabase.MainDb.First(pair => pair.Value == ent.Model.Hash).Key : "Unknown Prop";
 			    type = "~h~[PROP]~h~ ";
 		    }
-			else if (ent is Vehicle)
+		    else if (ent is Vehicle)
 			{
-				name = ObjectDatabase.VehicleDb.First(pair => pair.Value == ent.Model.Hash).Key;
+				name = ObjectDatabase.VehicleDb.ContainsValue(ent.Model.Hash) ? ObjectDatabase.VehicleDb.First(x => x.Value == ent.Model.Hash).Key.ToUpper() : "Unknown Vehicle";
 				type = "~h~[VEH]~h~ ";
 			}
 			else if (ent is Ped)
 			{
-				name = ObjectDatabase.PedDb.First(pair => pair.Value == ent.Model.Hash).Key;
+				name = ObjectDatabase.PedDb.ContainsValue(ent.Model.Hash) ? ObjectDatabase.PedDb.First(x => x.Value == ent.Model.Hash).Key.ToUpper() : "Unknown Ped";
 				type = "~h~[PED]~h~ ";
 			}
 			_currentObjectsMenu.AddItem(new UIMenuItem(type + name, ent.Handle.ToString()));
-			_currentObjectsMenu.RefreshIndex();
+			_currentObjectsMenu.RefreshIndex(); //TODO: fix this, selected item remains after refresh.
 	    }
 
 	    public void RemoveItemFromEntityMenu(Entity ent)
 	    {
 		    var found = _currentObjectsMenu.MenuItems.FirstOrDefault(item => item.Description == ent.Handle.ToString());
 			if(found == null) return;
-            _currentObjectsMenu.RemoveItemAt(_currentObjectsMenu.MenuItems.IndexOf(found));
-			_currentObjectsMenu.RefreshIndex();
-	    }
+			_currentObjectsMenu.RemoveItemAt(_currentObjectsMenu.MenuItems.IndexOf(found));
+			_currentObjectsMenu.RefreshIndex(); //TODO: fix this, selected item remains after refresh.
+		}
 
 	    public void OnEntityTeleport(UIMenu menu, UIMenuItem item, int index)
 	    {
