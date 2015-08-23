@@ -7,10 +7,7 @@ namespace MapEditor
 		public MapEditor.Marker Marker;
 		public int CameraSensivity;
 		public bool InstructionalButtons;
-		public int StreamedPropsCount;
-
-		public Settings()
-		{
-		}
+		public bool PropCounterDisplay;
+		public bool SnapCameraToSelectedObject;
 	}
 }

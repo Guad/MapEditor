@@ -16,7 +16,7 @@ namespace MapEditor
 	/// </summary>
 	public static class PropStreamer
 	{
-		public static int MAX_OBJECTS = 100;
+		public static int MAX_OBJECTS = 2048;
 
 		public static List<MapObject> MemoryObjects = new List<MapObject>();
 
@@ -34,40 +34,12 @@ namespace MapEditor
 
 		public static Prop CreateProp(Model model, Vector3 position, Vector3 rotation, bool dynamic, Quaternion q = null, bool force = false)
 		{
+			
 			if (StreamedInHandles.Count >= MAX_OBJECTS)
 			{
-				if (force)
-				{
-					UI.Notify("~g~~h~Map Editor~h~~w~\nProp limit reached, streamer kicking in.");
-					MoveToMemory(new Prop(StreamedInHandles[0]));
-					var tmpProp = World.CreateProp(model, position, rotation, dynamic, false);
-					if (tmpProp == null) return null;
-					StreamedInHandles.Add(tmpProp.Handle);
-					if (!dynamic)
-					{
-						StaticProps.Add(tmpProp.Handle);
-						tmpProp.FreezePosition = true;
-					}
-					if (q != null)
-						Quaternion.SetEntityQuaternion(tmpProp, q);
-					tmpProp.Position = position;
-					return tmpProp;
-				}
-				else
-				{
-					UI.Notify("~r~~h~Map Editor~h~~w~\nYou have reached the prop limit. You cannot place more props.");
-					MemoryObjects.Add(new MapObject()
-					{
-						Dynamic = dynamic,
-						Hash = model.Hash,
-						Position = position,
-						Rotation = rotation,
-						Type = ObjectTypes.Prop,
-						Quaternion = q
-					});
-					return null;
-				}
-			}
+				UI.Notify("~r~~h~Map Editor~h~~w~\nYou have reached the prop limit. You cannot place any more props.");
+				return null;
+			} // */
 			var prop = World.CreateProp(model, position, rotation, dynamic, false);
 			if (prop == null) return null;
 			StreamedInHandles.Add(prop.Handle);
@@ -217,14 +189,11 @@ namespace MapEditor
 			MemoryObjects.Remove(prop);
 		}
 
-
-		private static List<float> _averageFPS = new List<float> {0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f};
-		private static Vector3 _lastPos;
+		
+		//private static Vector3 _lastPos;
 		public static void Tick()
 		{
-			_averageFPS.RemoveAt(0);
-			_averageFPS.Add(Game.FPS);
-			UI.ShowSubtitle(string.Format("[~r~STREAMING INACTIVE~w~]: PropCount: {2} Active: {0} Memory: {1} FPS: {3}\n.", StreamedInHandles.Count, MemoryObjects.Count, PropCount, _averageFPS.Average().ToString("###.0")), 200);
+			/*
 			if(_lastPos == Game.Player.Character.Position)
 				return;
 			_lastPos = Game.Player.Character.Position;
@@ -251,8 +220,6 @@ namespace MapEditor
 				}
 				return;
 			}
-			//Disabled for now.
-			//File.AppendAllText("scripts\\streamerdebug.txt", "======DebugBegin=====\n");
 			
 			MapObject[] propsToRemove = StreamedInHandles.Select(i => new MapObject()
 			{
@@ -260,14 +227,10 @@ namespace MapEditor
 			}).OrderBy(obj => (obj.Position - Game.Player.Character.Position).Length()).ToArray();
 
 			MapObject[] propsToReAdd = MemoryObjects.OrderBy(obj => (obj.Position - Game.Player.Character.Position).Length()).ToArray();
-			//File.AppendAllText("scripts\\streamerdebug.txt", "propsToRemove.Length = " + propsToRemove.Length +"\n");
-			//File.AppendAllText("scripts\\streamerdebug.txt", "propsToReAdd.Length = " + propsToReAdd.Length + "\n");
-			
 
 
 			int lastPropToRemove = 0;
 			int lastPropToReAdd = 0;
-			//File.AppendAllText("scripts\\streamerdebug.txt", "Entering main loop.\n");
 			for (int i = 0; i < MAX_OBJECTS; i++)
 			{
 				if (propsToReAdd.Length <= lastPropToReAdd)
@@ -275,9 +238,11 @@ namespace MapEditor
 					lastPropToRemove = MAX_OBJECTS - lastPropToReAdd;
 					break;
 				}
-				/*File.AppendAllText("scripts\\streamerdebug.txt", "lastPropToRemove = " + lastPropToRemove + "\n");
-				File.AppendAllText("scripts\\streamerdebug.txt", "lastPropToReAdd = " + lastPropToReAdd + "\n");
-				File.AppendAllText("scripts\\streamerdebug.txt", "Iteration #" + i + "\n");*/
+				if (propsToRemove.Length <= lastPropToRemove)
+				{
+					lastPropToReAdd = MAX_OBJECTS - lastPropToRemove;
+					break;
+				}
 				float readdLen = (propsToReAdd[lastPropToReAdd].Position - Game.Player.Character.Position).Length();
 				float removeLen = (propsToRemove[lastPropToRemove].Position - Game.Player.Character.Position).Length();
 				if (readdLen < removeLen)
@@ -285,26 +250,18 @@ namespace MapEditor
 				else
 					lastPropToRemove++;
 			}
-			//UI.ShowSubtitle("[~g~STREAMING ACTIVE~w~]: Remove: " + propsToRemove.Length + " ReAdd: " + propsToReAdd.Length + " lastPropToRem: " + lastPropToRemove + " lastDel: " + lastPropToReAdd + "\n.");
-			UI.ShowSubtitle(string.Format("[~g~STREAMING ACTIVE~w~]: PropCount: {4} Active: {0} Memory: {1} aI: {2} mI: {3} FPS: {5}\n.", propsToRemove.Length, propsToReAdd.Length, lastPropToRemove, lastPropToReAdd, PropCount, Game.FPS), 200);
 
-			//File.AppendAllText("scripts\\streamerdebug.txt", "Removing props..\n");
 			for (var i = lastPropToRemove; i < propsToRemove.Length; i++)
 			{
-				//File.AppendAllText("scripts\\streamerdebug.txt", "Iteration #" + i + "\n");
 				MoveToMemory(new Prop(propsToRemove[i].Id));
 			}
-
-			//File.AppendAllText("scripts\\streamerdebug.txt", "Adding props..\n");
+			
 			for (int i = 0; i < lastPropToReAdd; i++) // Have to spawn it in
 			{
-				//File.AppendAllText("scripts\\streamerdebug.txt", "Iteration # "+ i + "\n");
 				var prop = propsToReAdd[i];
 				MoveFromMemory(prop);
-				//File.AppendAllText("scripts\\streamerdebug.txt", "Removal successful: " + MemoryObjects.Remove(prop) + "\n");
 			}
-			//File.AppendAllText("scripts\\streamerdebug.txt", "StreamedInHandles count: " + StreamedInHandles.Count + "\n");
-			//File.AppendAllText("scripts\\streamerdebug.txt", "MemoryObjects count: " + MemoryObjects.Count + "\n");
+			// */
 		}
 	}
 }

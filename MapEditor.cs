@@ -4,10 +4,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 using GTA;
 using GTA.Math;
 using GTA.Native;
@@ -15,6 +12,7 @@ using NativeUI;
 using System.IO;
 using System.Xml.Serialization;
 using Control = GTA.Control;
+using Font = GTA.Font;
 
 namespace MapEditor
 {
@@ -22,15 +20,18 @@ namespace MapEditor
     {
         private bool _isInFreecam;
         private bool _isChoosingObject;
-        private bool _searchResultsOn = false;
+        private bool _searchResultsOn;
 
-        private UIMenu _objectsMenu;
-        private UIMenu _mainMenu;
-	    private UIMenu _formatMenu;
-	    private UIMenu _objectInfoMenu;
-	    private UIMenu _settingsMenu;
+        private readonly UIMenu _objectsMenu;
+        private readonly UIMenu _mainMenu;
+	    private readonly UIMenu _formatMenu;
+	    private readonly UIMenu _objectInfoMenu;
+	    private readonly UIMenu _settingsMenu;
+	    private readonly UIMenu _currentObjectsMenu;
 
-        private MenuPool _menuPool = new MenuPool();
+	    private UIMenuItem _currentEntitiesItem;
+
+        private readonly MenuPool _menuPool = new MenuPool();
 
         private Entity _previewProp;
         private Entity _snappedProp;
@@ -39,16 +40,14 @@ namespace MapEditor
         private Camera _mainCamera;
         private Camera _objectPreviewCamera;
 
-        private Vector3 _objectPreviewPos = new Vector3(1200.133f, 4000.958f, 85.9f);
+        private readonly Vector3 _objectPreviewPos = new Vector3(1200.133f, 4000.958f, 85.9f);
 
         private bool _zAxis = true;
-	    private bool _controlsRotate = false;
-
-        //List<int> _currentProps = new List<int>();
+	    private bool _controlsRotate;
 		
-	    private string _crosshairPath;
+	    private readonly string _crosshairPath;
 	    private bool _savingMap;
-	    private bool _hasLoaded = false;
+	    private bool _hasLoaded;
 	    
 
 	    private ObjectTypes _currentObjectType;
@@ -92,9 +91,9 @@ namespace MapEditor
             _menuPool.Add(_objectsMenu);
 
 			_objectsMenu.ResetKey(UIMenu.MenuControls.Back);
-            _objectsMenu.AddInstructionalButton(new InstructionalButton(GTA.Control.SelectWeapon, "Change Axis"));
-            _objectsMenu.AddInstructionalButton(new InstructionalButton(GTA.Control.MoveUpDown, "Zoom"));
-            _objectsMenu.AddInstructionalButton(new InstructionalButton(GTA.Control.Jump, "Search"));
+            _objectsMenu.AddInstructionalButton(new InstructionalButton(Control.SelectWeapon, "Change Axis"));
+            _objectsMenu.AddInstructionalButton(new InstructionalButton(Control.MoveUpDown, "Zoom"));
+            _objectsMenu.AddInstructionalButton(new InstructionalButton(Control.Jump, "Search"));
 
             _mainMenu = new UIMenu("Map Editor", "~b~MAIN MENU");
             _mainMenu.AddItem(new UIMenuItem("Enter/Exit Map Editor"));
@@ -136,6 +135,7 @@ namespace MapEditor
                         break;
                     case 1:
 						PropStreamer.RemoveAll();
+						_currentObjectsMenu.Clear();
 						UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded new map.");
 						break;
 					case 2:
@@ -231,30 +231,44 @@ namespace MapEditor
 				SaveSettings();
 	        };
 
-	        var tmplist = new List<dynamic>();
-	        for (int i = 10; i < 245; i++)
+	        var counterItem = new UIMenuCheckboxItem("Entity Counter", _settings.PropCounterDisplay);
+	        counterItem.CheckboxEvent += (i, checkd) =>
 	        {
-		        tmplist.Add(i);
-	        }
-
-	        var streamItem = new UIMenuListItem("Streamed Props", tmplist, _settings.StreamedPropsCount - 10);
-	        streamItem.OnListChanged += (it, index) =>
-	        {
-		        PropStreamer.MAX_OBJECTS = index + 10;
-		        _settings.StreamedPropsCount = index + 10;
+		        _settings.PropCounterDisplay = checkd;
+				SaveSettings();
 	        };
 
+	        var snapper = new UIMenuCheckboxItem("Follow Object With Camera", _settings.SnapCameraToSelectedObject);
+	        snapper.CheckboxEvent += (i, checkd) =>
+	        {
+		        _settings.SnapCameraToSelectedObject = checkd;
+				SaveSettings();
+	        };
+			
 			_settingsMenu.AddItem(gamepadItem);
 			_settingsMenu.AddItem(checkem);
 			_settingsMenu.AddItem(gamboy);
 			_settingsMenu.AddItem(butts);
-			_settingsMenu.AddItem(streamItem);
+			_settingsMenu.AddItem(counterItem);
+	        _settingsMenu.AddItem(snapper);
 			_settingsMenu.RefreshIndex();
+			_settingsMenu.DisableInstructionalButtons(true);
 			_menuPool.Add(_settingsMenu);
 
+
+			_currentObjectsMenu = new UIMenu("Map Editor", "~b~CURRENT ENTITES");
+	        _currentObjectsMenu.OnItemSelect += OnEntityTeleport;
+            _menuPool.Add(_currentObjectsMenu);
+
+
 	        var binder = new UIMenuItem("Settings");
+	        _currentEntitiesItem = new UIMenuItem("Current Entities");
+
+			_mainMenu.AddItem(_currentEntitiesItem);
             _mainMenu.AddItem(binder);
+
 			_mainMenu.BindMenuToItem(_settingsMenu, binder);
+			_mainMenu.BindMenuToItem(_currentObjectsMenu, _currentEntitiesItem);
 			_mainMenu.RefreshIndex();
         }
 
@@ -266,7 +280,6 @@ namespace MapEditor
 			    var file = new StreamReader("scripts\\MapEditor.xml");
 			    _settings = (Settings) serializer.Deserialize(file);
 				file.Close();
-			    PropStreamer.MAX_OBJECTS = _settings.StreamedPropsCount;
 		    }
 		    else
 		    {
@@ -276,7 +289,8 @@ namespace MapEditor
 					Gamepad = true,
 					InstructionalButtons = true,
 					Marker = Marker.Crosshair,
-					StreamedPropsCount = 50,
+					PropCounterDisplay = true,
+					SnapCameraToSelectedObject = true,
 			    };
 				SaveSettings();
 		    }
@@ -329,11 +343,11 @@ namespace MapEditor
 				foreach (MapObject o in map2Load.Objects)
 				{
 					if (o.Type == ObjectTypes.Prop)
-						PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, o.Quaternion == new Quaternion() { X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion);
+						AddItemToEntityMenu(PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, o.Quaternion == new Quaternion() { X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion));
 					else if (o.Type == ObjectTypes.Vehicle)
-						PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic);
+						AddItemToEntityMenu(PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic));
 					else if (o.Type == ObjectTypes.Ped)
-						PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic);
+						AddItemToEntityMenu(PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic));
 				}
 				UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded map ~h~" + filename + "~h~.");
 			}
@@ -342,6 +356,8 @@ namespace MapEditor
 				UI.Notify("~r~~h~Map Editor~h~~w~~n~Map failed to load, see error below.");
 				UI.Notify(e.Message);
 			}
+
+
 		}
 
 	    private void SaveMap(string filename, MapSerializer.Format format)
@@ -378,9 +394,20 @@ namespace MapEditor
 				_hasLoaded = true;
 			}
 			_menuPool.ProcessMenus();
-			PropStreamer.Tick();
+			//PropStreamer.Tick();
 
-			if (Game.IsControlPressed(0, GTA.Control.LookBehind) && Game.IsControlJustPressed(0, GTA.Control.FrontendLb) && !_menuPool.IsAnyMenuOpen() && _settings.Gamepad)
+			if (PropStreamer.EntityCount > 0)
+			{
+				_currentEntitiesItem.Enabled = true;
+				_currentEntitiesItem.Description = "";
+			}
+			else
+			{
+				_currentEntitiesItem.Enabled = false;
+				_currentEntitiesItem.Description = "There are no current entities.";
+			}
+
+			if (Game.IsControlPressed(0, Control.LookBehind) && Game.IsControlJustPressed(0, Control.FrontendLb) && !_menuPool.IsAnyMenuOpen() && _settings.Gamepad)
 			{
 				_mainMenu.Visible = !_mainMenu.Visible;
 			}
@@ -388,12 +415,12 @@ namespace MapEditor
             if (!_isInFreecam) return;
 			if(_settings.InstructionalButtons && !_objectsMenu.Visible)
 				_scaleform.Render2D();
-			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)GTA.Control.CharacterWheel);
-			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)GTA.Control.SelectWeapon);
-			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)GTA.Control.FrontendPause);
-			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)GTA.Control.NextCamera);
+			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.CharacterWheel);
+			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.SelectWeapon);
+			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.FrontendPause);
+			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.NextCamera);
 
-			if (Game.IsControlJustPressed(0, GTA.Control.Enter) && !_isChoosingObject)
+			if (Game.IsControlJustPressed(0, Control.Enter) && !_isChoosingObject)
             {
 	            var oldType = _currentObjectType;
 				_currentObjectType = ObjectTypes.Prop;
@@ -409,7 +436,7 @@ namespace MapEditor
 				_objectsMenu.Subtitle.Caption = "~b~PLACE " + _currentObjectType.ToString().ToUpper();
 			}
 
-			if (Game.IsControlJustPressed(0, GTA.Control.NextCamera) && !_isChoosingObject)
+			if (Game.IsControlJustPressed(0, Control.NextCamera) && !_isChoosingObject)
 			{
 				var oldType = _currentObjectType;
 				_currentObjectType = ObjectTypes.Vehicle;
@@ -425,7 +452,7 @@ namespace MapEditor
 				_objectsMenu.Subtitle.Caption = "~b~PLACE " + _currentObjectType.ToString().ToUpper();
 			}
 
-			if (Game.IsControlJustPressed(0, GTA.Control.FrontendPause) && !_isChoosingObject)
+			if (Game.IsControlJustPressed(0, Control.FrontendPause) && !_isChoosingObject)
 			{
 				var oldType = _currentObjectType;
 				_currentObjectType = ObjectTypes.Ped;
@@ -448,7 +475,7 @@ namespace MapEditor
                     _previewProp.Rotation = _previewProp.Rotation + (_zAxis ? new Vector3(0f, 0f, 2.5f) : new Vector3(2.5f, 0f, 0f));
                 }
 
-                if (Game.IsControlJustPressed(0, GTA.Control.SelectWeapon))
+                if (Game.IsControlJustPressed(0, Control.SelectWeapon))
                     _zAxis = !_zAxis;
 
                 if (_objectPreviewCamera == null)
@@ -457,25 +484,25 @@ namespace MapEditor
                     _objectPreviewCamera.PointAt(_objectPreviewPos);
                 }
 
-                if (Game.IsControlPressed(0, GTA.Control.MoveDownOnly))
+                if (Game.IsControlPressed(0, Control.MoveDownOnly))
                 {
                     _objectPreviewCamera.Position -= new Vector3(0f, 0.5f, 0f);
                 }
 
-                if (Game.IsControlPressed(0, GTA.Control.MoveUpOnly))
+                if (Game.IsControlPressed(0, Control.MoveUpOnly))
                 {
                     _objectPreviewCamera.Position += new Vector3(0f, 0.5f, 0f);
                 }
                 World.RenderingCamera = _objectPreviewCamera;
 
-                if (Game.IsControlJustPressed(0, GTA.Control.PhoneCancel) && !_searchResultsOn)
+                if (Game.IsControlJustPressed(0, Control.PhoneCancel) && !_searchResultsOn)
                 {
                     _isChoosingObject = false;
                     _objectsMenu.Visible = false;
                     _previewProp?.Delete();
                 }
 
-                if (Game.IsControlJustPressed(0, GTA.Control.PhoneCancel) && _searchResultsOn)
+                if (Game.IsControlJustPressed(0, Control.PhoneCancel) && _searchResultsOn)
                 {
                     RedrawObjectsMenu(type: _currentObjectType);
                     OnIndexChange(_objectsMenu, 0);
@@ -483,7 +510,7 @@ namespace MapEditor
                     _objectsMenu.Subtitle.Caption = "~b~PLACE " + _currentObjectType.ToString().ToUpper();
                 }
 
-                if (Game.IsControlJustPressed(0, GTA.Control.Jump))
+                if (Game.IsControlJustPressed(0, Control.Jump))
                 {
                     string query = Game.GetUserInput(255);
                     RedrawObjectsMenu(query, _currentObjectType);
@@ -497,6 +524,24 @@ namespace MapEditor
             World.RenderingCamera = _mainCamera;
 
 	        var res = UIMenu.GetScreenResolutionMantainRatio();
+			var safe = UIMenu.GetSafezoneBounds();
+
+			if (_settings.PropCounterDisplay)
+			{
+				const int interval = 45;
+
+				new UIResText("PROPS", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - (90 + (2*interval))), 0.3f, Color.White).Draw();
+				new UIResText(PropStreamer.PropCount.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (2 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (2 * interval))), new Size(250, 37)).Draw();
+
+				new UIResText("VEHICLES", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - (90 + interval)), 0.3f, Color.White).Draw();
+				new UIResText(PropStreamer.Vehicles.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + interval)), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + interval)), new Size(250, 37)).Draw();
+				
+				new UIResText("PEDS", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - 90), 0.3f, Color.White).Draw();
+				new UIResText(PropStreamer.Peds.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - 102), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - 100), new Size(250, 37)).Draw();
+			}
 
 			int wi = Convert.ToInt32(res.Width*0.5);
 			int he = Convert.ToInt32(res.Height * 0.5);
@@ -504,12 +549,12 @@ namespace MapEditor
 			if (_settings.Marker == Marker.Crosshair)
 				Sprite.DrawTexture(_crosshairPath, new Point(wi - 15, he - 15), new Size(30, 30));
 
-			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)GTA.Control.CharacterWheel);
-            Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)GTA.Control.SelectWeapon);
-			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)GTA.Control.FrontendPause);
+			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.CharacterWheel);
+            Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.SelectWeapon);
+			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.FrontendPause);
 
-			var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GTA.Control.LookLeftRight);
-			var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GTA.Control.LookUpDown);
+			var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.LookLeftRight);
+			var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.LookUpDown);
 
 
 			mouseX *= -1;
@@ -520,9 +565,9 @@ namespace MapEditor
             
 
             float modifier = 1f;
-            if (Game.IsControlPressed(0, GTA.Control.Sprint))
+            if (Game.IsControlPressed(0, Control.Sprint))
                 modifier = 5f;
-            else if (Game.IsControlPressed(0, GTA.Control.CharacterWheel))
+            else if (Game.IsControlPressed(0, Control.CharacterWheel))
                 modifier = 0.3f;
 
             if (_selectedProp == null)
@@ -534,19 +579,19 @@ namespace MapEditor
 				var rotRight = _mainCamera.Rotation + new Vector3(0, 0, 10);
 				var right = VectorExtensions.RotationToDirection(rotRight) - VectorExtensions.RotationToDirection(rotLeft);
 
-				if (Game.IsControlPressed(0, GTA.Control.MoveUpOnly))
+				if (Game.IsControlPressed(0, Control.MoveUpOnly))
                 {
                     _mainCamera.Position += dir*modifier;
                 }
-                if (Game.IsControlPressed(0, GTA.Control.MoveDownOnly))
+                if (Game.IsControlPressed(0, Control.MoveDownOnly))
                 {
                     _mainCamera.Position -= dir*modifier;
                 }
-                if (Game.IsControlPressed(0, GTA.Control.MoveLeftOnly))
+                if (Game.IsControlPressed(0, Control.MoveLeftOnly))
                 {
                     _mainCamera.Position += right*modifier;
                 }
-                if (Game.IsControlPressed(0, GTA.Control.MoveRightOnly))
+                if (Game.IsControlPressed(0, Control.MoveRightOnly))
                 {
                     _mainCamera.Position -= right*modifier;
                 }
@@ -555,23 +600,24 @@ namespace MapEditor
                 if (_snappedProp != null)
                 {
                     _snappedProp.Position = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, _snappedProp);
-                    if (Game.IsControlPressed(0, GTA.Control.CursorScrollUp) || Game.IsControlPressed(0, GTA.Control.FrontendRb))
+                    if (Game.IsControlPressed(0, Control.CursorScrollUp) || Game.IsControlPressed(0, Control.FrontendRb))
                     {
                         _snappedProp.Rotation = _snappedProp.Rotation + new Vector3(0f, 0f, modifier);
                     }
 
-                    if (Game.IsControlPressed(0, GTA.Control.CursorScrollDown) || Game.IsControlPressed(0, GTA.Control.FrontendLb))
+                    if (Game.IsControlPressed(0, Control.CursorScrollDown) || Game.IsControlPressed(0, Control.FrontendLb))
                     {
                         _snappedProp.Rotation = _snappedProp.Rotation - new Vector3(0f, 0f, modifier);
                     }
 
-					if (Game.IsControlJustPressed(0, GTA.Control.CreatorDelete))
+					if (Game.IsControlJustPressed(0, Control.CreatorDelete))
 					{
+						RemoveItemFromEntityMenu(_snappedProp);
 						PropStreamer.RemoveEntity(_snappedProp.Handle);
 						_snappedProp = null;
 					}
 
-					if (Game.IsControlJustPressed(0, GTA.Control.Attack))
+					if (Game.IsControlJustPressed(0, Control.Attack))
                     {
                         _snappedProp = null;
                     }
@@ -587,7 +633,7 @@ namespace MapEditor
 						Function.Call(Hash.DRAW_MARKER, 28, pos.X, pos.Y, pos.Z, 0f, 0f, 0f, 0f, 0f, 0f, 0.20f, 0.20f, 0.20f, 200, 20, 20, 255, false, true, 2, false, false, false, false);
 	                }
 
-	                if (Game.IsControlJustPressed(0, GTA.Control.Aim))
+	                if (Game.IsControlJustPressed(0, Control.Aim))
                     {
                         Entity hitEnt = VectorExtensions.RaycastEntity(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation);
                         if (hitEnt != null && PropStreamer.GetAllHandles().Contains(hitEnt.Handle))
@@ -601,7 +647,7 @@ namespace MapEditor
 						}
                     }
 
-                    if (Game.IsControlJustPressed(0, GTA.Control.Attack))
+                    if (Game.IsControlJustPressed(0, Control.Attack))
                     {
                         Entity hitEnt = VectorExtensions.RaycastEntity(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation);
                         if (hitEnt != null && PropStreamer.GetAllHandles().Contains(hitEnt.Handle))
@@ -615,30 +661,33 @@ namespace MapEditor
 							RedrawObjectInfoMenu(_selectedProp);
 							_menuPool.CloseAllMenus();
 							_objectInfoMenu.Visible = true;
+							if(_settings.SnapCameraToSelectedObject)
+								_mainCamera.PointAt(_selectedProp);
 						}
                     }
 
-	                if (Game.IsControlJustReleased(0, GTA.Control.LookBehind))
+	                if (Game.IsControlJustReleased(0, Control.LookBehind))
 	                {
 						Entity hitEnt = VectorExtensions.RaycastEntity(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation);
 						if (hitEnt != null && PropStreamer.GetAllHandles().Contains(hitEnt.Handle))
 						{
 							Entity tmpProp = new Prop(0);
 							if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt.Handle))
-								tmpProp = PropStreamer.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, !PropStreamer.StaticProps.Contains(hitEnt.Handle), force: true);
+								AddItemToEntityMenu(tmpProp = PropStreamer.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, !PropStreamer.StaticProps.Contains(hitEnt.Handle), force: true));
 							else if (Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, hitEnt.Handle))
-								tmpProp = World.CreateVehicle(hitEnt.Model, hitEnt.Position, hitEnt.Rotation.Z);
+								AddItemToEntityMenu(tmpProp = World.CreateVehicle(hitEnt.Model, hitEnt.Position, hitEnt.Rotation.Z));
 							else if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, hitEnt.Handle))
-								tmpProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped)hitEnt).Handle, hitEnt.Rotation.Z, 1, 1);
+								AddItemToEntityMenu(tmpProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped)hitEnt).Handle, hitEnt.Rotation.Z, 1, 1));
 							_snappedProp = tmpProp;
 						}
 					}
 
-					if (Game.IsControlJustPressed(0, GTA.Control.CreatorDelete))
+					if (Game.IsControlJustPressed(0, Control.CreatorDelete))
 					{
 						Entity hitEnt = VectorExtensions.RaycastEntity(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation);
 						if (hitEnt != null && PropStreamer.GetAllHandles().Contains(hitEnt.Handle))
 						{
+							RemoveItemFromEntityMenu(hitEnt);
 							PropStreamer.RemoveEntity(hitEnt.Handle);
 						}
 					}
@@ -649,14 +698,13 @@ namespace MapEditor
             }
             else //_selectedProp isnt null
             {
-	            Color tmp;
-	            tmp = _controlsRotate ? Color.FromArgb(200, 200, 20, 20) : Color.FromArgb(200, 200, 200, 10);
+	            var tmp = _controlsRotate ? Color.FromArgb(200, 200, 20, 20) : Color.FromArgb(200, 200, 200, 10);
                 Function.Call(Hash.DRAW_MARKER, 0, _selectedProp.Position.X, _selectedProp.Position.Y, _selectedProp.Position.Z + 5f, 0f, 0f, 0f, 0f, 0f, 0f, 2f, 2f, 2f, tmp.R, tmp.G, tmp.B, tmp.A, 1, 0, 2, 2, 0, 0, 0);
-	            if (Game.IsControlJustReleased(0, GTA.Control.Duck))
+	            if (Game.IsControlJustReleased(0, Control.Duck))
 	            {
 		            _controlsRotate = !_controlsRotate;
 	            }
-                if (Game.IsControlPressed(0, GTA.Control.FrontendRb))
+                if (Game.IsControlPressed(0, Control.FrontendRb))
                 {
 	                float pedMod = 0f;
 	                if (_selectedProp is Ped)
@@ -666,7 +714,7 @@ namespace MapEditor
 					else
 						_selectedProp.Rotation += new Vector3(0f, 0f, modifier);
 				}
-                if (Game.IsControlPressed(0, GTA.Control.FrontendLb))
+                if (Game.IsControlPressed(0, Control.FrontendLb))
                 {
 					float pedMod = 0f;
 					if (_selectedProp is Ped)
@@ -677,7 +725,7 @@ namespace MapEditor
 		                _selectedProp.Rotation -= new Vector3(0f, 0f, modifier);
 				}
 				
-                if (Game.IsControlPressed(0, GTA.Control.MoveUpOnly))
+                if (Game.IsControlPressed(0, Control.MoveUpOnly))
                 {
 					float pedMod = 0f;
 	                if (_selectedProp is Ped)
@@ -690,7 +738,7 @@ namespace MapEditor
 	                else
 		                _selectedProp.Rotation += new Vector3(modifier, 0f, 0f);
                 }
-                if (Game.IsControlPressed(0, GTA.Control.MoveDownOnly))
+                if (Game.IsControlPressed(0, Control.MoveDownOnly))
                 {
 					float pedMod = 0f;
 					if (_selectedProp is Ped)
@@ -704,7 +752,7 @@ namespace MapEditor
 						_selectedProp.Rotation -= new Vector3(modifier, 0f, 0f);
 				}
 
-                if (Game.IsControlPressed(0, GTA.Control.MoveLeftOnly))
+                if (Game.IsControlPressed(0, Control.MoveLeftOnly))
                 {
 					float pedMod = 0f;
 					if (_selectedProp is Ped)
@@ -719,7 +767,7 @@ namespace MapEditor
 					else
 		                _selectedProp.Rotation += new Vector3(0f, modifier, 0f);
                 }
-                if (Game.IsControlPressed(0, GTA.Control.MoveRightOnly))
+                if (Game.IsControlPressed(0, Control.MoveRightOnly))
                 {
 					float pedMod = 0f;
 					if (_selectedProp is Ped)
@@ -735,44 +783,49 @@ namespace MapEditor
 						_selectedProp.Rotation -= new Vector3(0f, modifier, 0f);
 				}
 
-	            if (Game.IsControlJustReleased(0, GTA.Control.MoveLeft) ||
-					Game.IsControlJustReleased(0, GTA.Control.MoveRight) ||
-                    Game.IsControlJustReleased(0, GTA.Control.MoveUp) ||
-					Game.IsControlJustReleased(0, GTA.Control.MoveDown) ||
-                    Game.IsControlJustReleased(0, GTA.Control.FrontendLb) ||
-	                Game.IsControlJustReleased(0, GTA.Control.FrontendRb))
+	            if (Game.IsControlJustReleased(0, Control.MoveLeft) ||
+					Game.IsControlJustReleased(0, Control.MoveRight) ||
+                    Game.IsControlJustReleased(0, Control.MoveUp) ||
+					Game.IsControlJustReleased(0, Control.MoveDown) ||
+                    Game.IsControlJustReleased(0, Control.FrontendLb) ||
+	                Game.IsControlJustReleased(0, Control.FrontendRb))
 	            {
 					RedrawObjectInfoMenu(_selectedProp);
 				}
 
-				if (Game.IsControlJustReleased(0, GTA.Control.LookBehind))
+				if (Game.IsControlJustReleased(0, Control.LookBehind))
 				{
 					Entity mainProp = new Prop(0);
 					if (_selectedProp is Prop)
-						mainProp = PropStreamer.CreateProp(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation, !PropStreamer.StaticProps.Contains(_selectedProp.Handle), force: true);
+						AddItemToEntityMenu(mainProp = PropStreamer.CreateProp(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation, !PropStreamer.StaticProps.Contains(_selectedProp.Handle), force: true));
 					else if (_selectedProp is Vehicle)
-						mainProp = PropStreamer.CreateVehicle(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation.Z, !PropStreamer.StaticProps.Contains(_selectedProp.Handle));
+						AddItemToEntityMenu(mainProp = PropStreamer.CreateVehicle(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation.Z, !PropStreamer.StaticProps.Contains(_selectedProp.Handle)));
 					else if (_selectedProp is Ped)
 					{
-						mainProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped) _selectedProp).Handle, _selectedProp.Rotation.Z, 1, 1);
+						AddItemToEntityMenu(mainProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped) _selectedProp).Handle, _selectedProp.Rotation.Z, 1, 1));
 						PropStreamer.Peds.Add(mainProp.Handle);
 					}
 
 					_selectedProp = mainProp;
+					if(_settings.SnapCameraToSelectedObject)
+						_mainCamera.PointAt(_selectedProp);
 					if(_selectedProp != null) RedrawObjectInfoMenu(_selectedProp);
 				}
 
-				if (Game.IsControlJustPressed(0, GTA.Control.CreatorDelete))
+				if (Game.IsControlJustPressed(0, Control.CreatorDelete))
 				{
+					RemoveItemFromEntityMenu(_selectedProp);
 					PropStreamer.RemoveEntity(_selectedProp.Handle);
 					_selectedProp = null;
 					_objectInfoMenu.Visible = false;
+					_mainCamera.StopPointing();
 				}
 
-				if (Game.IsControlJustPressed(0, GTA.Control.PhoneCancel) || Game.IsControlJustPressed(0, GTA.Control.Attack))
+				if (Game.IsControlJustPressed(0, Control.PhoneCancel) || Game.IsControlJustPressed(0, Control.Attack))
                 {
                     _selectedProp = null;
 					_objectInfoMenu.Visible = false;
+					_mainCamera.StopPointing();
 				}
 				InstructionalButtonsStart();
 				InstructionalButtonsSelected();
@@ -833,15 +886,15 @@ namespace MapEditor
 	        {
 			    case ObjectTypes.Prop:
 					objectHash = ObjectDatabase.MainDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
-					_snappedProp = PropStreamer.CreateProp(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), new Vector3(0, 0, 0), false, force: true);
+					AddItemToEntityMenu(_snappedProp = PropStreamer.CreateProp(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), new Vector3(0, 0, 0), false, force: true));
 					break;
 				case ObjectTypes.Vehicle:
 			        objectHash = ObjectDatabase.VehicleDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
-			        _snappedProp = PropStreamer.CreateVehicle(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true);
+			        AddItemToEntityMenu(_snappedProp = PropStreamer.CreateVehicle(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true));
 					break;
 				case ObjectTypes.Ped:
 					objectHash = ObjectDatabase.PedDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
-			        _snappedProp = PropStreamer.CreatePed(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true);
+			        AddItemToEntityMenu(_snappedProp = PropStreamer.CreatePed(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true));
 					break;
 	        }
             _isChoosingObject = false;
@@ -918,10 +971,8 @@ namespace MapEditor
 	    {
 			_formatMenu.Clear();
 			_formatMenu.AddItem(new UIMenuItem("XML", "Default format for Map Editor. Choose this one if you have no idea. This saves props, vehicles and peds."));
-		    var simple = new UIMenuItem("Simple Trainer", "Format used in Simple Trainer mod (objects.ini). Only saves props.");
-		    if (PropStreamer.PropCount > PropStreamer.MAX_OBJECTS && _savingMap)
-			    simple.Enabled = false;
-            _formatMenu.AddItem(simple);
+		    _formatMenu.AddItem(new UIMenuItem("Simple Trainer",
+				"Format used in Simple Trainer mod (objects.ini). Only saves props and has a prop limit of 250."));
 		    if (_savingMap)
 		    {
 			    _formatMenu.AddItem(new UIMenuItem("C# Code",
@@ -932,7 +983,7 @@ namespace MapEditor
 		    _formatMenu.RefreshIndex();
 		}
 
-	    private Scaleform _scaleform;
+	    private readonly Scaleform _scaleform;
 	    private void InstructionalButtonsStart()
 	    {
 		    if(!_settings.InstructionalButtons) return;
@@ -992,7 +1043,7 @@ namespace MapEditor
 			if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent.Handle))
 				name = ObjectDatabase.PedDb.First(x => x.Value == ent.Model.Hash).Key.ToUpper();
 
-		    _objectInfoMenu.Subtitle.Caption = "~b~" + name + " PROPERTIES";
+		    _objectInfoMenu.Subtitle.Caption = "~b~" + name;
 			_objectInfoMenu.Clear();
 			List<dynamic> possiblePositions = new List<dynamic>();
 		    for (int i = -500000; i <= 500000; i++)
@@ -1053,6 +1104,51 @@ namespace MapEditor
 		    }
 			string output = tmpDict.Aggregate("", (current, pair) => current + (pair.Key + "=" + pair.Value + "\r\n"));
 		    File.WriteAllText("scripts\\ObjectList.ini", output);
+	    }
+
+	    public void AddItemToEntityMenu(Entity ent)
+	    {
+			if(ent == null) return;
+		    var name = "";
+		    var type = "";
+		    if (ent is Prop)
+		    {
+			    name = ObjectDatabase.MainDb.First(pair => pair.Value == ent.Model.Hash).Key;
+			    type = "~h~[PROP]~h~ ";
+		    }
+			else if (ent is Vehicle)
+			{
+				name = ObjectDatabase.VehicleDb.First(pair => pair.Value == ent.Model.Hash).Key;
+				type = "~h~[VEH]~h~ ";
+			}
+			else if (ent is Ped)
+			{
+				name = ObjectDatabase.PedDb.First(pair => pair.Value == ent.Model.Hash).Key;
+				type = "~h~[PED]~h~ ";
+			}
+			_currentObjectsMenu.AddItem(new UIMenuItem(type + name, ent.Handle.ToString()));
+			_currentObjectsMenu.RefreshIndex();
+	    }
+
+	    public void RemoveItemFromEntityMenu(Entity ent)
+	    {
+		    var found = _currentObjectsMenu.MenuItems.FirstOrDefault(item => item.Description == ent.Handle.ToString());
+			if(found == null) return;
+            _currentObjectsMenu.RemoveItemAt(_currentObjectsMenu.MenuItems.IndexOf(found));
+			_currentObjectsMenu.RefreshIndex();
+	    }
+
+	    public void OnEntityTeleport(UIMenu menu, UIMenuItem item, int index)
+	    {
+		    var prop = new Prop(int.Parse(item.Description, CultureInfo.InvariantCulture));
+			if(!prop.Exists()) return;
+		    _mainCamera.Position = prop.Position + new Vector3(5f, 5f, 10f);
+			if(_settings.SnapCameraToSelectedObject)
+				_mainCamera.PointAt(prop);
+			_menuPool.CloseAllMenus();
+			_selectedProp = prop;
+			RedrawObjectInfoMenu(_selectedProp);
+			_objectInfoMenu.Visible = true;
 	    }
     }
 }
