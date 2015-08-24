@@ -1,4 +1,5 @@
-﻿
+﻿using System.Windows.Forms;
+
 namespace MapEditor
 {
 	public class Settings
@@ -9,5 +10,6 @@ namespace MapEditor
 		public bool InstructionalButtons;
 		public bool PropCounterDisplay;
 		public bool SnapCameraToSelectedObject;
+		public Keys ActivationKey;
 	}
 }

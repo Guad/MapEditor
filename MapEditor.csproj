@@ -69,6 +69,10 @@
   <ItemGroup>
     <EmbeddedResource Include="crosshair.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="crosshair_blue.png" />
+    <EmbeddedResource Include="crosshair_yellow.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetPath)" "A:\Program Files\Rockstar Games\Grand Theft Auto V\scripts\$(TargetFileName)"</PostBuildEvent>

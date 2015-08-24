@@ -32,6 +32,8 @@ namespace MapEditor
 
 		public static int EntityCount => StreamedInHandles.Count + MemoryObjects.Count + Vehicles.Count + Peds.Count;
 
+		public static List<MapObject> RemovedObjects = new List<MapObject>();
+
 		public static Prop CreateProp(Model model, Vector3 position, Vector3 rotation, bool dynamic, Quaternion q = null, bool force = false)
 		{
 			
@@ -193,6 +195,13 @@ namespace MapEditor
 		//private static Vector3 _lastPos;
 		public static void Tick()
 		{
+			foreach (MapObject o in RemovedObjects)
+			{
+				Prop returnedProp = Function.Call<Prop>(Hash.GET_CLOSEST_OBJECT_OF_TYPE, o.Position.X, o.Position.Y, o.Position.Z, 1f, o.Hash, 0);
+				if (returnedProp == null || returnedProp.Handle == 0 || StreamedInHandles.Contains(returnedProp.Handle)) continue;
+				returnedProp.Delete();
+			}
+
 			/*
 			if(_lastPos == Game.Player.Character.Position)
 				return;

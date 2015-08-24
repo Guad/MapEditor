@@ -23,90 +23,79 @@ namespace MapEditor
 		public Map Deserialize(string path, Format format)
 		{
 			string tip = "";
-			try
+			switch (format)
 			{
-				switch (format)
-				{
-					case Format.NormalXml:
-						XmlSerializer reader = new XmlSerializer(typeof (Map));
-						var file = new StreamReader(path);
-						var map = (Map) reader.Deserialize(file);
-						file.Close();
-						return map;
-					case Format.SimpleTrainer:
-						var tmpMap = new Map();
-						string currentSection = "";
-						string oldSection = "";
-						Dictionary<string, string> tmpData = new Dictionary<string, string>();
-						foreach (string line in File.ReadAllLines(path))
+				case Format.NormalXml:
+					XmlSerializer reader = new XmlSerializer(typeof (Map));
+					var file = new StreamReader(path);
+					var map = (Map) reader.Deserialize(file);
+					file.Close();
+					return map;
+				case Format.SimpleTrainer:
+					var tmpMap = new Map();
+					string currentSection = "";
+					string oldSection = "";
+					Dictionary<string, string> tmpData = new Dictionary<string, string>();
+					foreach (string line in File.ReadAllLines(path))
+					{
+						if (line.StartsWith("[") && line.EndsWith("]"))
 						{
-							if (line.StartsWith("[") && line.EndsWith("]"))
+							oldSection = currentSection;
+							currentSection = line;
+							tip = currentSection;
+							if (oldSection == "" || oldSection == "[Player]") continue;
+							Vector3 pos = new Vector3(float.Parse(tmpData["x"], CultureInfo.InvariantCulture),
+								float.Parse(tmpData["y"], CultureInfo.InvariantCulture),
+								float.Parse(tmpData["z"], CultureInfo.InvariantCulture));
+							Vector3 rot = new Vector3(float.Parse(tmpData["qz"]), float.Parse(tmpData["qw"]), float.Parse(tmpData["h"]));
+							Quaternion q = new Quaternion()
 							{
-								oldSection = currentSection;
-								currentSection = line;
-								tip = currentSection;
-								if (oldSection == "" || oldSection == "[Player]") continue;
-								Vector3 pos = new Vector3(float.Parse(tmpData["x"], CultureInfo.InvariantCulture),
-									float.Parse(tmpData["y"], CultureInfo.InvariantCulture),
-									float.Parse(tmpData["z"], CultureInfo.InvariantCulture));
-								Vector3 rot = new Vector3(float.Parse(tmpData["qz"]), float.Parse(tmpData["qw"]), float.Parse(tmpData["h"]));
-								Quaternion q = new Quaternion()
-								{
-									X = float.Parse(tmpData["qx"]),
-									Y = float.Parse(tmpData["qy"]),
-									Z = float.Parse(tmpData["qz"]),
-									W = float.Parse(tmpData["qw"]),
-								};
-								int mod = Convert.ToInt32(tmpData["Model"], CultureInfo.InvariantCulture);
-								int dyn = Convert.ToInt32(tmpData["Dynamic"], CultureInfo.InvariantCulture);
-								tmpMap.Objects.Add(new MapObject()
-								{
-									Hash = mod,
-									Position = pos,
-									Rotation = rot,
-									Dynamic = dyn == 1,
-									Quaternion = q
-								});
-								tmpData = new Dictionary<string, string>();
-								continue;
-							}
-							if (currentSection == "[Player]") continue;
-							string[] spl = line.Split('=');
-							tmpData.Add(spl[0], spl[1]);
+								X = float.Parse(tmpData["qx"]),
+								Y = float.Parse(tmpData["qy"]),
+								Z = float.Parse(tmpData["qz"]),
+								W = float.Parse(tmpData["qw"]),
+							};
+							int mod = Convert.ToInt32(tmpData["Model"], CultureInfo.InvariantCulture);
+							int dyn = Convert.ToInt32(tmpData["Dynamic"], CultureInfo.InvariantCulture);
+							tmpMap.Objects.Add(new MapObject()
+							{
+								Hash = mod,
+								Position = pos,
+								Rotation = rot,
+								Dynamic = dyn == 1,
+								Quaternion = q
+							});
+							tmpData = new Dictionary<string, string>();
+							continue;
 						}
-						Vector3 lastPos = new Vector3(float.Parse(tmpData["x"], CultureInfo.InvariantCulture),
-							float.Parse(tmpData["y"], CultureInfo.InvariantCulture), float.Parse(tmpData["z"], CultureInfo.InvariantCulture));
-						Vector3 lastRot = new Vector3(float.Parse(tmpData["qz"]), float.Parse(tmpData["qw"]), float.Parse(tmpData["h"]));
-						Quaternion lastQ = new Quaternion()
-						{
-							X = float.Parse(tmpData["qx"]),
-							Y = float.Parse(tmpData["qy"]),
-							Z = float.Parse(tmpData["qz"]),
-							W = float.Parse(tmpData["qw"]),
-						};
-						int lastMod = Convert.ToInt32(tmpData["Model"], CultureInfo.InvariantCulture);
-						int lastDyn = Convert.ToInt32(tmpData["Dynamic"], CultureInfo.InvariantCulture);
-						tmpMap.Objects.Add(new MapObject()
-						{
-							Hash = lastMod,
-							Position = lastPos,
-							Rotation = lastRot,
-							Dynamic = lastDyn == 1,
-							Quaternion = lastQ
-						});
-						return tmpMap;
-					default:
-						throw new NotImplementedException("This is not implemented yet.");
-				}
+						if (currentSection == "[Player]") continue;
+						string[] spl = line.Split('=');
+						tmpData.Add(spl[0], spl[1]);
+					}
+					Vector3 lastPos = new Vector3(float.Parse(tmpData["x"], CultureInfo.InvariantCulture),
+						float.Parse(tmpData["y"], CultureInfo.InvariantCulture), float.Parse(tmpData["z"], CultureInfo.InvariantCulture));
+					Vector3 lastRot = new Vector3(float.Parse(tmpData["qz"]), float.Parse(tmpData["qw"]), float.Parse(tmpData["h"]));
+					Quaternion lastQ = new Quaternion()
+					{
+						X = float.Parse(tmpData["qx"]),
+						Y = float.Parse(tmpData["qy"]),
+						Z = float.Parse(tmpData["qz"]),
+						W = float.Parse(tmpData["qw"]),
+					};
+					int lastMod = Convert.ToInt32(tmpData["Model"], CultureInfo.InvariantCulture);
+					int lastDyn = Convert.ToInt32(tmpData["Dynamic"], CultureInfo.InvariantCulture);
+					tmpMap.Objects.Add(new MapObject()
+					{
+						Hash = lastMod,
+						Position = lastPos,
+						Rotation = lastRot,
+						Dynamic = lastDyn == 1,
+						Quaternion = lastQ
+					});
+					return tmpMap;
+				default:
+					throw new NotImplementedException("This is not implemented yet.");
 			}
-			catch (Exception e)
-			{
-				UI.Notify("~r~~h~Map Editor~h~~w~~n~Map failed to load, see error below.");
-				UI.Notify(e.Message);
-				if (!String.IsNullOrEmpty(tip))
-					UI.Notify("~h~Section:~h~~n~" + tip);
-			}
-			return null;
 		}
 
 		public void Serialize(string path, Map map, Format format)
