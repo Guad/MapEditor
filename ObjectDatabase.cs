@@ -19,7 +19,7 @@ namespace MapEditor
 
 		public static Dictionary<string, int> PedDb;
 
-	    public static void LoadEnumDatabases()
+		internal static void LoadEnumDatabases()
 	    {
 			VehicleDb = new Dictionary<string, int>();
 			PedDb = new Dictionary<string, int>();
@@ -43,7 +43,7 @@ namespace MapEditor
 			}
 		}
 
-		public static void LoadFromFile(string path)
+		internal static void LoadFromFile(string path)
         {
             MainDb = new Dictionary<string, int>();
             string[] lines = File.ReadAllLines(path);
@@ -57,7 +57,7 @@ namespace MapEditor
             }
         }
 
-	    public static void LoadInvalidHashes()
+		internal static void LoadInvalidHashes()
 	    {
 			if(!File.Exists("scripts\\InvalidObjects.ini")) return;
 		    string[] lines = File.ReadAllLines("scripts\\InvalidObjects.ini");
@@ -68,7 +68,7 @@ namespace MapEditor
 		    }
 	    }
 
-	    public static void SaveInvalidHashes()
+		internal static void SaveInvalidHashes()
 	    {
 		    string output = InvalidHashes.Aggregate("", (current, hash) => current + (hash + "\r\n"));
 		    File.WriteAllText("scripts\\InvalidObjects.ini", output);

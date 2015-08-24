@@ -20,7 +20,7 @@ namespace MapEditor
 			Raw,
 		}
 
-		public Map Deserialize(string path, Format format)
+		internal Map Deserialize(string path, Format format)
 		{
 			string tip = "";
 			switch (format)
@@ -98,7 +98,7 @@ namespace MapEditor
 			}
 		}
 
-		public void Serialize(string path, Map map, Format format)
+		internal void Serialize(string path, Map map, Format format)
 		{
 			if(path == null) return;
 			switch (format)

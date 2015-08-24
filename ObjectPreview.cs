@@ -8,8 +8,6 @@ namespace MapEditor
 {
     public static class ObjectPreview
     {
-        public static List<int> ActiveObjects;
-
         public static Model LoadObject(int hash)
         {
             int counter = 0;

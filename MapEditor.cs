@@ -908,7 +908,7 @@ namespace MapEditor
             }
         }
 
-        public void OnIndexChange(UIMenu sender, int index)
+        private void OnIndexChange(UIMenu sender, int index)
         {
 	        int requestedHash = 0;
 	        switch (_currentObjectType)
@@ -945,7 +945,7 @@ namespace MapEditor
             }
         }
 
-        public void OnObjectSelect(UIMenu sender, UIMenuItem item, int index)
+        private void OnObjectSelect(UIMenu sender, UIMenuItem item, int index)
         {
 	        int objectHash;
 	        switch (_currentObjectType)
@@ -968,7 +968,7 @@ namespace MapEditor
 			_previewProp?.Delete();
         }
 
-        public void RedrawObjectsMenu(string searchQuery = null, ObjectTypes type = ObjectTypes.Prop)
+        private void RedrawObjectsMenu(string searchQuery = null, ObjectTypes type = ObjectTypes.Prop)
         {
             _objectsMenu.Clear();
             if (searchQuery == null)
@@ -1033,7 +1033,7 @@ namespace MapEditor
             }
         }
 
-	    public void RedrawFormatMenu()
+	    private void RedrawFormatMenu()
 	    {
 			_formatMenu.Clear();
 			_formatMenu.AddItem(new UIMenuItem("XML", "Default format for Map Editor. Choose this one if you have no idea. This saves props, vehicles and peds."));

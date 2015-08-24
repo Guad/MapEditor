@@ -106,7 +106,7 @@ namespace MapEditor
 			if (StreamedInHandles.Contains(handle)) StreamedInHandles.Remove(handle);
 		}
 
-		public static void AddProp(Prop prop, bool dynamic)
+		internal static void AddProp(Prop prop, bool dynamic)
 		{
 			if (StreamedInHandles.Count > MAX_OBJECTS)
 			{
@@ -119,7 +119,7 @@ namespace MapEditor
 				StaticProps.Add(prop.Handle);
 		}
 
-		public static void RemoveProp(Prop prop, bool dynamic)
+		internal static void RemoveProp(Prop prop, bool dynamic)
 		{
 			if(StreamedInHandles.Contains(prop.Handle)) StreamedInHandles.Remove(prop.Handle);
 			if(StaticProps.Contains(prop.Handle)) StaticProps.Remove(prop.Handle);
@@ -157,6 +157,7 @@ namespace MapEditor
 			return outHandles.ToArray();
 		}
 
+		[Obsolete("Prop streaming has been disabled since the object limit is 2048.")]
 		public static void MoveToMemory(Entity i)
 		{
 			var obj = new MapObject()
@@ -174,6 +175,7 @@ namespace MapEditor
 			i.Delete();
 		}
 
+		[Obsolete("Prop streaming has been disabled since the object limit is 2048.")]
 		public static void MoveFromMemory(MapObject obj)
 		{
 			var prop = obj;
