@@ -12,6 +12,7 @@ using NativeUI;
 using System.IO;
 using System.Security;
 using System.Xml.Serialization;
+using MapEditor.API;
 using Control = GTA.Control;
 using Font = GTA.Font;
 
@@ -37,6 +38,9 @@ namespace MapEditor
         private Entity _previewProp;
         private Entity _snappedProp;
         private Entity _selectedProp;
+
+	    private Marker _snappedMarker;
+	    private Marker _selectedMarker;
         
         private Camera _mainCamera;
         private Camera _objectPreviewCamera;
@@ -53,13 +57,16 @@ namespace MapEditor
 	    private bool _savingMap;
 	    private bool _hasLoaded;
 	    private int _mapObjCounter = 0;
+	    private int _markerCounter = 0;
 	    
 
 	    private ObjectTypes _currentObjectType;
 		
 	    private Settings _settings;
 
-	    public enum Marker
+	    private string[] _markersTypes = Enum.GetNames(typeof(MarkerType)).ToArray();
+
+	    public enum CrosshairType
 	    {
 		    Crosshair,
 			Orb,
@@ -81,6 +88,8 @@ namespace MapEditor
 			_menuPool.Add(_objectInfoMenu);
 
 			LoadSettings();
+
+			ModManager.InitMenu();
 
 			_objectsMenu = new UIMenu("Map Editor", "~b~PLACE OBJECT");
 
@@ -108,14 +117,6 @@ namespace MapEditor
             _mainMenu.AddItem(new UIMenuItem("New Map", "Remove all current objects and start a new map."));
             _mainMenu.AddItem(new UIMenuItem("Save Map", "Save all current objects to a file."));
 			_mainMenu.AddItem(new UIMenuItem("Load Map", "Load objects from a file and add them to the world."));
-			
-
-	        var validate = new UIMenuItem("Validate Object Database",
-		        "This will update the current object database, removing any invalid objects. The changes will take effect after you restart the script." +
-		        " It will take a couple of minutes.");
-	        validate.Activated += (men, item) => ValidateDatabase();
-			
-			_mainMenu.AddItem(validate);
 			_mainMenu.RefreshIndex();
 			_mainMenu.DisableInstructionalButtons(true);
             _menuPool.Add(_mainMenu);
@@ -143,7 +144,9 @@ namespace MapEditor
                         break;
                     case 1:
 						PropStreamer.RemoveAll();
+						PropStreamer.Markers.Clear();
 						_currentObjectsMenu.Clear();
+		                ModManager.CurrentMod = null;
 		                foreach (MapObject o in PropStreamer.RemovedObjects)
 		                {
 			                var t = World.CreateProp(o.Hash, o.Position, o.Rotation, true, false);
@@ -153,6 +156,22 @@ namespace MapEditor
 						UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded new map.");
 						break;
 					case 2:
+		                if (ModManager.CurrentMod != null)
+		                {
+			                string filename = Game.GetUserInput(255);
+			                if (String.IsNullOrWhiteSpace(filename))
+			                {
+				                UI.Notify("~r~~h~Map Editor~h~~n~~w~The filename was empty.");
+								return;
+			                }
+							Map tmpMap = new Map();
+							tmpMap.Objects.AddRange(PropStreamer.GetAllEntities());
+							tmpMap.RemoveFromWorld.AddRange(PropStreamer.RemovedObjects);
+							tmpMap.Markers.AddRange(PropStreamer.Markers);
+			                UI.Notify("~b~~h~Map Editor~h~~n~~w~Map sent to external mod for saving.");
+							ModManager.CurrentMod.MapSavedInvoker(tmpMap);
+			                return;
+		                }
 		                _savingMap = true;
 		                _mainMenu.Visible = false;
 						RedrawFormatMenu();
@@ -211,12 +230,12 @@ namespace MapEditor
 			_settingsMenu = new UIMenu("Map Editor", "~b~SETTINGS");
 
 
-			var checkem = new UIMenuListItem("Marker", new List<dynamic>(Enum.GetNames(typeof(Marker))), Enum.GetNames(typeof(Marker)).ToList().FindIndex(x => x == _settings.Marker.ToString()));
+			var checkem = new UIMenuListItem("Marker", new List<dynamic>(Enum.GetNames(typeof(CrosshairType))), Enum.GetNames(typeof(CrosshairType)).ToList().FindIndex(x => x == _settings.CrosshairType.ToString()));
 			checkem.OnListChanged += (i, indx) =>
 			{
-				Marker outHash;
+				CrosshairType outHash;
 				Enum.TryParse(i.IndexToItem(indx).ToString(), out outHash);
-				_settings.Marker = outHash;
+				_settings.CrosshairType = outHash;
 				SaveSettings();
 			};
 			List<dynamic> senslist = new List<dynamic>();
@@ -258,13 +277,19 @@ namespace MapEditor
 		        _settings.SnapCameraToSelectedObject = checkd;
 				SaveSettings();
 	        };
-			
+
+			var validate = new UIMenuItem("Validate Object Database",
+				"This will update the current object database, removing any invalid objects. The changes will take effect after you restart the script." +
+				" It will take a couple of minutes.");
+			validate.Activated += (men, item) => ValidateDatabase();
+
 			_settingsMenu.AddItem(gamepadItem);
 			_settingsMenu.AddItem(checkem);
 			_settingsMenu.AddItem(gamboy);
 			_settingsMenu.AddItem(butts);
 			_settingsMenu.AddItem(counterItem);
 	        _settingsMenu.AddItem(snapper);
+			_settingsMenu.AddItem(validate);
 			_settingsMenu.RefreshIndex();
 			_settingsMenu.DisableInstructionalButtons(true);
 			_menuPool.Add(_settingsMenu);
@@ -279,12 +304,17 @@ namespace MapEditor
 	        var binder = new UIMenuItem("Settings");
 	        _currentEntitiesItem = new UIMenuItem("Current Entities");
 
+	        var binder2 = new UIMenuItem("Create Map for External Mod");
+
 			_mainMenu.AddItem(_currentEntitiesItem);
             _mainMenu.AddItem(binder);
+			_mainMenu.AddItem(binder2);
 
 			_mainMenu.BindMenuToItem(_settingsMenu, binder);
 			_mainMenu.BindMenuToItem(_currentObjectsMenu, _currentEntitiesItem);
+			_mainMenu.BindMenuToItem(ModManager.ModMenu, binder2);
 			_mainMenu.RefreshIndex();
+			_menuPool.Add(ModManager.ModMenu);
         }
 
 	    private void LoadSettings()
@@ -308,7 +338,7 @@ namespace MapEditor
 				    CameraSensivity = 30,
 					Gamepad = true,
 					InstructionalButtons = true,
-					Marker = Marker.Crosshair,
+					CrosshairType = CrosshairType.Crosshair,
 					PropCounterDisplay = true,
 					SnapCameraToSelectedObject = true,
 					ActivationKey = Keys.F7,
@@ -364,23 +394,37 @@ namespace MapEditor
 			    if (map2Load == null) return;
 			    foreach (MapObject o in map2Load.Objects)
 			    {
-				    if (o.Type == ObjectTypes.Prop)
-					    AddItemToEntityMenu(PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic,
-						    o.Quaternion == new Quaternion() {X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion));
-				    else if (o.Type == ObjectTypes.Vehicle)
-					    AddItemToEntityMenu(PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z,
-						    o.Dynamic));
-				    else if (o.Type == ObjectTypes.Ped)
-					    AddItemToEntityMenu(PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash),
-						    o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic));
+				    if(o == null) continue;
+				    switch (o.Type)
+				    {
+					    case ObjectTypes.Prop:
+						    AddItemToEntityMenu(PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic,
+							    o.Quaternion == new Quaternion() {X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion));
+						    break;
+					    case ObjectTypes.Vehicle:
+						    AddItemToEntityMenu(PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z,
+							    o.Dynamic));
+						    break;
+					    case ObjectTypes.Ped:
+						    AddItemToEntityMenu(PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash),
+							    o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic));
+						    break;
+				    }
 			    }
 			    foreach (MapObject o in map2Load.RemoveFromWorld)
 			    {
+					if(o == null) continue;
 				    PropStreamer.RemovedObjects.Add(o);
 				    Prop returnedProp = Function.Call<Prop>(Hash.GET_CLOSEST_OBJECT_OF_TYPE, o.Position.X, o.Position.Y,
 					    o.Position.Z, 1f, o.Hash, 0);
 				    if (returnedProp == null || returnedProp.Handle == 0) continue;
 				    returnedProp.Delete();
+			    }
+			    foreach (Marker marker in map2Load.Markers)
+			    {
+				    if(marker == null) continue;
+					PropStreamer.Markers.Add(marker);
+					AddItemToEntityMenu(marker);
 			    }
 			    UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded map ~h~" + filename + "~h~.");
 		    }
@@ -406,6 +450,7 @@ namespace MapEditor
 					? PropStreamer.GetAllEntities().Where(p => p.Type == ObjectTypes.Prop)
 					: PropStreamer.GetAllEntities());
 				tmpmap.RemoveFromWorld.AddRange(PropStreamer.RemovedObjects);
+				tmpmap.Markers.AddRange(PropStreamer.Markers);
 				ser.Serialize(filename, tmpmap, format);
 				UI.Notify("~b~~h~Map Editor~h~~w~~n~Saved current map as ~h~" + filename + "~h~.");
 			}
@@ -414,6 +459,7 @@ namespace MapEditor
 				UI.Notify("~r~~h~Map Editor~h~~w~~n~Map failed to save, see error below.");
 				UI.Notify(e.Message);
 			}
+			ModManager.Mods.ForEach(mod => mod.MapSavedInvoker(tmpmap));
 		}
 		
 		public void OnTick(object sender, EventArgs e)
@@ -427,7 +473,7 @@ namespace MapEditor
 			_menuPool.ProcessMenus();
 			PropStreamer.Tick();
 
-			if (PropStreamer.EntityCount > 0 || PropStreamer.RemovedObjects.Count > 0)
+			if (PropStreamer.EntityCount > 0 || PropStreamer.RemovedObjects.Count > 0 || PropStreamer.Markers.Count > 0)
 			{
 				_currentEntitiesItem.Enabled = true;
 				_currentEntitiesItem.Description = "";
@@ -450,6 +496,7 @@ namespace MapEditor
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.SelectWeapon);
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.FrontendPause);
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.NextCamera);
+			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.Phone);
 
 			if (Game.IsControlJustPressed(0, Control.Enter) && !_isChoosingObject)
             {
@@ -497,6 +544,27 @@ namespace MapEditor
 				_objectsMenu.Visible = true;
 				OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
 				_objectsMenu.Subtitle.Caption = "~b~PLACE " + _currentObjectType.ToString().ToUpper();
+			}
+
+			if (Game.IsControlJustPressed(0, Control.Phone) && !_isChoosingObject && !_menuPool.IsAnyMenuOpen())
+			{
+				_snappedProp = null;
+				_selectedProp = null;
+				_snappedMarker = null;
+				_selectedMarker = null;
+
+				var tmpMark = new Marker()
+				{
+					Color = Color.Yellow,
+					Scale = new Vector3(0.75f, 0.75f, 0.75f),
+					Type =  MarkerType.UpsideDownCone,
+					Position = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, Game.Player.Character),
+					Id = _markerCounter,
+				};
+				PropStreamer.Markers.Add(tmpMark);
+				_snappedMarker = tmpMark;
+				_markerCounter++;
+				AddItemToEntityMenu(_snappedMarker);
 			}
 
 			if (_isChoosingObject)
@@ -561,6 +629,10 @@ namespace MapEditor
 			{
 				const int interval = 45;
 
+				new UIResText("MARKERS", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - (90 + (4 * interval))), 0.3f, Color.White).Draw();
+				new UIResText(PropStreamer.Markers.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (4 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (4 * interval))), new Size(250, 37)).Draw();
+
 				new UIResText("WORLD", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - (90 + (3 * interval))), 0.3f, Color.White).Draw();
 				new UIResText(PropStreamer.RemovedObjects.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (3 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
 				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (3 * interval))), new Size(250, 37)).Draw();
@@ -576,8 +648,6 @@ namespace MapEditor
 				new UIResText("PEDS", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - 90), 0.3f, Color.White).Draw();
 				new UIResText(PropStreamer.Peds.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - 102), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
 				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - 100), new Size(250, 37)).Draw();
-
-				
 			}
 
 			int wi = Convert.ToInt32(res.Width*0.5);
@@ -585,7 +655,7 @@ namespace MapEditor
 			
 			Entity hitEnt = VectorExtensions.RaycastEntity(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation);
 
-			if (_settings.Marker == Marker.Crosshair)
+			if (_settings.CrosshairType == CrosshairType.Crosshair)
 			{
 				var crossColor = _crosshairPath;
 				if (hitEnt != null && hitEnt.Handle != 0 && !PropStreamer.GetAllHandles().Contains(hitEnt.Handle))
@@ -617,7 +687,7 @@ namespace MapEditor
                 modifier = 0.3f;
 
 
-			if (_selectedProp == null)
+			if (_selectedProp == null && _selectedMarker == null)
             {
                 _mainCamera.Rotation = new Vector3(_mainCamera.Rotation.X + mouseY, _mainCamera.Rotation.Y, _mainCamera.Rotation.Z + mouseX);
 				
@@ -672,9 +742,38 @@ namespace MapEditor
 					InstructionalButtonsSnapped();
 					InstructionalButtonsEnd();
 				}
-                else
+				else if (_snappedMarker != null)
+				{
+					_snappedMarker.Position = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, Game.Player.Character);
+					if (Game.IsControlPressed(0, Control.CursorScrollUp) || Game.IsControlPressed(0, Control.FrontendRb))
+					{
+						_snappedMarker.Rotation = _snappedMarker.Rotation + new Vector3(0f, 0f, modifier);
+					}
+
+					if (Game.IsControlPressed(0, Control.CursorScrollDown) || Game.IsControlPressed(0, Control.FrontendLb))
+					{
+						_snappedMarker.Rotation = _snappedMarker.Rotation - new Vector3(0f, 0f, modifier);
+					}
+
+					if (Game.IsControlJustPressed(0, Control.CreatorDelete))
+					{
+						RemoveMarkerFromEntityMenu(_snappedMarker.Id); //TODO: implement
+						PropStreamer.Markers.Remove(_snappedMarker);
+						_snappedMarker = null;
+					}
+
+					if (Game.IsControlJustPressed(0, Control.Attack))
+					{
+						_snappedMarker = null;
+					}
+
+					InstructionalButtonsStart();
+					InstructionalButtonsSnapped();
+					InstructionalButtonsEnd();
+				}
+                else if(_snappedProp == null && _snappedMarker == null)
                 {
-	                if (_settings.Marker == Marker.Orb)
+	                if (_settings.CrosshairType == CrosshairType.Orb)
 	                {
 		                var pos = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, Game.Player.Character);
 		                var color = Color.FromArgb(255, 200, 20, 20);
@@ -696,6 +795,15 @@ namespace MapEditor
 							else if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, hitEnt.Handle))
 								_snappedProp = new Ped(hitEnt.Handle);
 						}
+                        else
+                        {
+							var pos = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, Game.Player.Character);
+	                        Marker mark = PropStreamer.Markers.FirstOrDefault(m => (m.Position - pos).Length() < 2f);
+	                        if (mark != null)
+	                        {
+		                        _snappedMarker = mark;
+	                        }
+                        }
                     }
 
                     if (Game.IsControlJustPressed(0, Control.Attack))
@@ -714,7 +822,19 @@ namespace MapEditor
 							if(_settings.SnapCameraToSelectedObject)
 								_mainCamera.PointAt(_selectedProp);
 						}
-                    }
+						else
+						{
+							var pos = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, Game.Player.Character);
+							Marker mark = PropStreamer.Markers.FirstOrDefault(m => (m.Position - pos).Length() < 2f);
+							if (mark != null)
+							{
+								_selectedMarker = mark;
+								RedrawObjectInfoMenu(_selectedMarker);
+								_menuPool.CloseAllMenus();
+								_objectInfoMenu.Visible = true;
+							}
+						}
+					}
 
 	                if (Game.IsControlJustReleased(0, Control.LookBehind))
 	                {
@@ -729,6 +849,29 @@ namespace MapEditor
 								AddItemToEntityMenu(_snappedProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped)hitEnt).Handle, hitEnt.Rotation.Z, 1, 1));
 								if(_snappedProp != null)
 									PropStreamer.Peds.Add(_snappedProp.Handle);
+							}
+						}
+						else
+						{
+							var pos = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, Game.Player.Character);
+							Marker mark = PropStreamer.Markers.FirstOrDefault(m => (m.Position - pos).Length() < 2f);
+							if (mark != null)
+							{
+								var tmpMark = new Marker()
+								{
+									BobUpAndDown = mark.BobUpAndDown,
+									Color = mark.Color,
+									Position = mark.Position,
+									RotateToCamera = mark.RotateToCamera,
+									Rotation = mark.Rotation,
+									Scale = mark.Scale,
+									Type = mark.Type,
+									Id = _markerCounter,
+								};
+								_markerCounter++;
+								AddItemToEntityMenu(tmpMark);
+								PropStreamer.Markers.Add(tmpMark);
+								_snappedMarker = tmpMark;
 							}
 						}
 					}
@@ -756,13 +899,23 @@ namespace MapEditor
 							AddItemToEntityMenu(tmpObj);
 							hitEnt.Delete();
 						}
+						else
+						{
+							var pos = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, Game.Player.Character);
+							Marker mark = PropStreamer.Markers.FirstOrDefault(m => (m.Position - pos).Length() < 2f);
+							if (mark != null)
+							{
+								PropStreamer.Markers.Remove(mark);
+								RemoveMarkerFromEntityMenu(mark.Id);
+							}
+						}
 					}
 					InstructionalButtonsStart();
 					InstructionalButtonsFreelook();
 					InstructionalButtonsEnd();
 				}
             }
-            else //_selectedProp isnt null
+            else if(_selectedProp != null)//_selectedProp isnt null
             {
 	            var tmp = _controlsRotate ? Color.FromArgb(200, 200, 20, 20) : Color.FromArgb(200, 200, 200, 10);
                 Function.Call(Hash.DRAW_MARKER, 0, _selectedProp.Position.X, _selectedProp.Position.Y, _selectedProp.Position.Z + 5f, 0f, 0f, 0f, 0f, 0f, 0f, 2f, 2f, 2f, tmp.R, tmp.G, tmp.B, tmp.A, 1, 0, 2, 2, 0, 0, 0);
@@ -890,6 +1043,122 @@ namespace MapEditor
 				if (Game.IsControlJustPressed(0, Control.PhoneCancel) || Game.IsControlJustPressed(0, Control.Attack))
                 {
                     _selectedProp = null;
+					_objectInfoMenu.Visible = false;
+					_mainCamera.StopPointing();
+				}
+				InstructionalButtonsStart();
+				InstructionalButtonsSelected();
+				InstructionalButtonsEnd();
+			}
+			else if (_selectedMarker != null) // marker isn't null
+			{
+				if (Game.IsControlJustReleased(0, Control.Duck))
+				{
+					_controlsRotate = !_controlsRotate;
+				}
+				if (Game.IsControlPressed(0, Control.FrontendRb))
+				{
+					if (!_controlsRotate)
+						_selectedMarker.Position += new Vector3(0f, 0f, (modifier / 4));
+					else
+						_selectedMarker.Rotation += new Vector3(0f, 0f, modifier);
+				}
+				if (Game.IsControlPressed(0, Control.FrontendLb))
+				{
+					if (!_controlsRotate)
+						_selectedMarker.Position -= new Vector3(0f, 0f, (modifier / 4));
+					else
+						_selectedMarker.Rotation -= new Vector3(0f, 0f, modifier);
+				}
+
+				if (Game.IsControlPressed(0, Control.MoveUpOnly))
+				{
+					if (!_controlsRotate)
+					{
+						var dir = VectorExtensions.RotationToDirection(_mainCamera.Rotation) * (modifier / 4);
+						_selectedMarker.Position += new Vector3(dir.X, dir.Y, 0f);
+					}
+					else
+						_selectedMarker.Rotation += new Vector3(modifier, 0f, 0f);
+				}
+				if (Game.IsControlPressed(0, Control.MoveDownOnly))
+				{
+					if (!_controlsRotate)
+					{
+						var dir = VectorExtensions.RotationToDirection(_mainCamera.Rotation) * (modifier / 4);
+						_selectedMarker.Position -= new Vector3(dir.X, dir.Y, 0f);
+					}
+					else
+						_selectedMarker.Rotation -= new Vector3(modifier, 0f, 0f);
+				}
+
+				if (Game.IsControlPressed(0, Control.MoveLeftOnly))
+				{
+					if (!_controlsRotate)
+					{
+						var rotLeft = _mainCamera.Rotation + new Vector3(0, 0, -10);
+						var rotRight = _mainCamera.Rotation + new Vector3(0, 0, 10);
+						var right = (VectorExtensions.RotationToDirection(rotRight) - VectorExtensions.RotationToDirection(rotLeft)) * (modifier / 2);
+						_selectedMarker.Position += new Vector3(right.X, right.Y, 0f);
+					}
+					else
+						_selectedMarker.Rotation += new Vector3(0f, modifier, 0f);
+				}
+				if (Game.IsControlPressed(0, Control.MoveRightOnly))
+				{
+					if (!_controlsRotate)
+					{
+						var rotLeft = _mainCamera.Rotation + new Vector3(0, 0, -10);
+						var rotRight = _mainCamera.Rotation + new Vector3(0, 0, 10);
+						var right = (VectorExtensions.RotationToDirection(rotRight) - VectorExtensions.RotationToDirection(rotLeft)) * (modifier / 2);
+						_selectedMarker.Position -= new Vector3(right.X, right.Y, 0f);
+					}
+					else
+						_selectedMarker.Rotation -= new Vector3(0f, modifier, 0f);
+				}
+
+				if (Game.IsControlJustReleased(0, Control.MoveLeft) ||
+					Game.IsControlJustReleased(0, Control.MoveRight) ||
+					Game.IsControlJustReleased(0, Control.MoveUp) ||
+					Game.IsControlJustReleased(0, Control.MoveDown) ||
+					Game.IsControlJustReleased(0, Control.FrontendLb) ||
+					Game.IsControlJustReleased(0, Control.FrontendRb))
+				{
+					RedrawObjectInfoMenu(_selectedMarker);
+				}
+
+				if (Game.IsControlJustReleased(0, Control.LookBehind))
+				{
+					var tmpMark = new Marker()
+					{
+						BobUpAndDown = _selectedMarker.BobUpAndDown,
+						Color = _selectedMarker.Color,
+						Position = _selectedMarker.Position,
+						RotateToCamera = _selectedMarker.RotateToCamera,
+						Rotation = _selectedMarker.Rotation,
+						Scale = _selectedMarker.Scale,
+						Type = _selectedMarker.Type,
+						Id = _markerCounter,
+					};
+					_markerCounter++;
+					PropStreamer.Markers.Add(tmpMark);
+					AddItemToEntityMenu(tmpMark);
+					_selectedMarker = tmpMark;
+					RedrawObjectInfoMenu(_selectedMarker);
+				}
+
+				if (Game.IsControlJustPressed(0, Control.CreatorDelete))
+				{
+					PropStreamer.Markers.Remove(_selectedMarker);
+					RemoveMarkerFromEntityMenu(_selectedMarker.Id);
+					_selectedMarker = null;
+					_objectInfoMenu.Visible = false;
+					_mainCamera.StopPointing();
+				}
+
+				if (Game.IsControlJustPressed(0, Control.PhoneCancel) || Game.IsControlJustPressed(0, Control.Attack))
+				{
+					_selectedMarker = null;
 					_objectInfoMenu.Visible = false;
 					_mainCamera.StopPointing();
 				}
@@ -1038,7 +1307,7 @@ namespace MapEditor
 			_formatMenu.Clear();
 			_formatMenu.AddItem(new UIMenuItem("XML", "Default format for Map Editor. Choose this one if you have no idea. This saves props, vehicles and peds."));
 		    _formatMenu.AddItem(new UIMenuItem("Simple Trainer",
-				"Format used in Simple Trainer mod (objects.ini). Only saves props and has a prop limit of 250."));
+				"Format used in Simple Trainer mod (objects.ini). Only saves props."));
 		    if (_savingMap)
 		    {
 			    _formatMenu.AddItem(new UIMenuItem("C# Code",
@@ -1064,10 +1333,11 @@ namespace MapEditor
 			_scaleform.CallFunction("SET_DATA_SLOT", 0, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Enter, 0), "Spawn Prop");
 			_scaleform.CallFunction("SET_DATA_SLOT", 1, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendPause, 0), "Spawn Ped");
 			_scaleform.CallFunction("SET_DATA_SLOT", 2, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.NextCamera, 0), "Spawn Vehicle");
-			_scaleform.CallFunction("SET_DATA_SLOT", 3, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Aim, 0), "Move Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 4, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Attack, 0), "Select Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 5, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.LookBehind, 0), "Copy Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 6, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.CreatorDelete, 0), "Delete Entity");
+			_scaleform.CallFunction("SET_DATA_SLOT", 3, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Phone, 0), "Spawn Marker");
+			_scaleform.CallFunction("SET_DATA_SLOT", 4, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Aim, 0), "Move Entity");
+			_scaleform.CallFunction("SET_DATA_SLOT", 5, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Attack, 0), "Select Entity");
+			_scaleform.CallFunction("SET_DATA_SLOT", 6, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.LookBehind, 0), "Copy Entity");
+			_scaleform.CallFunction("SET_DATA_SLOT", 7, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.CreatorDelete, 0), "Delete Entity");
 		}
 
 		private void InstructionalButtonsSelected()
@@ -1153,7 +1423,106 @@ namespace MapEditor
 			rotZitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, ent.Rotation.Y, (float)item.IndexToItem(index));
 		}
 
-	    public void ValidateDatabase()
+		private void RedrawObjectInfoMenu(Marker ent)
+		{
+			if (ent == null) return;
+			string name = ent.Type.ToString();
+
+			_objectInfoMenu.Subtitle.Caption = "~b~" + name;
+			_objectInfoMenu.Clear();
+			List<dynamic> possiblePositions = new List<dynamic>();
+			for (int i = -500000; i <= 500000; i++)
+			{
+				possiblePositions.Add(i * 0.01);
+			}
+
+			List<dynamic> possbileScale = new List<dynamic>();
+			for (int i = 0; i <= 1000; i++)
+			{
+				possbileScale.Add(i * 0.01);
+			}
+
+			List<dynamic> possibleColors = new List<dynamic>();
+			for (int i = 0; i <= 255; i++)
+			{
+				possibleColors.Add(i);
+			}
+
+			var posXitem = new UIMenuListItem("Position X", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 100) + 500000)));
+			var posYitem = new UIMenuListItem("Position Y", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 100) + 500000)));
+			var posZitem = new UIMenuListItem("Position Z", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 100) + 500000)));
+
+			var rotXitem = new UIMenuListItem("Rotation X", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.X * 100) + 500000)));
+			var rotYitem = new UIMenuListItem("Rotation Y", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Y * 100) + 500000)));
+			var rotZitem = new UIMenuListItem("Rotation Z", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Z * 100) + 500000)));
+
+			var dynamic = new UIMenuCheckboxItem("Bob Up And Down", ent.BobUpAndDown);
+			dynamic.CheckboxEvent += (ite, checkd) =>
+			{
+				ent.BobUpAndDown = checkd;
+			};
+
+			var faceCam = new UIMenuCheckboxItem("Face Camera", ent.RotateToCamera);
+			dynamic.CheckboxEvent += (ite, checkd) =>
+			{
+				ent.RotateToCamera = checkd;
+			};
+
+			var type = new UIMenuListItem("Type", new List<dynamic>(_markersTypes), _markersTypes.ToList().IndexOf(ent.Type.ToString()));
+			type.OnListChanged += (ite, index) =>
+			{
+				MarkerType hash;
+				Enum.TryParse(ite.IndexToItem(index), out hash);
+				ent.Type = hash;
+			};
+
+			var scaleXitem = new UIMenuListItem("Scale X", possbileScale, Convert.ToInt32(Math.Round((ent.Scale.X * 100))));
+			var scaleYitem = new UIMenuListItem("Scale Y", possbileScale, Convert.ToInt32(Math.Round((ent.Scale.Y * 100))));
+			var scaleZitem = new UIMenuListItem("Scale Z", possbileScale, Convert.ToInt32(Math.Round((ent.Scale.Z * 100))));
+
+			var colorR = new UIMenuListItem("Red Color", possibleColors, ent.Color.R);
+			var colorG = new UIMenuListItem("Green Color", possibleColors, ent.Color.G);
+			var colorB = new UIMenuListItem("Blue Color", possibleColors, ent.Color.B);
+			var colorA = new UIMenuListItem("Transparency", possibleColors, ent.Color.A);
+
+			_objectInfoMenu.AddItem(type);
+			_objectInfoMenu.AddItem(posXitem);
+			_objectInfoMenu.AddItem(posYitem);
+			_objectInfoMenu.AddItem(posZitem);
+			_objectInfoMenu.AddItem(rotXitem);
+			_objectInfoMenu.AddItem(rotYitem);
+			_objectInfoMenu.AddItem(rotZitem);
+			_objectInfoMenu.AddItem(scaleXitem);
+			_objectInfoMenu.AddItem(scaleYitem);
+			_objectInfoMenu.AddItem(scaleZitem);
+			_objectInfoMenu.AddItem(colorR);
+			_objectInfoMenu.AddItem(colorG);
+			_objectInfoMenu.AddItem(colorB);
+			_objectInfoMenu.AddItem(colorA);
+			_objectInfoMenu.AddItem(dynamic);
+			_objectInfoMenu.AddItem(faceCam);
+
+
+			posXitem.OnListChanged += (item, index) => ent.Position = new Vector3((float)item.IndexToItem(index), ent.Position.Y, ent.Position.Z);
+			posYitem.OnListChanged += (item, index) => ent.Position = new Vector3(ent.Position.X, (float)item.IndexToItem(index), ent.Position.Z);
+			posZitem.OnListChanged += (item, index) => ent.Position = new Vector3(ent.Position.X, ent.Position.Y, (float)item.IndexToItem(index));
+
+			rotXitem.OnListChanged += (item, index) => ent.Rotation = new Vector3((float)item.IndexToItem(index), ent.Rotation.Y, ent.Rotation.Z);
+			rotYitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, (float)item.IndexToItem(index), ent.Rotation.Z);
+			rotZitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, ent.Rotation.Y, (float)item.IndexToItem(index));
+
+			scaleXitem.OnListChanged += (item, index) => ent.Scale = new Vector3((float)item.IndexToItem(index), ent.Scale.Y, ent.Scale.Z);
+			scaleXitem.OnListChanged += (item, index) => ent.Scale = new Vector3(ent.Scale.X, (float)item.IndexToItem(index), ent.Scale.Z);
+			scaleXitem.OnListChanged += (item, index) => ent.Scale = new Vector3(ent.Scale.X, ent.Scale.Y, (float)item.IndexToItem(index));
+
+			colorR.OnListChanged += (item, index) => ent.Color = Color.FromArgb(ent.Color.A, index, ent.Color.G, ent.Color.B);
+			colorG.OnListChanged += (item, index) => ent.Color = Color.FromArgb(ent.Color.A, ent.Color.R, index, ent.Color.B);
+			colorB.OnListChanged += (item, index) => ent.Color = Color.FromArgb(ent.Color.A, ent.Color.R, ent.Color.G, index);
+			colorA.OnListChanged += (item, index) => ent.Color = Color.FromArgb(index, ent.Color.R, ent.Color.G, ent.Color.B);
+
+		}
+
+		public void ValidateDatabase()
 	    {
 		    // Validate object list.
 		    Dictionary<string, int> tmpDict = new Dictionary<string, int>();
@@ -1182,7 +1551,15 @@ namespace MapEditor
 			_currentObjectsMenu.RefreshIndex();
 		}
 
-	    public void AddItemToEntityMenu(Entity ent)
+		public void AddItemToEntityMenu(Marker mark)
+		{
+			if (mark == null) return;
+			var name = mark.Type.ToString();
+			_currentObjectsMenu.AddItem(new UIMenuItem("~h~[MARK]~h~ " + name, "marker-" + mark.Id));
+			_currentObjectsMenu.RefreshIndex();
+		}
+
+		public void AddItemToEntityMenu(Entity ent)
 	    {
 			if(ent == null) return;
 		    var name = "";
@@ -1226,7 +1603,18 @@ namespace MapEditor
 			    _currentObjectsMenu.Visible = false;
 	    }
 
-	    public void OnEntityTeleport(UIMenu menu, UIMenuItem item, int index)
+		public void RemoveMarkerFromEntityMenu(int id)
+		{
+			var found = _currentObjectsMenu.MenuItems.FirstOrDefault(item => item.Description == "marker-" + id);
+			if (found == null) return;
+			_currentObjectsMenu.RemoveItemAt(_currentObjectsMenu.MenuItems.IndexOf(found));
+			if (_currentObjectsMenu.Size != 0)
+				_currentObjectsMenu.RefreshIndex();
+			else
+				_currentObjectsMenu.Visible = false;
+		}
+
+		public void OnEntityTeleport(UIMenu menu, UIMenuItem item, int index)
 	    {
 		    if (item.Text.StartsWith("~h~[WORLD]~h~ "))
 		    {
@@ -1239,6 +1627,19 @@ namespace MapEditor
 				_menuPool.CloseAllMenus();
 			    return;
 		    }
+			if (item.Text.StartsWith("~h~[MARK]~h~ "))
+			{
+				Marker tmpM = PropStreamer.Markers.FirstOrDefault(m => item.Description == "marker-" + m.Id);
+				if(tmpM == null) return;
+				_mainCamera.Position = tmpM.Position + new Vector3(5f, 5f, 10f);
+				if(_settings.SnapCameraToSelectedObject)
+					_mainCamera.PointAt(tmpM.Position);
+				_menuPool.CloseAllMenus();
+				_selectedMarker = tmpM;
+				RedrawObjectInfoMenu(_selectedMarker);
+				_objectInfoMenu.Visible = true;
+				return;
+			}
 		    var prop = new Prop(int.Parse(item.Description, CultureInfo.InvariantCulture));
 			if(!prop.Exists()) return;
 		    _mainCamera.Position = prop.Position + new Vector3(5f, 5f, 10f);

@@ -51,10 +51,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\ModManager.cs" />
     <Compile Include="Map.cs" />
     <Compile Include="MapEditor.cs" />
     <Compile Include="MapObject.cs" />
     <Compile Include="MapSerializer.cs" />
+    <Compile Include="Marker.cs" />
     <Compile Include="ObjectDatabase.cs" />
     <Compile Include="ObjectPreview.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

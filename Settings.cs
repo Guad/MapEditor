@@ -5,7 +5,7 @@ namespace MapEditor
 	public class Settings
 	{
 		public bool Gamepad;
-		public MapEditor.Marker Marker;
+		public MapEditor.CrosshairType CrosshairType;
 		public int CameraSensivity;
 		public bool InstructionalButtons;
 		public bool PropCounterDisplay;

@@ -28,6 +28,8 @@ namespace MapEditor
 
 		public static List<int> Peds = new List<int>(); // Not streamed in.
 
+		public static List<Marker> Markers = new List<Marker>();
+
 		public static int PropCount => StreamedInHandles.Count + MemoryObjects.Count;
 
 		public static int EntityCount => StreamedInHandles.Count + MemoryObjects.Count + Vehicles.Count + Peds.Count;
@@ -193,8 +195,7 @@ namespace MapEditor
 			MemoryObjects.Remove(prop);
 		}
 
-		
-		//private static Vector3 _lastPos;
+	
 		public static void Tick()
 		{
 			foreach (MapObject o in RemovedObjects)
@@ -202,6 +203,13 @@ namespace MapEditor
 				Prop returnedProp = Function.Call<Prop>(Hash.GET_CLOSEST_OBJECT_OF_TYPE, o.Position.X, o.Position.Y, o.Position.Z, 1f, o.Hash, 0);
 				if (returnedProp == null || returnedProp.Handle == 0 || StreamedInHandles.Contains(returnedProp.Handle)) continue;
 				returnedProp.Delete();
+			}
+
+			foreach (Marker marker in Markers)
+			{
+				Function.Call(Hash.DRAW_MARKER, (int) marker.Type, marker.Position.X, marker.Position.Y, marker.Position.Z, 0f, 0f, 0f,
+				 marker.Rotation.X, marker.Rotation.Y, marker.Rotation.Z, marker.Scale.X, marker.Scale.Y, marker.Scale.Z,
+				 marker.Color.R, marker.Color.G, marker.Color.B, marker.Color.A, marker.BobUpAndDown, marker.RotateToCamera, 2, false, false, false);
 			}
 
 			/*

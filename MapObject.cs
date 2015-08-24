@@ -22,5 +22,6 @@ namespace MapEditor
 		Prop,
 		Vehicle,
 		Ped,
+		Marker,
 	}
 }

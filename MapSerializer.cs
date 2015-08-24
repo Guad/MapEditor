@@ -138,7 +138,7 @@ namespace MapEditor
 					break;
 				case Format.CSharpCode:
 					string output = "";
-					foreach (var prop in PropStreamer.GetAllEntities())
+					foreach (var prop in map.Objects)
 					{
 						if (prop.Position == new Vector3(0, 0, 0)) continue;
 						string cmd = "";
@@ -181,7 +181,7 @@ namespace MapEditor
 					break;
 				case Format.Raw:
 					string flush = "";
-					foreach (var prop in PropStreamer.GetAllEntities())
+					foreach (var prop in map.Objects)
 					{
 						if (prop.Position == new Vector3(0, 0, 0)) continue;
 						string name = "";
