@@ -8,6 +8,8 @@ namespace MapEditor.API
 	public delegate void MapSavedEvent(Map currentMap, string filename);
 	public delegate void ModSelectedEvent();
 
+	public delegate void ModDisconnectedEvent();
+
 	public static class ModManager
 	{
 		internal static List<ModListener> Mods = new List<ModListener>();
@@ -20,9 +22,18 @@ namespace MapEditor.API
 			ModMenu.OnItemSelect += (menu, item, index) =>
 			{
 				var tmpMod = Mods[index];
-				UI.Notify("~b~~h~Map Editor~h~~n~~w~Mod ~h~" + tmpMod.Name + "~h~ has been connected.");
-				tmpMod.ModSelectInvoker();
-				CurrentMod = tmpMod;
+				if (CurrentMod == tmpMod)
+				{
+					UI.Notify("~b~~h~Map Editor~h~~n~~w~Mod ~h~" + tmpMod.Name + "~h~ has been disconnected.");
+					CurrentMod.ModDisconnectInvoker();
+					CurrentMod = null;
+				}
+				else
+				{
+					UI.Notify("~b~~h~Map Editor~h~~n~~w~Mod ~h~" + tmpMod.Name + "~h~ has been connected.");
+					tmpMod.ModSelectInvoker();
+					CurrentMod = tmpMod;
+				}
 			};
 		}
 
@@ -37,6 +48,7 @@ namespace MapEditor.API
 	{
 		public event MapSavedEvent OnMapSaved;
 		public event ModSelectedEvent OnModSelect;
+		public event ModDisconnectedEvent OnModDisconnect;
 
 		public string Name;
 		public string Description;
@@ -50,6 +62,11 @@ namespace MapEditor.API
 		internal void ModSelectInvoker()
 		{
 			OnModSelect?.Invoke();
+		}
+
+		internal void ModDisconnectInvoker()
+		{
+			OnModDisconnect?.Invoke();
 		}
 	}
 }

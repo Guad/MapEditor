@@ -146,7 +146,8 @@ namespace MapEditor
 						PropStreamer.RemoveAll();
 						PropStreamer.Markers.Clear();
 						_currentObjectsMenu.Clear();
-		                ModManager.CurrentMod = null;
+						ModManager.CurrentMod?.ModDisconnectInvoker();
+						ModManager.CurrentMod = null;
 		                foreach (MapObject o in PropStreamer.RemovedObjects)
 		                {
 			                var t = World.CreateProp(o.Hash, o.Position, o.Rotation, true, false);
