@@ -30,6 +30,8 @@ namespace MapEditor
 
 		public static List<Marker> Markers = new List<Marker>();
 
+		public static Dictionary<int, string> ActiveScenarios = new Dictionary<int, string>();
+
 		public static int PropCount => StreamedInHandles.Count + MemoryObjects.Count;
 
 		public static int EntityCount => StreamedInHandles.Count + MemoryObjects.Count + Vehicles.Count + Peds.Count;

@@ -73,5 +73,39 @@ namespace MapEditor
 		    string output = InvalidHashes.Aggregate("", (current, hash) => current + (hash + "\r\n"));
 		    File.WriteAllText("scripts\\InvalidObjects.ini", output);
 	    }
+
+		internal static Dictionary<string, string> ScrenarioDatabase = new Dictionary<string, string>
+		{
+			{"Drink Coffee",  "WORLD_HUMAN_AA_COFFEE"},
+			{"Smoke", "WORLD_HUMAN_AA_SMOKE" },
+			{"Smoke 2", "WORLD_HUMAN_SMOKING" },
+			{"Binoculars",  "WORLD_HUMAN_BINOCULARS"},
+			{"Bum", "WORLD_HUMAN_BUM_FREEWAY" },
+			{"Cheering", "WORLD_HUMAN_CHEERING" },
+			{"Clipboard", "WORLD_HUMAN_CLIPBOARD" },
+			{"Drilling",  "WORLD_HUMAN_CONST_DRILL"},
+			{"Drinking", "WORLD_HUMAN_DRINKING" },
+			{"Drug Dealer", "WORLD_HUMAN_DRUG_DEALER"},
+			{"Drug Dealer Hard", "WORLD_HUMAN_DRUG_DEALER_HARD" },
+			{"Traffic Signaling",  "WORLD_HUMAN_CAR_PARK_ATTENDANT"},
+			{"Filming", "WORLD_HUMAN_MOBILE_FILM_SHOCKING" },
+			{"Leaf Blower", "WORLD_HUMAN_GARDENER_LEAF_BLOWER" },
+			{"Golf Player", "WORLD_HUMAN_GOLF_PLAYER" },
+			{"Guard Patrol", "WORLD_HUMAN_GUARD_PATROL" },
+			{"Hammering", "WORLD_HUMAN_HAMMERING" },
+			{"Janitor", "WORLD_HUMAN_JANITOR" },
+			{"Musician", "WORLD_HUMAN_MUSICIAN" },
+			{"Paparazzi", "WORLD_HUMAN_PAPARAZZI" },
+			{"Party", "WORLD_HUMAN_PARTYING" },
+			{"Picnic", "WORLD_HUMAN_PICNIC" },
+			{"Push Ups", "WORLD_HUMAN_PUSH_UPS"},
+			{"Shine Torch", "WORLD_HUMAN_SECURITY_SHINE_TORCH" },
+			{"Sunbathe", "WORLD_HUMAN_SUNBATHE" },
+			{"Sunbathe Back", "WORLD_HUMAN_SUNBATHE_BACK"},
+			{"Tourist", "WORLD_HUMAN_TOURIST_MAP" },
+			{"Mechanic", "WORLD_HUMAN_VEHICLE_MECHANIC" },
+			{"Welding", "WORLD_HUMAN_WELDING" },
+			{"Yoga", "WORLD_HUMAN_YOGA" },
+		};
     }
 }

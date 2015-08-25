@@ -13,6 +13,8 @@ namespace MapEditor
 
 		public Quaternion Quaternion;
 
+		public string Action;
+
 		[NonSerialized]
 		public int Id = -1;
 	}

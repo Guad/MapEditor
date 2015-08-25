@@ -169,7 +169,7 @@ namespace MapEditor
 							tmpMap.RemoveFromWorld.AddRange(PropStreamer.RemovedObjects);
 							tmpMap.Markers.AddRange(PropStreamer.Markers);
 			                UI.Notify("~b~~h~Map Editor~h~~n~~w~Map sent to external mod for saving.");
-							ModManager.CurrentMod.MapSavedInvoker(tmpMap);
+							ModManager.CurrentMod.MapSavedInvoker(tmpMap, filename);
 			                return;
 		                }
 		                _savingMap = true;
@@ -406,8 +406,15 @@ namespace MapEditor
 							    o.Dynamic));
 						    break;
 					    case ObjectTypes.Ped:
-						    AddItemToEntityMenu(PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash),
-							    o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic));
+						    Ped pedid;
+						    AddItemToEntityMenu(pedid = PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic));
+							if((o.Action == null || o.Action == "None") && !PropStreamer.ActiveScenarios.ContainsKey(pedid.Handle))
+								PropStreamer.ActiveScenarios.Add(pedid.Handle, "None");
+							else if (o.Action != null && o.Action != "None" && !PropStreamer.ActiveScenarios.ContainsKey(pedid.Handle))
+							{
+								PropStreamer.ActiveScenarios.Add(pedid.Handle, o.Action);
+								pedid.Task.StartScenario(ObjectDatabase.ScrenarioDatabase[o.Action], pedid.Position);
+							}
 						    break;
 				    }
 			    }
@@ -446,9 +453,31 @@ namespace MapEditor
 			var tmpmap = new Map();
 			try
 			{
-				tmpmap.Objects.AddRange(format == MapSerializer.Format.SimpleTrainer
-					? PropStreamer.GetAllEntities().Where(p => p.Type == ObjectTypes.Prop)
-					: PropStreamer.GetAllEntities());
+				/*tmpmap.Objects.AddRange(format == MapSerializer.Format.SimpleTrainer? PropStreamer.GetAllEntities().Where(p => p.Type == ObjectTypes.Prop)
+					: PropStreamer.GetAllEntities());*/
+				if (format == MapSerializer.Format.SimpleTrainer)
+				{
+					tmpmap.Objects.AddRange(PropStreamer.GetAllEntities().Where(p => p.Type == ObjectTypes.Prop));
+				}
+				else
+				{
+					tmpmap.Objects.AddRange(PropStreamer.GetAllEntities().Where(p => p.Type != ObjectTypes.Ped));
+					foreach (var o in PropStreamer.Peds)
+					{
+						var tmpObj = new MapObject()
+						{
+							Dynamic = !PropStreamer.StaticProps.Contains(o),
+							Hash = new Prop(o).Model.Hash,
+							Position = new Prop(o).Position,
+							Rotation = new Prop(o).Rotation,
+							Quaternion = Quaternion.GetEntityQuaternion(new Prop(o)),
+							Type = ObjectTypes.Ped,
+						};
+						if (PropStreamer.ActiveScenarios.ContainsKey(o))
+							tmpObj.Action = PropStreamer.ActiveScenarios[o];
+						tmpmap.Objects.Add(tmpObj);
+					}
+				}
 				tmpmap.RemoveFromWorld.AddRange(PropStreamer.RemovedObjects);
 				tmpmap.Markers.AddRange(PropStreamer.Markers);
 				ser.Serialize(filename, tmpmap, format);
@@ -459,7 +488,6 @@ namespace MapEditor
 				UI.Notify("~r~~h~Map Editor~h~~w~~n~Map failed to save, see error below.");
 				UI.Notify(e.Message);
 			}
-			ModManager.Mods.ForEach(mod => mod.MapSavedInvoker(tmpmap));
 		}
 		
 		public void OnTick(object sender, EventArgs e)
@@ -849,6 +877,8 @@ namespace MapEditor
 								AddItemToEntityMenu(_snappedProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped)hitEnt).Handle, hitEnt.Rotation.Z, 1, 1));
 								if(_snappedProp != null)
 									PropStreamer.Peds.Add(_snappedProp.Handle);
+								if(!PropStreamer.ActiveScenarios.ContainsKey(_snappedProp.Handle))
+									PropStreamer.ActiveScenarios.Add(_snappedProp.Handle, "None");
 							}
 						}
 						else
@@ -881,6 +911,8 @@ namespace MapEditor
 						if (hitEnt != null && PropStreamer.GetAllHandles().Contains(hitEnt.Handle))
 						{
 							RemoveItemFromEntityMenu(hitEnt);
+							if (PropStreamer.ActiveScenarios.ContainsKey(hitEnt.Handle))
+								PropStreamer.ActiveScenarios.Remove(hitEnt.Handle);
 							PropStreamer.RemoveEntity(hitEnt.Handle);
 						}
 						else if(hitEnt != null && !PropStreamer.GetAllHandles().Contains(hitEnt.Handle) && Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt.Handle))
@@ -1023,6 +1055,8 @@ namespace MapEditor
 					{
 						AddItemToEntityMenu(mainProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped) _selectedProp).Handle, _selectedProp.Rotation.Z, 1, 1));
 						PropStreamer.Peds.Add(mainProp.Handle);
+						if(!PropStreamer.ActiveScenarios.ContainsKey(mainProp.Handle))
+							PropStreamer.ActiveScenarios.Add(mainProp.Handle, "None");
 					}
 
 					_selectedProp = mainProp;
@@ -1033,6 +1067,8 @@ namespace MapEditor
 
 				if (Game.IsControlJustPressed(0, Control.CreatorDelete))
 				{
+					if (PropStreamer.ActiveScenarios.ContainsKey(_selectedProp.Handle))
+						PropStreamer.ActiveScenarios.Remove(_selectedProp.Handle);
 					RemoveItemFromEntityMenu(_selectedProp);
 					PropStreamer.RemoveEntity(_selectedProp.Handle);
 					_selectedProp = null;
@@ -1230,6 +1266,7 @@ namespace MapEditor
 				case ObjectTypes.Ped:
 					objectHash = ObjectDatabase.PedDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
 			        AddItemToEntityMenu(_snappedProp = PropStreamer.CreatePed(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true));
+					PropStreamer.ActiveScenarios.Add(_snappedProp.Handle, "None");
 					break;
 	        }
             _isChoosingObject = false;
@@ -1412,6 +1449,26 @@ namespace MapEditor
 			_objectInfoMenu.AddItem(rotYitem);
 			_objectInfoMenu.AddItem(rotZitem);
 			_objectInfoMenu.AddItem(dynamic);
+			
+		    if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent.Handle))
+		    {
+				List<dynamic> actions = new List<dynamic> {"None"};
+				actions.AddRange(ObjectDatabase.ScrenarioDatabase.Keys);
+			    var scenarioItem = new UIMenuListItem("Idle Action", actions, actions.IndexOf(PropStreamer.ActiveScenarios[ent.Handle]));
+			    scenarioItem.OnListChanged += (item, index) => PropStreamer.ActiveScenarios[ent.Handle] = item.IndexToItem(index).ToString();
+			    scenarioItem.Activated += (item, index) =>
+			    {
+					if(PropStreamer.ActiveScenarios[ent.Handle] == "None") return;
+				    string scenario = ObjectDatabase.ScrenarioDatabase[PropStreamer.ActiveScenarios[ent.Handle]];
+				    if (Function.Call<bool>(Hash.IS_PED_USING_SCENARIO, ent.Handle, scenario))
+						((Ped)ent).Task.ClearAll();
+				    else
+						((Ped)ent).Task.StartScenario(scenario, ent.Position);
+			    };
+				_objectInfoMenu.AddItem(scenarioItem);
+		    }
+
+
 			
 
 		    posXitem.OnListChanged += (item, index) => ent.Position = new Vector3((float)item.IndexToItem(index), ent.Position.Y, ent.Position.Z);
