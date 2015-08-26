@@ -1,5 +1,7 @@
 ﻿using System;
+using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace MapEditor
 {
@@ -13,7 +15,10 @@ namespace MapEditor
 
 		public Quaternion Quaternion;
 
+		// Ped stuff
 		public string Action;
+		public string Relationship;
+		public WeaponHash? Weapon;
 
 		[NonSerialized]
 		public int Id = -1;

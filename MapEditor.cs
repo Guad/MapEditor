@@ -58,6 +58,8 @@ namespace MapEditor
 	    private bool _hasLoaded;
 	    private int _mapObjCounter = 0;
 	    private int _markerCounter = 0;
+
+	    private const Relationship DefaultRelationship = (Relationship) 0;
 	    
 
 	    private ObjectTypes _currentObjectType;
@@ -81,6 +83,8 @@ namespace MapEditor
         {
             Tick += OnTick;
             KeyDown += OnKeyDown;
+
+			ObjectDatabase.SetupRelationships();
 
 			_scaleform = new Scaleform(0);
 			_scaleform.Load("instructional_buttons");
@@ -154,6 +158,9 @@ namespace MapEditor
 						PropStreamer.RemoveAll();
 						PropStreamer.Markers.Clear();
 						_currentObjectsMenu.Clear();
+						PropStreamer.ActiveScenarios.Clear();
+						PropStreamer.ActiveRelationships.Clear();
+						PropStreamer.ActiveWeapons.Clear();
 						ModManager.CurrentMod?.ModDisconnectInvoker();
 						ModManager.CurrentMod = null;
 		                foreach (MapObject o in PropStreamer.RemovedObjects)
@@ -442,6 +449,28 @@ namespace MapEditor
 									Function.Call(Hash.TASK_START_SCENARIO_IN_PLACE, pedid.Handle, ObjectDatabase.ScrenarioDatabase[o.Action], 0, 0);
 								}
 							}
+
+						    if (o.Relationship == null)
+							    PropStreamer.ActiveRelationships.Add(pedid.Handle, Relationship.Neutral.ToString());
+						    else
+						    {
+							    PropStreamer.ActiveRelationships.Add(pedid.Handle, o.Relationship);
+							    if (o.Relationship != Relationship.Neutral.ToString())
+							    {
+								    ObjectDatabase.SetPedRelationshipGroup(pedid, o.Relationship);
+							    }
+						    }
+
+						    if (o.Weapon == null)
+							    PropStreamer.ActiveWeapons.Add(pedid.Handle, WeaponHash.Unarmed);
+						    else
+						    {
+							    PropStreamer.ActiveWeapons.Add(pedid.Handle, o.Weapon.Value);
+							    if (o.Weapon != WeaponHash.Unarmed)
+							    {
+								    pedid.Weapons.Give(o.Weapon.Value, 999, true, true);
+							    }
+						    }
 						    break;
 				    }
 			    }
@@ -502,6 +531,10 @@ namespace MapEditor
 						};
 						if (PropStreamer.ActiveScenarios.ContainsKey(o))
 							tmpObj.Action = PropStreamer.ActiveScenarios[o];
+						if (PropStreamer.ActiveRelationships.ContainsKey(o))
+							tmpObj.Relationship = PropStreamer.ActiveRelationships[o];
+						if (PropStreamer.ActiveWeapons.ContainsKey(o))
+							tmpObj.Weapon = PropStreamer.ActiveWeapons[o];
 						tmpmap.Objects.Add(tmpObj);
 					}
 				}
@@ -909,8 +942,19 @@ namespace MapEditor
 								AddItemToEntityMenu(_snappedProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped)hitEnt).Handle, hitEnt.Rotation.Z, 1, 1));
 								if(_snappedProp != null)
 									PropStreamer.Peds.Add(_snappedProp.Handle);
+
 								if(!PropStreamer.ActiveScenarios.ContainsKey(_snappedProp.Handle))
 									PropStreamer.ActiveScenarios.Add(_snappedProp.Handle, "None");
+
+								if(PropStreamer.ActiveRelationships.ContainsKey(hitEnt.Handle))
+									PropStreamer.ActiveRelationships.Add(_snappedProp.Handle, PropStreamer.ActiveRelationships[hitEnt.Handle]);
+								else if (!PropStreamer.ActiveRelationships.ContainsKey(_snappedProp.Handle))
+									PropStreamer.ActiveRelationships.Add(_snappedProp.Handle, Relationship.Neutral.ToString());
+
+								if(PropStreamer.ActiveWeapons.ContainsKey(hitEnt.Handle))
+									PropStreamer.ActiveWeapons.Add(_snappedProp.Handle, PropStreamer.ActiveWeapons[hitEnt.Handle]);
+								else if(!PropStreamer.ActiveWeapons.ContainsKey(_snappedProp.Handle))
+									PropStreamer.ActiveWeapons.Add(_snappedProp.Handle, WeaponHash.Unarmed);
 							}
 						}
 						else
@@ -948,6 +992,10 @@ namespace MapEditor
 							RemoveItemFromEntityMenu(hitEnt);
 							if (PropStreamer.ActiveScenarios.ContainsKey(hitEnt.Handle))
 								PropStreamer.ActiveScenarios.Remove(hitEnt.Handle);
+							if (PropStreamer.ActiveRelationships.ContainsKey(hitEnt.Handle))
+								PropStreamer.ActiveRelationships.Remove(hitEnt.Handle);
+							if (PropStreamer.ActiveWeapons.ContainsKey(hitEnt.Handle))
+								PropStreamer.ActiveWeapons.Remove(hitEnt.Handle);
 							PropStreamer.RemoveEntity(hitEnt.Handle);
 						}
 						else if(hitEnt != null && !PropStreamer.GetAllHandles().Contains(hitEnt.Handle) && Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt.Handle))
@@ -1130,6 +1178,16 @@ namespace MapEditor
 						PropStreamer.Peds.Add(mainProp.Handle);
 						if(!PropStreamer.ActiveScenarios.ContainsKey(mainProp.Handle))
 							PropStreamer.ActiveScenarios.Add(mainProp.Handle, "None");
+
+						if (PropStreamer.ActiveRelationships.ContainsKey(_selectedProp.Handle))
+							PropStreamer.ActiveRelationships.Add(mainProp.Handle, PropStreamer.ActiveRelationships[_selectedProp.Handle]);
+						else if (!PropStreamer.ActiveRelationships.ContainsKey(mainProp.Handle))
+							PropStreamer.ActiveRelationships.Add(mainProp.Handle, Relationship.Neutral.ToString());
+
+						if(PropStreamer.ActiveWeapons.ContainsKey(_selectedProp.Handle))
+							PropStreamer.ActiveWeapons.Add(mainProp.Handle, PropStreamer.ActiveWeapons[_selectedProp.Handle]);
+						else if(!PropStreamer.ActiveRelationships.ContainsKey(mainProp.Handle))
+							PropStreamer.ActiveWeapons.Add(mainProp.Handle, WeaponHash.Unarmed);
 					}
 
 					_selectedProp = mainProp;
@@ -1142,6 +1200,10 @@ namespace MapEditor
 				{
 					if (PropStreamer.ActiveScenarios.ContainsKey(_selectedProp.Handle))
 						PropStreamer.ActiveScenarios.Remove(_selectedProp.Handle);
+					if (PropStreamer.ActiveRelationships.ContainsKey(_selectedProp.Handle))
+						PropStreamer.ActiveRelationships.Remove(_selectedProp.Handle);
+					if (PropStreamer.ActiveWeapons.ContainsKey(_selectedProp.Handle))
+						PropStreamer.ActiveWeapons.Remove(_selectedProp.Handle);
 					RemoveItemFromEntityMenu(_selectedProp);
 					PropStreamer.RemoveEntity(_selectedProp.Handle);
 					_selectedProp = null;
@@ -1343,6 +1405,8 @@ namespace MapEditor
 					objectHash = ObjectDatabase.PedDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
 			        AddItemToEntityMenu(_snappedProp = PropStreamer.CreatePed(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true));
 					PropStreamer.ActiveScenarios.Add(_snappedProp.Handle, "None");
+					PropStreamer.ActiveRelationships.Add(_snappedProp.Handle, Relationship.Neutral.ToString());
+					PropStreamer.ActiveWeapons.Add(_snappedProp.Handle, WeaponHash.Unarmed);
 					break;
 	        }
             _isChoosingObject = false;
@@ -1565,7 +1629,33 @@ namespace MapEditor
 				    }
 			    };
 				_objectInfoMenu.AddItem(scenarioItem);
-		    }
+
+				List<dynamic> rels = new List<dynamic> { "Ballas", "Grove"};
+				Enum.GetNames(typeof(Relationship)).ToList().ForEach(rel => rels.Add(rel));
+			    var relItem = new UIMenuListItem("Relationship", rels, rels.IndexOf(PropStreamer.ActiveRelationships[ent.Handle]));
+			    relItem.OnListChanged += (item, index) => PropStreamer.ActiveRelationships[ent.Handle] = item.IndexToItem(index).ToString();
+			    relItem.Activated += (item, index) =>
+			    {
+				    ObjectDatabase.SetPedRelationshipGroup((Ped) ent, PropStreamer.ActiveRelationships[ent.Handle]);
+			    };
+				_objectInfoMenu.AddItem(relItem);
+
+
+				List<dynamic> weps = new List<dynamic>();
+				Enum.GetNames(typeof(WeaponHash)).ToList().ForEach(rel => weps.Add(rel));
+				var wepItem = new UIMenuListItem("Weapon", weps, weps.IndexOf(PropStreamer.ActiveWeapons[ent.Handle].ToString()));
+				wepItem.OnListChanged += (item, index) =>
+				{
+					PropStreamer.ActiveWeapons[ent.Handle] = Enum.Parse(typeof(WeaponHash), item.IndexToItem(index).ToString());
+				};
+				wepItem.Activated += (item, index) =>
+				{
+					((Ped)ent).Weapons.RemoveAll();
+					if(PropStreamer.ActiveWeapons[ent.Handle] == WeaponHash.Unarmed) return;
+					((Ped) ent).Weapons.Give(PropStreamer.ActiveWeapons[ent.Handle], 999, true, true);
+				};
+				_objectInfoMenu.AddItem(wepItem);
+			}
 
 
 			
@@ -1835,5 +1925,5 @@ namespace MapEditor
 			RedrawObjectInfoMenu(_selectedProp);
 			_objectInfoMenu.Visible = true;
 	    }
-    }
+	}
 }

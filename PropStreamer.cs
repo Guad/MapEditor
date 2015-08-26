@@ -32,6 +32,10 @@ namespace MapEditor
 
 		public static Dictionary<int, string> ActiveScenarios = new Dictionary<int, string>();
 
+		public static Dictionary<int, string> ActiveRelationships = new Dictionary<int, string>();
+
+		public static Dictionary<int, WeaponHash> ActiveWeapons = new Dictionary<int, WeaponHash>();
+
 		public static int PropCount => StreamedInHandles.Count + MemoryObjects.Count;
 
 		public static int EntityCount => StreamedInHandles.Count + MemoryObjects.Count + Vehicles.Count + Peds.Count;

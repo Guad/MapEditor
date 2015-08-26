@@ -19,6 +19,12 @@ namespace MapEditor
 
 		public static Dictionary<string, int> PedDb;
 
+		public static Dictionary<Relationship, int> RelationshipDb = new Dictionary<Relationship, int>();
+
+	    public static int BallasGroup;
+
+	    public static int GroveGroup;
+
 		internal static void LoadEnumDatabases()
 	    {
 			VehicleDb = new Dictionary<string, int>();
@@ -57,6 +63,24 @@ namespace MapEditor
             }
         }
 
+	    internal static void SetupRelationships()
+	    {
+		    foreach (var s in Enum.GetNames(typeof(Relationship)))
+		    {
+			    var hash = (Relationship) Enum.Parse(typeof(Relationship), s);
+			    var group = World.AddRelationshipGroup("MAPEDITOR_" + s);
+				World.SetRelationshipBetweenGroups(hash, group, Game.Player.Character.RelationshipGroup);
+				World.SetRelationshipBetweenGroups(hash, Game.Player.Character.RelationshipGroup, group);
+				RelationshipDb.Add(hash, group);
+		    }
+
+		    BallasGroup = World.AddRelationshipGroup("MAPEDITOR_BALLAS");
+		    GroveGroup = World.AddRelationshipGroup("MAPEDITOR_GROVE");
+
+			World.SetRelationshipBetweenGroups(Relationship.Hate, BallasGroup, GroveGroup);
+			World.SetRelationshipBetweenGroups(Relationship.Hate, GroveGroup, BallasGroup);
+		}
+
 		internal static void LoadInvalidHashes()
 	    {
 			if(!File.Exists("scripts\\InvalidObjects.ini")) return;
@@ -72,6 +96,23 @@ namespace MapEditor
 	    {
 		    string output = InvalidHashes.Aggregate("", (current, hash) => current + (hash + "\r\n"));
 		    File.WriteAllText("scripts\\InvalidObjects.ini", output);
+	    }
+
+	    internal static void SetPedRelationshipGroup(Ped ped, string group)
+	    {
+		    if (group == "Ballas")
+		    {
+			    ped.RelationshipGroup = BallasGroup;
+				return;
+		    }
+		    if (group == "Grove")
+		    {
+			    ped.RelationshipGroup = GroveGroup;
+				return;
+		    }
+		    Relationship outHash;
+			if(!Enum.TryParse(group, out outHash)) return;
+		    ped.RelationshipGroup = RelationshipDb[outHash];
 	    }
 
 		internal static Dictionary<string, string> ScrenarioDatabase = new Dictionary<string, string>
