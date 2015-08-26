@@ -211,7 +211,7 @@ namespace MapEditor
 			{
 				Function.Call(Hash.DRAW_MARKER, (int) marker.Type, marker.Position.X, marker.Position.Y, marker.Position.Z, 0f, 0f, 0f,
 				 marker.Rotation.X, marker.Rotation.Y, marker.Rotation.Z, marker.Scale.X, marker.Scale.Y, marker.Scale.Z,
-				 marker.Color.R, marker.Color.G, marker.Color.B, marker.Color.A, marker.BobUpAndDown, marker.RotateToCamera, 2, false, false, false);
+				 marker.Red, marker.Green, marker.Blue, marker.Alpha, marker.BobUpAndDown, marker.RotateToCamera, 2, false, false, false);
 			}
 
 			/*

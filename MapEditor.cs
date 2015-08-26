@@ -72,8 +72,12 @@ namespace MapEditor
 			Orb,
 			None,
 	    }
-		
-        public MapEditor()
+
+		private readonly List<dynamic> _possiblePositions = new List<dynamic>();
+		private readonly List<dynamic> _possibleRoll = new List<dynamic>();
+
+
+		public MapEditor()
         {
             Tick += OnTick;
             KeyDown += OnKeyDown;
@@ -136,7 +140,11 @@ namespace MapEditor
                         Game.Player.Character.FreezePosition = _isInFreecam;
 		                Game.Player.Character.IsVisible = !_isInFreecam;
                         World.RenderingCamera = null;
-                        if (!_isInFreecam) return;
+		                if (!_isInFreecam)
+		                {
+							Game.Player.Character.Position -= new Vector3(0f, 0f, Game.Player.Character.HeightAboveGround - 1f);
+			                return;
+		                }
                         World.DestroyAllCameras();
                         _mainCamera = World.CreateCamera(GameplayCamera.Position, GameplayCamera.Rotation, 60f);
 						_objectPreviewCamera = World.CreateCamera(new Vector3(1200.016f, 3980.998f, 86.05062f), new Vector3(0f, 0f, 0f), 60f);
@@ -230,6 +238,15 @@ namespace MapEditor
 
 			_settingsMenu = new UIMenu("Map Editor", "~b~SETTINGS");
 
+			for (int i = -500000; i <= 500000; i++)
+			{
+				_possiblePositions.Add(i * 0.01);
+			}
+			
+			for (int i = -36000; i <= 36000; i++)
+			{
+				_possibleRoll.Add(i * 0.01);
+			}
 
 			var checkem = new UIMenuListItem("Marker", new List<dynamic>(Enum.GetNames(typeof(CrosshairType))), Enum.GetNames(typeof(CrosshairType)).ToList().FindIndex(x => x == _settings.CrosshairType.ToString()));
 			checkem.OnListChanged += (i, indx) =>
@@ -414,7 +431,16 @@ namespace MapEditor
 							else if (o.Action != null && o.Action != "None" && !PropStreamer.ActiveScenarios.ContainsKey(pedid.Handle))
 							{
 								PropStreamer.ActiveScenarios.Add(pedid.Handle, o.Action);
-								pedid.Task.StartScenario(ObjectDatabase.ScrenarioDatabase[o.Action], pedid.Position);
+								if (o.Action == "Any" || o.Action == "Any - Walk")
+									Function.Call(Hash.TASK_USE_NEAREST_SCENARIO_TO_COORD, pedid.Handle, pedid.Position.X, pedid.Position.Y,
+										pedid.Position.Z, 100f, -1);
+								else if(o.Action == "Any - Warp")
+									Function.Call(Hash.TASK_USE_NEAREST_SCENARIO_TO_COORD_WARP, pedid.Handle, pedid.Position.X, pedid.Position.Y,
+											pedid.Position.Z, 100f, -1);
+								else
+								{
+									Function.Call(Hash.TASK_START_SCENARIO_IN_PLACE, pedid.Handle, ObjectDatabase.ScrenarioDatabase[o.Action], 0, 0);
+								}
 							}
 						    break;
 				    }
@@ -521,11 +547,13 @@ namespace MapEditor
             if (!_isInFreecam) return;
 			if(_settings.InstructionalButtons && !_objectsMenu.Visible)
 				_scaleform.Render2D();
+
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.CharacterWheel);
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.SelectWeapon);
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.FrontendPause);
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.NextCamera);
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.Phone);
+			Function.Call(Hash.HIDE_HUD_AND_RADAR_THIS_FRAME);
 
 			if (Game.IsControlJustPressed(0, Control.Enter) && !_isChoosingObject)
             {
@@ -584,7 +612,10 @@ namespace MapEditor
 
 				var tmpMark = new Marker()
 				{
-					Color = Color.Yellow,
+					Red = Color.Yellow.R,
+					Green = Color.Yellow.G,
+					Blue = Color.Yellow.B,
+					Alpha = Color.Yellow.A,
 					Scale = new Vector3(0.75f, 0.75f, 0.75f),
 					Type =  MarkerType.UpsideDownCone,
 					Position = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, Game.Player.Character),
@@ -660,23 +691,23 @@ namespace MapEditor
 
 				new UIResText("MARKERS", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - (90 + (4 * interval))), 0.3f, Color.White).Draw();
 				new UIResText(PropStreamer.Markers.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (4 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (4 * interval))), new Size(250, 37)).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (4 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 
 				new UIResText("WORLD", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - (90 + (3 * interval))), 0.3f, Color.White).Draw();
 				new UIResText(PropStreamer.RemovedObjects.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (3 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (3 * interval))), new Size(250, 37)).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (3 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 
 				new UIResText("PROPS", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - (90 + (2*interval))), 0.3f, Color.White).Draw();
 				new UIResText(PropStreamer.PropCount.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (2 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (2 * interval))), new Size(250, 37)).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (2 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 
 				new UIResText("VEHICLES", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - (90 + interval)), 0.3f, Color.White).Draw();
 				new UIResText(PropStreamer.Vehicles.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + interval)), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + interval)), new Size(250, 37)).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + interval)), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 				
 				new UIResText("PEDS", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - 90), 0.3f, Color.White).Draw();
 				new UIResText(PropStreamer.Peds.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - 102), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - 100), new Size(250, 37)).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - 100), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 			}
 
 			int wi = Convert.ToInt32(res.Width*0.5);
@@ -786,7 +817,7 @@ namespace MapEditor
 
 					if (Game.IsControlJustPressed(0, Control.CreatorDelete))
 					{
-						RemoveMarkerFromEntityMenu(_snappedMarker.Id); //TODO: implement
+						RemoveMarkerFromEntityMenu(_snappedMarker.Id); 
 						PropStreamer.Markers.Remove(_snappedMarker);
 						_snappedMarker = null;
 					}
@@ -891,7 +922,10 @@ namespace MapEditor
 								var tmpMark = new Marker()
 								{
 									BobUpAndDown = mark.BobUpAndDown,
-									Color = mark.Color,
+									Red = mark.Red,
+									Green = mark.Green,
+									Blue = mark.Blue,
+									Alpha = mark.Alpha,
 									Position = mark.Position,
 									RotateToCamera = mark.RotateToCamera,
 									Rotation = mark.Rotation,
@@ -961,20 +995,32 @@ namespace MapEditor
 	                float pedMod = 0f;
 	                if (_selectedProp is Ped)
 		                pedMod = -1f;
-					if(!_controlsRotate)
-						_selectedProp.Position += new Vector3(0f, 0f, (modifier/4) + pedMod);
-					else
-						_selectedProp.Rotation += new Vector3(0f, 0f, modifier);
+	                if (!_controlsRotate)
+		                _selectedProp.Position += new Vector3(0f, 0f, (modifier/4) + pedMod);
+	                else
+	                {
+						Quaternion oldq = Quaternion.GetEntityQuaternion(_selectedProp);
+						GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(0f, 0f, modifier * 0.01f);
+						GTA.Math.Quaternion entQ = new GTA.Math.Quaternion(oldq.X, oldq.Y, oldq.Z, oldq.W);
+						GTA.Math.Quaternion newQuaternion = tmpQ * entQ;
+						Quaternion.SetEntityQuaternion(_selectedProp, newQuaternion);
+					}
 				}
                 if (Game.IsControlPressed(0, Control.FrontendLb))
                 {
 					float pedMod = 0f;
 					if (_selectedProp is Ped)
 						pedMod = 1f;
-					if (!_controlsRotate)
+	                if (!_controlsRotate)
 		                _selectedProp.Position -= new Vector3(0f, 0f, (modifier/4) + pedMod);
 	                else
-		                _selectedProp.Rotation -= new Vector3(0f, 0f, modifier);
+	                {
+						Quaternion oldq = Quaternion.GetEntityQuaternion(_selectedProp);
+						GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(0f, 0f, modifier * -0.01f);
+						GTA.Math.Quaternion entQ = new GTA.Math.Quaternion(oldq.X, oldq.Y, oldq.Z, oldq.W);
+						GTA.Math.Quaternion newQuaternion = tmpQ * entQ;
+						Quaternion.SetEntityQuaternion(_selectedProp, newQuaternion);
+					}
 				}
 				
                 if (Game.IsControlPressed(0, Control.MoveUpOnly))
@@ -984,24 +1030,36 @@ namespace MapEditor
 		                pedMod = -1f;
 	                if (!_controlsRotate)
 	                {
-						var dir = VectorExtensions.RotationToDirection(_mainCamera.Rotation) * (modifier/4);
-						_selectedProp.Position += new Vector3(dir.X, dir.Y, pedMod);
+		                var dir = VectorExtensions.RotationToDirection(_mainCamera.Rotation)*(modifier/4);
+		                _selectedProp.Position += new Vector3(dir.X, dir.Y, pedMod);
 	                }
 	                else
-		                _selectedProp.Rotation += new Vector3(modifier, 0f, 0f);
+	                {
+						Quaternion oldq = Quaternion.GetEntityQuaternion(_selectedProp);
+						GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(0f, modifier * 0.01f, 0f);
+						GTA.Math.Quaternion entQ = new GTA.Math.Quaternion(oldq.X, oldq.Y, oldq.Z, oldq.W);
+						GTA.Math.Quaternion newQuaternion = tmpQ * entQ;
+						Quaternion.SetEntityQuaternion(_selectedProp, newQuaternion);
+					}
                 }
                 if (Game.IsControlPressed(0, Control.MoveDownOnly))
                 {
 					float pedMod = 0f;
 					if (_selectedProp is Ped)
 						pedMod = 1f;
-					if (!_controlsRotate)
-					{
-						var dir = VectorExtensions.RotationToDirection(_mainCamera.Rotation) * (modifier / 4);
-						_selectedProp.Position -= new Vector3(dir.X, dir.Y, pedMod);
+	                if (!_controlsRotate)
+	                {
+		                var dir = VectorExtensions.RotationToDirection(_mainCamera.Rotation)*(modifier/4);
+		                _selectedProp.Position -= new Vector3(dir.X, dir.Y, pedMod);
+	                }
+	                else
+	                {
+						Quaternion oldq = Quaternion.GetEntityQuaternion(_selectedProp);
+						GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(0f, modifier * -0.01f, 0f);
+						GTA.Math.Quaternion entQ = new GTA.Math.Quaternion(oldq.X, oldq.Y, oldq.Z, oldq.W);
+						GTA.Math.Quaternion newQuaternion = tmpQ * entQ;
+						Quaternion.SetEntityQuaternion(_selectedProp, newQuaternion);
 					}
-					else
-						_selectedProp.Rotation -= new Vector3(modifier, 0f, 0f);
 				}
 
                 if (Game.IsControlPressed(0, Control.MoveLeftOnly))
@@ -1011,13 +1069,20 @@ namespace MapEditor
 						pedMod = -1f;
 	                if (!_controlsRotate)
 	                {
-						var rotLeft = _mainCamera.Rotation + new Vector3(0, 0, -10);
-						var rotRight = _mainCamera.Rotation + new Vector3(0, 0, 10);
-						var right = (VectorExtensions.RotationToDirection(rotRight) - VectorExtensions.RotationToDirection(rotLeft)) * (modifier/2);
-						_selectedProp.Position += new Vector3(right.X, right.Y, pedMod);
-					}
-					else
-		                _selectedProp.Rotation += new Vector3(0f, modifier, 0f);
+		                var rotLeft = _mainCamera.Rotation + new Vector3(0, 0, -10);
+		                var rotRight = _mainCamera.Rotation + new Vector3(0, 0, 10);
+		                var right = (VectorExtensions.RotationToDirection(rotRight) -
+		                             VectorExtensions.RotationToDirection(rotLeft))*(modifier/2);
+		                _selectedProp.Position += new Vector3(right.X, right.Y, pedMod);
+	                }
+	                else
+	                {
+		                Quaternion oldq = Quaternion.GetEntityQuaternion(_selectedProp);
+						GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(modifier*-0.01f, 0f, 0f);
+						GTA.Math.Quaternion entQ = new GTA.Math.Quaternion(oldq.X, oldq.Y, oldq.Z, oldq.W);
+		                GTA.Math.Quaternion newQuaternion = tmpQ*entQ;
+						Quaternion.SetEntityQuaternion(_selectedProp, newQuaternion);
+	                }
                 }
                 if (Game.IsControlPressed(0, Control.MoveRightOnly))
                 {
@@ -1026,19 +1091,26 @@ namespace MapEditor
 						pedMod = 1f;
 	                if (!_controlsRotate)
 	                {
-						var rotLeft = _mainCamera.Rotation + new Vector3(0, 0, -10);
-						var rotRight = _mainCamera.Rotation + new Vector3(0, 0, 10);
-						var right = (VectorExtensions.RotationToDirection(rotRight) - VectorExtensions.RotationToDirection(rotLeft)) * (modifier/2);
-						_selectedProp.Position -= new Vector3(right.X, right.Y, pedMod);
+		                var rotLeft = _mainCamera.Rotation + new Vector3(0, 0, -10);
+		                var rotRight = _mainCamera.Rotation + new Vector3(0, 0, 10);
+		                var right = (VectorExtensions.RotationToDirection(rotRight) -
+		                             VectorExtensions.RotationToDirection(rotLeft))*(modifier/2);
+		                _selectedProp.Position -= new Vector3(right.X, right.Y, pedMod);
+	                }
+	                else
+	                {
+						Quaternion oldq = Quaternion.GetEntityQuaternion(_selectedProp);
+						GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(modifier * 0.01f, 0f, 0f);
+						GTA.Math.Quaternion entQ = new GTA.Math.Quaternion(oldq.X, oldq.Y, oldq.Z, oldq.W);
+						GTA.Math.Quaternion newQuaternion = tmpQ * entQ;
+						Quaternion.SetEntityQuaternion(_selectedProp, newQuaternion);
 					}
-					else
-						_selectedProp.Rotation -= new Vector3(0f, modifier, 0f);
 				}
 
-	            if (Game.IsControlJustReleased(0, Control.MoveLeft) ||
-					Game.IsControlJustReleased(0, Control.MoveRight) ||
-                    Game.IsControlJustReleased(0, Control.MoveUp) ||
-					Game.IsControlJustReleased(0, Control.MoveDown) ||
+	            if (Game.IsControlJustReleased(0, Control.MoveLeftOnly) ||
+					Game.IsControlJustReleased(0, Control.MoveRightOnly) ||
+                    Game.IsControlJustReleased(0, Control.MoveUpOnly) ||
+					Game.IsControlJustReleased(0, Control.MoveDownOnly) ||
                     Game.IsControlJustReleased(0, Control.FrontendLb) ||
 	                Game.IsControlJustReleased(0, Control.FrontendRb))
 	            {
@@ -1169,7 +1241,10 @@ namespace MapEditor
 					var tmpMark = new Marker()
 					{
 						BobUpAndDown = _selectedMarker.BobUpAndDown,
-						Color = _selectedMarker.Color,
+						Red = _selectedMarker.Red,
+						Green = _selectedMarker.Green,
+						Blue = _selectedMarker.Blue,
+						Alpha =  _selectedMarker.Alpha,
 						Position = _selectedMarker.Position,
 						RotateToCamera = _selectedMarker.RotateToCamera,
 						Rotation = _selectedMarker.Rotation,
@@ -1406,6 +1481,11 @@ namespace MapEditor
 			_scaleform.CallFunction("DRAW_INSTRUCTIONAL_BUTTONS", -1);
 		}
 
+
+
+	    private float oldRotX = 0f;
+	    private float oldRotY = 0f;
+	    private float oldRotZ = 0f;
 	    private void RedrawObjectInfoMenu(Entity ent)
 	    {
 			if(ent == null) return;
@@ -1421,18 +1501,20 @@ namespace MapEditor
 
 		    _objectInfoMenu.Subtitle.Caption = "~b~" + name;
 			_objectInfoMenu.Clear();
-			List<dynamic> possiblePositions = new List<dynamic>();
-		    for (int i = -500000; i <= 500000; i++)
-		    {
-			    possiblePositions.Add(i * 0.01);
-		    }
-		    var posXitem = new UIMenuListItem("Position X", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 100) + 500000)));
-			var posYitem = new UIMenuListItem("Position Y", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 100) + 500000)));
-			var posZitem = new UIMenuListItem("Position Z", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 100) + 500000)));
+			
+			
+			var posXitem = new UIMenuListItem("Position X", _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 100) + 500000)));
+			var posYitem = new UIMenuListItem("Position Y", _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 100) + 500000)));
+			var posZitem = new UIMenuListItem("Position Z", _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 100) + 500000)));
 
-			var rotXitem = new UIMenuListItem("Rotation X", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.X * 100) + 500000)));
-			var rotYitem = new UIMenuListItem("Rotation Y", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Y * 100) + 500000)));
-			var rotZitem = new UIMenuListItem("Rotation Z", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Z * 100) + 500000)));
+			Quaternion localQ = Quaternion.GetEntityQuaternion(_selectedProp);
+			GTA.Math.Quaternion realQ = new GTA.Math.Quaternion(localQ.X, localQ.Y, localQ.Z, localQ.W);
+
+			var rotXitem = new UIMenuListItem("Rotation X", _possibleRoll, Convert.ToInt32(Math.Round((realQ.Axis.X * 100) + 36000)));
+			var rotYitem = new UIMenuListItem("Rotation Y", _possibleRoll, Convert.ToInt32(Math.Round(realQ.Axis.Y * 100)) + 36000);
+			var rotZitem = new UIMenuListItem("Rotation Z", _possibleRoll, Convert.ToInt32(Math.Round((realQ.Axis.Z * 100) + 36000)));
+
+			
 
 		    var dynamic = new UIMenuCheckboxItem("Dynamic", !PropStreamer.StaticProps.Contains(ent.Handle));
 		    dynamic.CheckboxEvent += (ite, checkd) =>
@@ -1453,18 +1535,34 @@ namespace MapEditor
 			
 		    if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent.Handle))
 		    {
-				List<dynamic> actions = new List<dynamic> {"None"};
+				List<dynamic> actions = new List<dynamic> {"None", "Any - Walk", "Any - Warp"};
 				actions.AddRange(ObjectDatabase.ScrenarioDatabase.Keys);
 			    var scenarioItem = new UIMenuListItem("Idle Action", actions, actions.IndexOf(PropStreamer.ActiveScenarios[ent.Handle]));
 			    scenarioItem.OnListChanged += (item, index) => PropStreamer.ActiveScenarios[ent.Handle] = item.IndexToItem(index).ToString();
 			    scenarioItem.Activated += (item, index) =>
 			    {
-					if(PropStreamer.ActiveScenarios[ent.Handle] == "None") return;
-				    string scenario = ObjectDatabase.ScrenarioDatabase[PropStreamer.ActiveScenarios[ent.Handle]];
+				    if (PropStreamer.ActiveScenarios[ent.Handle] == "None")
+				    {
+					    ((Ped)ent).Task.ClearAll();
+					    return;
+				    }
+					if (PropStreamer.ActiveScenarios[ent.Handle] == "Any - Walk" || PropStreamer.ActiveScenarios[ent.Handle] == "Any")
+					{
+						Function.Call(Hash.TASK_USE_NEAREST_SCENARIO_TO_COORD, ent.Handle, ent.Position.X, ent.Position.Y, ent.Position.Z, 100f, -1);
+						return;
+				    }
+					if (PropStreamer.ActiveScenarios[ent.Handle] == "Any - Warp")
+					{
+						Function.Call(Hash.TASK_USE_NEAREST_SCENARIO_TO_COORD_WARP, ent.Handle, ent.Position.X, ent.Position.Y, ent.Position.Z, 100f, -1);
+						return;
+					}
+					string scenario = ObjectDatabase.ScrenarioDatabase[PropStreamer.ActiveScenarios[ent.Handle]];
 				    if (Function.Call<bool>(Hash.IS_PED_USING_SCENARIO, ent.Handle, scenario))
-						((Ped)ent).Task.ClearAll();
+					    ((Ped) ent).Task.ClearAll();
 				    else
-						((Ped)ent).Task.StartScenario(scenario, ent.Position);
+				    {
+						Function.Call(Hash.TASK_START_SCENARIO_IN_PLACE, ent.Handle, scenario, 0, 0);
+				    }
 			    };
 				_objectInfoMenu.AddItem(scenarioItem);
 		    }
@@ -1476,9 +1574,38 @@ namespace MapEditor
 			posYitem.OnListChanged += (item, index) => ent.Position = new Vector3(ent.Position.X, (float)item.IndexToItem(index), ent.Position.Z);
 			posZitem.OnListChanged += (item, index) => ent.Position = new Vector3(ent.Position.X, ent.Position.Y, (float)item.IndexToItem(index));
 
-			rotXitem.OnListChanged += (item, index) => ent.Rotation = new Vector3((float)item.IndexToItem(index), ent.Rotation.Y, ent.Rotation.Z);
-			rotYitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, (float)item.IndexToItem(index), ent.Rotation.Z);
-			rotZitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, ent.Rotation.Y, (float)item.IndexToItem(index));
+		    rotXitem.OnListChanged += (item, index) =>
+		    {
+			    var change = (float)item.IndexToItem(index) - oldRotX;
+				Quaternion oldq = Quaternion.GetEntityQuaternion(_selectedProp);
+				GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(0f, change, 0f);
+				GTA.Math.Quaternion entQ = new GTA.Math.Quaternion(oldq.X, oldq.Y, oldq.Z, oldq.W);
+				GTA.Math.Quaternion newQuaternion = tmpQ * entQ;
+				Quaternion.SetEntityQuaternion(_selectedProp, newQuaternion);
+			    oldRotX = (float)item.IndexToItem(index);
+		    };
+
+		    rotZitem.OnListChanged += (item, index) =>
+		    {
+				var change = (float)item.IndexToItem(index) - oldRotZ;
+				Quaternion oldq = Quaternion.GetEntityQuaternion(_selectedProp);
+				GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(0f, 0f, change);
+				GTA.Math.Quaternion entQ = new GTA.Math.Quaternion(oldq.X, oldq.Y, oldq.Z, oldq.W);
+				GTA.Math.Quaternion newQuaternion = tmpQ * entQ;
+				Quaternion.SetEntityQuaternion(_selectedProp, newQuaternion);
+				oldRotZ = (float)item.IndexToItem(index);
+			};
+			
+			rotYitem.OnListChanged += (item, index) =>
+			{
+				var change = (float)item.IndexToItem(index) - oldRotY;
+				Quaternion oldq = Quaternion.GetEntityQuaternion(_selectedProp);
+				GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(change, 0f, 0f);
+				GTA.Math.Quaternion entQ = new GTA.Math.Quaternion(oldq.X, oldq.Y, oldq.Z, oldq.W);
+				GTA.Math.Quaternion newQuaternion = tmpQ * entQ;
+				Quaternion.SetEntityQuaternion(_selectedProp, newQuaternion);
+				oldRotY = (float)item.IndexToItem(index);
+			};
 		}
 
 		private void RedrawObjectInfoMenu(Marker ent)
@@ -1538,10 +1665,10 @@ namespace MapEditor
 			var scaleYitem = new UIMenuListItem("Scale Y", possbileScale, Convert.ToInt32(Math.Round((ent.Scale.Y * 100))));
 			var scaleZitem = new UIMenuListItem("Scale Z", possbileScale, Convert.ToInt32(Math.Round((ent.Scale.Z * 100))));
 
-			var colorR = new UIMenuListItem("Red Color", possibleColors, ent.Color.R);
-			var colorG = new UIMenuListItem("Green Color", possibleColors, ent.Color.G);
-			var colorB = new UIMenuListItem("Blue Color", possibleColors, ent.Color.B);
-			var colorA = new UIMenuListItem("Transparency", possibleColors, ent.Color.A);
+			var colorR = new UIMenuListItem("Red Color", possibleColors, ent.Red);
+			var colorG = new UIMenuListItem("Green Color", possibleColors, ent.Green);
+			var colorB = new UIMenuListItem("Blue Color", possibleColors, ent.Blue);
+			var colorA = new UIMenuListItem("Transparency", possibleColors, ent.Alpha);
 
 			_objectInfoMenu.AddItem(type);
 			_objectInfoMenu.AddItem(posXitem);
@@ -1573,10 +1700,10 @@ namespace MapEditor
 			scaleXitem.OnListChanged += (item, index) => ent.Scale = new Vector3(ent.Scale.X, (float)item.IndexToItem(index), ent.Scale.Z);
 			scaleXitem.OnListChanged += (item, index) => ent.Scale = new Vector3(ent.Scale.X, ent.Scale.Y, (float)item.IndexToItem(index));
 
-			colorR.OnListChanged += (item, index) => ent.Color = Color.FromArgb(ent.Color.A, index, ent.Color.G, ent.Color.B);
-			colorG.OnListChanged += (item, index) => ent.Color = Color.FromArgb(ent.Color.A, ent.Color.R, index, ent.Color.B);
-			colorB.OnListChanged += (item, index) => ent.Color = Color.FromArgb(ent.Color.A, ent.Color.R, ent.Color.G, index);
-			colorA.OnListChanged += (item, index) => ent.Color = Color.FromArgb(index, ent.Color.R, ent.Color.G, ent.Color.B);
+			colorR.OnListChanged += (item, index) => ent.Red = index;
+			colorG.OnListChanged += (item, index) => ent.Green = index;
+			colorB.OnListChanged += (item, index) => ent.Blue = index;
+			colorA.OnListChanged += (item, index) => ent.Alpha = index;
 
 		}
 
@@ -1638,7 +1765,7 @@ namespace MapEditor
 				type = "~h~[PED]~h~ ";
 			}
 			_currentObjectsMenu.AddItem(new UIMenuItem(type + name, ent.Handle.ToString()));
-			_currentObjectsMenu.RefreshIndex(); //TODO: fix this, selected item remains after refresh.
+			_currentObjectsMenu.RefreshIndex();
 	    }
 
 	    public void RemoveItemFromEntityMenu(Entity ent)
