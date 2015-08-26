@@ -24,9 +24,9 @@ namespace MapEditor
 
 		public static List<int> StaticProps = new List<int>();
 
-		public static List<int> Vehicles = new List<int>(); // Not streamed in.
+		public static List<int> Vehicles = new List<int>();
 
-		public static List<int> Peds = new List<int>(); // Not streamed in.
+		public static List<int> Peds = new List<int>();
 
 		public static List<Marker> Markers = new List<Marker>();
 
@@ -35,6 +35,8 @@ namespace MapEditor
 		public static Dictionary<int, string> ActiveRelationships = new Dictionary<int, string>();
 
 		public static Dictionary<int, WeaponHash> ActiveWeapons = new Dictionary<int, WeaponHash>();
+
+		public static List<int> ActiveSirens = new List<int>();
 
 		public static int PropCount => StreamedInHandles.Count + MemoryObjects.Count;
 
@@ -149,10 +151,45 @@ namespace MapEditor
 
 		public static MapObject[] GetAllEntities()
 		{
-			List<MapObject> outList = StreamedInHandles.Select(handle => new MapObject() {Dynamic = !StaticProps.Contains(handle), Hash = new Prop(handle).Model.Hash, Position = new Prop(handle).Position, Quaternion = Quaternion.GetEntityQuaternion(new Prop(handle)), Rotation = new Prop(handle).Rotation, Type = ObjectTypes.Prop}).ToList();
+			List<MapObject> outList =
+				StreamedInHandles.Select(
+					handle =>
+						new MapObject()
+						{
+							Dynamic = !StaticProps.Contains(handle),
+							Hash = new Prop(handle).Model.Hash,
+							Position = new Prop(handle).Position,
+							Quaternion = Quaternion.GetEntityQuaternion(new Prop(handle)),
+							Rotation = new Prop(handle).Rotation,
+							Type = ObjectTypes.Prop
+						}).ToList();
+
 			outList.AddRange(MemoryObjects);
-			Vehicles.ForEach(v => outList.Add(new MapObject() { Dynamic = !StaticProps.Contains(v), Hash = new Vehicle(v).Model.Hash, Position = new Vehicle(v).Position, Quaternion = Quaternion.GetEntityQuaternion(new Vehicle(v)), Rotation = new Vehicle(v).Rotation, Type = ObjectTypes.Vehicle}));
-			Peds.ForEach(v => outList.Add(new MapObject() { Dynamic = !StaticProps.Contains(v), Hash = new Ped(v).Model.Hash, Position = new Ped(v).Position, Quaternion = Quaternion.GetEntityQuaternion(new Ped(v)), Rotation = new Ped(v).Rotation, Type = ObjectTypes.Ped }));
+			Vehicles.ForEach(
+				v =>
+					outList.Add(new MapObject()
+					{
+						Dynamic = !StaticProps.Contains(v),
+						Hash = new Vehicle(v).Model.Hash,
+						Position = new Vehicle(v).Position,
+						Quaternion = Quaternion.GetEntityQuaternion(new Vehicle(v)),
+						Rotation = new Vehicle(v).Rotation,
+						Type = ObjectTypes.Vehicle,
+						SirensActive = ActiveSirens.Contains(v)
+					}));
+
+			Peds.ForEach(v => outList.Add(new MapObject()
+			{
+				Dynamic = !StaticProps.Contains(v),
+				Hash = new Ped(v).Model.Hash,
+				Position = new Ped(v).Position,
+				Quaternion = Quaternion.GetEntityQuaternion(new Ped(v)),
+				Rotation = new Ped(v).Rotation,
+				Type = ObjectTypes.Ped,
+				Action = ActiveScenarios[v],
+				Relationship = ActiveRelationships[v],
+				Weapon = ActiveWeapons[v],
+			}));
 			return outList.ToArray();
 		}
 

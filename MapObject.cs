@@ -20,6 +20,9 @@ namespace MapEditor
 		public string Relationship;
 		public WeaponHash? Weapon;
 
+		// Vehicle stuff
+		public bool SirensActive;
+
 		[NonSerialized]
 		public int Id = -1;
 	}

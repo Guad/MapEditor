@@ -59,14 +59,14 @@ namespace MapEditor
 	    private int _mapObjCounter = 0;
 	    private int _markerCounter = 0;
 
-	    private const Relationship DefaultRelationship = (Relationship) 0;
+	    private const Relationship DefaultRelationship = Relationship.Companion;
 	    
 
 	    private ObjectTypes _currentObjectType;
 		
 	    private Settings _settings;
 
-	    private string[] _markersTypes = Enum.GetNames(typeof(MarkerType)).ToArray();
+	    private readonly string[] _markersTypes = Enum.GetNames(typeof(MarkerType)).ToArray();
 
 	    public enum CrosshairType
 	    {
@@ -308,6 +308,13 @@ namespace MapEditor
 				" It will take a couple of minutes.");
 			validate.Activated += (men, item) => ValidateDatabase();
 
+			var resetGrps = new UIMenuItem("Reset Active Relationship Groups",
+				"This will set all ped's relationship groups to Companion.");
+			resetGrps.Activated += (men, item) =>
+			{
+				PropStreamer.Peds.ForEach(ped => ObjectDatabase.SetPedRelationshipGroup(new Ped(ped), "Companion"));
+			};
+
 			_settingsMenu.AddItem(gamepadItem);
 			_settingsMenu.AddItem(checkem);
 			_settingsMenu.AddItem(gamboy);
@@ -315,6 +322,7 @@ namespace MapEditor
 			_settingsMenu.AddItem(counterItem);
 	        _settingsMenu.AddItem(snapper);
 			_settingsMenu.AddItem(validate);
+			_settingsMenu.AddItem(resetGrps);
 			_settingsMenu.RefreshIndex();
 			_settingsMenu.DisableInstructionalButtons(true);
 			_menuPool.Add(_settingsMenu);
@@ -427,8 +435,13 @@ namespace MapEditor
 							    o.Quaternion == new Quaternion() {X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion));
 						    break;
 					    case ObjectTypes.Vehicle:
-						    AddItemToEntityMenu(PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z,
-							    o.Dynamic));
+						    Vehicle tmpVeh;
+						    AddItemToEntityMenu(tmpVeh = PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic));
+						    if (o.SirensActive)
+						    {
+							    PropStreamer.ActiveSirens.Add(tmpVeh.Handle);
+							    tmpVeh.SirenActive = true;
+						    }
 						    break;
 					    case ObjectTypes.Ped:
 						    Ped pedid;
@@ -451,11 +464,11 @@ namespace MapEditor
 							}
 
 						    if (o.Relationship == null)
-							    PropStreamer.ActiveRelationships.Add(pedid.Handle, Relationship.Neutral.ToString());
+							    PropStreamer.ActiveRelationships.Add(pedid.Handle, DefaultRelationship.ToString());
 						    else
 						    {
 							    PropStreamer.ActiveRelationships.Add(pedid.Handle, o.Relationship);
-							    if (o.Relationship != Relationship.Neutral.ToString())
+							    if (o.Relationship != DefaultRelationship.ToString())
 							    {
 								    ObjectDatabase.SetPedRelationshipGroup(pedid, o.Relationship);
 							    }
@@ -509,35 +522,9 @@ namespace MapEditor
 			var tmpmap = new Map();
 			try
 			{
-				/*tmpmap.Objects.AddRange(format == MapSerializer.Format.SimpleTrainer? PropStreamer.GetAllEntities().Where(p => p.Type == ObjectTypes.Prop)
-					: PropStreamer.GetAllEntities());*/
-				if (format == MapSerializer.Format.SimpleTrainer)
-				{
-					tmpmap.Objects.AddRange(PropStreamer.GetAllEntities().Where(p => p.Type == ObjectTypes.Prop));
-				}
-				else
-				{
-					tmpmap.Objects.AddRange(PropStreamer.GetAllEntities().Where(p => p.Type != ObjectTypes.Ped));
-					foreach (var o in PropStreamer.Peds)
-					{
-						var tmpObj = new MapObject()
-						{
-							Dynamic = !PropStreamer.StaticProps.Contains(o),
-							Hash = new Prop(o).Model.Hash,
-							Position = new Prop(o).Position,
-							Rotation = new Prop(o).Rotation,
-							Quaternion = Quaternion.GetEntityQuaternion(new Prop(o)),
-							Type = ObjectTypes.Ped,
-						};
-						if (PropStreamer.ActiveScenarios.ContainsKey(o))
-							tmpObj.Action = PropStreamer.ActiveScenarios[o];
-						if (PropStreamer.ActiveRelationships.ContainsKey(o))
-							tmpObj.Relationship = PropStreamer.ActiveRelationships[o];
-						if (PropStreamer.ActiveWeapons.ContainsKey(o))
-							tmpObj.Weapon = PropStreamer.ActiveWeapons[o];
-						tmpmap.Objects.Add(tmpObj);
-					}
-				}
+				tmpmap.Objects.AddRange(format == MapSerializer.Format.SimpleTrainer
+					? PropStreamer.GetAllEntities().Where(p => p.Type == ObjectTypes.Prop)
+					: PropStreamer.GetAllEntities());
 				tmpmap.RemoveFromWorld.AddRange(PropStreamer.RemovedObjects);
 				tmpmap.Markers.AddRange(PropStreamer.Markers);
 				ser.Serialize(filename, tmpmap, format);
@@ -949,7 +936,7 @@ namespace MapEditor
 								if(PropStreamer.ActiveRelationships.ContainsKey(hitEnt.Handle))
 									PropStreamer.ActiveRelationships.Add(_snappedProp.Handle, PropStreamer.ActiveRelationships[hitEnt.Handle]);
 								else if (!PropStreamer.ActiveRelationships.ContainsKey(_snappedProp.Handle))
-									PropStreamer.ActiveRelationships.Add(_snappedProp.Handle, Relationship.Neutral.ToString());
+									PropStreamer.ActiveRelationships.Add(_snappedProp.Handle, DefaultRelationship.ToString());
 
 								if(PropStreamer.ActiveWeapons.ContainsKey(hitEnt.Handle))
 									PropStreamer.ActiveWeapons.Add(_snappedProp.Handle, PropStreamer.ActiveWeapons[hitEnt.Handle]);
@@ -1182,7 +1169,7 @@ namespace MapEditor
 						if (PropStreamer.ActiveRelationships.ContainsKey(_selectedProp.Handle))
 							PropStreamer.ActiveRelationships.Add(mainProp.Handle, PropStreamer.ActiveRelationships[_selectedProp.Handle]);
 						else if (!PropStreamer.ActiveRelationships.ContainsKey(mainProp.Handle))
-							PropStreamer.ActiveRelationships.Add(mainProp.Handle, Relationship.Neutral.ToString());
+							PropStreamer.ActiveRelationships.Add(mainProp.Handle, DefaultRelationship.ToString());
 
 						if(PropStreamer.ActiveWeapons.ContainsKey(_selectedProp.Handle))
 							PropStreamer.ActiveWeapons.Add(mainProp.Handle, PropStreamer.ActiveWeapons[_selectedProp.Handle]);
@@ -1288,10 +1275,10 @@ namespace MapEditor
 						_selectedMarker.Rotation -= new Vector3(0f, modifier, 0f);
 				}
 
-				if (Game.IsControlJustReleased(0, Control.MoveLeft) ||
-					Game.IsControlJustReleased(0, Control.MoveRight) ||
-					Game.IsControlJustReleased(0, Control.MoveUp) ||
-					Game.IsControlJustReleased(0, Control.MoveDown) ||
+				if (Game.IsControlJustReleased(0, Control.MoveLeftOnly) ||
+					Game.IsControlJustReleased(0, Control.MoveRightOnly) ||
+					Game.IsControlJustReleased(0, Control.MoveUpOnly) ||
+					Game.IsControlJustReleased(0, Control.MoveDownOnly) ||
 					Game.IsControlJustReleased(0, Control.FrontendLb) ||
 					Game.IsControlJustReleased(0, Control.FrontendRb))
 				{
@@ -1405,7 +1392,7 @@ namespace MapEditor
 					objectHash = ObjectDatabase.PedDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
 			        AddItemToEntityMenu(_snappedProp = PropStreamer.CreatePed(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true));
 					PropStreamer.ActiveScenarios.Add(_snappedProp.Handle, "None");
-					PropStreamer.ActiveRelationships.Add(_snappedProp.Handle, Relationship.Neutral.ToString());
+					PropStreamer.ActiveRelationships.Add(_snappedProp.Handle, DefaultRelationship.ToString());
 					PropStreamer.ActiveWeapons.Add(_snappedProp.Handle, WeaponHash.Unarmed);
 					break;
 	        }
@@ -1583,7 +1570,7 @@ namespace MapEditor
 		    var dynamic = new UIMenuCheckboxItem("Dynamic", !PropStreamer.StaticProps.Contains(ent.Handle));
 		    dynamic.CheckboxEvent += (ite, checkd) =>
 		    {
-			    if (checkd && PropStreamer.StaticProps.Contains(ent.Handle)) PropStreamer.StaticProps.Remove(ent.Handle);
+			    if (checkd && PropStreamer.StaticProps.Contains(ent.Handle)) { PropStreamer.StaticProps.Remove(ent.Handle);}
 				else if (!checkd && !PropStreamer.StaticProps.Contains(ent.Handle)) PropStreamer.StaticProps.Add(ent.Handle);
 
 			    ent.FreezePosition = PropStreamer.StaticProps.Contains(ent.Handle);
@@ -1657,6 +1644,18 @@ namespace MapEditor
 				_objectInfoMenu.AddItem(wepItem);
 			}
 
+		    if (Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, ent.Handle))
+		    {
+			    var sirentBool = new UIMenuCheckboxItem("Siren", PropStreamer.ActiveSirens.Contains(ent.Handle));
+			    sirentBool.CheckboxEvent += (item, check) =>
+			    {
+				    if (check && !PropStreamer.ActiveSirens.Contains(ent.Handle)) PropStreamer.ActiveSirens.Add(ent.Handle);
+				    else if (!check && PropStreamer.ActiveSirens.Contains(ent.Handle)) PropStreamer.ActiveSirens.Remove(ent.Handle);
+				    ((Vehicle) ent).SirenActive = check;
+			    };
+				_objectInfoMenu.AddItem(sirentBool);
+		    }
+
 
 			
 
@@ -1705,11 +1704,6 @@ namespace MapEditor
 
 			_objectInfoMenu.Subtitle.Caption = "~b~" + name;
 			_objectInfoMenu.Clear();
-			List<dynamic> possiblePositions = new List<dynamic>();
-			for (int i = -500000; i <= 500000; i++)
-			{
-				possiblePositions.Add(i * 0.01);
-			}
 
 			List<dynamic> possbileScale = new List<dynamic>();
 			for (int i = 0; i <= 1000; i++)
@@ -1723,13 +1717,13 @@ namespace MapEditor
 				possibleColors.Add(i);
 			}
 
-			var posXitem = new UIMenuListItem("Position X", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 100) + 500000)));
-			var posYitem = new UIMenuListItem("Position Y", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 100) + 500000)));
-			var posZitem = new UIMenuListItem("Position Z", possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 100) + 500000)));
+			var posXitem = new UIMenuListItem("Position X", _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 100) + 500000)));
+			var posYitem = new UIMenuListItem("Position Y", _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 100) + 500000)));
+			var posZitem = new UIMenuListItem("Position Z", _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 100) + 500000)));
 
-			var rotXitem = new UIMenuListItem("Rotation X", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.X * 100) + 500000)));
-			var rotYitem = new UIMenuListItem("Rotation Y", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Y * 100) + 500000)));
-			var rotZitem = new UIMenuListItem("Rotation Z", possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Z * 100) + 500000)));
+			var rotXitem = new UIMenuListItem("Rotation X", _possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.X * 100) + 500000)));
+			var rotYitem = new UIMenuListItem("Rotation Y", _possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Y * 100) + 500000)));
+			var rotZitem = new UIMenuListItem("Rotation Z", _possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Z * 100) + 500000)));
 
 			var dynamic = new UIMenuCheckboxItem("Bob Up And Down", ent.BobUpAndDown);
 			dynamic.CheckboxEvent += (ite, checkd) =>
