@@ -10,7 +10,6 @@ using GTA.Math;
 using GTA.Native;
 using NativeUI;
 using System.IO;
-using System.Security;
 using System.Xml.Serialization;
 using MapEditor.API;
 using Control = GTA.Control;
@@ -268,24 +267,43 @@ namespace MapEditor
 			{
 				senslist.Add(i);
 			}
-			var gamboy = new UIMenuListItem("Camera Sensitivity", senslist, _settings.CameraSensivity - 1);
+			var gamboy = new UIMenuListItem("Mouse Camera Sensitivity", senslist, _settings.CameraSensivity - 1);
 			gamboy.OnListChanged += (item, index) =>
 			{
 				_settings.CameraSensivity = index + 1;
 				SaveSettings();
 			};
-			var butts = new UIMenuCheckboxItem("Instructional Buttons", _settings.InstructionalButtons);
+            var gampadSens = new UIMenuListItem("Gamepad Camera Sensitivity", senslist, _settings.GamepadCameraSensitivity - 1);
+            gampadSens.OnListChanged += (item, index) =>
+            {
+                _settings.GamepadCameraSensitivity = index + 1;
+                SaveSettings();
+            };
+
+            var keymovesens = new UIMenuListItem("Keyboard Movement Sensitivity", senslist, _settings.KeyboardMovementSensitivity - 1);
+            keymovesens.OnListChanged += (item, index) =>
+            {
+                _settings.KeyboardMovementSensitivity = index + 1;
+                SaveSettings();
+            };
+
+            var gammovesens = new UIMenuListItem("Gamepad Movement Sensitivity", senslist, _settings.GamepadMovementSensitivity - 1);
+            gammovesens.OnListChanged += (item, index) =>
+            {
+                _settings.GamepadMovementSensitivity = index + 1;
+                SaveSettings();
+            };
+
+            var butts = new UIMenuCheckboxItem("Instructional Buttons", _settings.InstructionalButtons);
 			butts.CheckboxEvent += (i, checkd) =>
 			{
 				_settings.InstructionalButtons = checkd;
 				SaveSettings();
 			};
-	        var gamepadItem = new UIMenuCheckboxItem("Use Gamepad", _settings.Gamepad);
+	        var gamepadItem = new UIMenuCheckboxItem("Enable Gamepad Shortcut", _settings.Gamepad);
 	        gamepadItem.CheckboxEvent += (i, checkd) =>
 	        {
-		        _settings.CameraSensivity = checkd ? 5 : 30;
 		        _settings.Gamepad = checkd;
-		        gamboy.Index = _settings.CameraSensivity - 1;
 				SaveSettings();
 	        };
 
@@ -318,7 +336,10 @@ namespace MapEditor
 			_settingsMenu.AddItem(gamepadItem);
 			_settingsMenu.AddItem(checkem);
 			_settingsMenu.AddItem(gamboy);
-			_settingsMenu.AddItem(butts);
+            _settingsMenu.AddItem(gampadSens);
+            _settingsMenu.AddItem(keymovesens);
+            _settingsMenu.AddItem(gammovesens);
+            _settingsMenu.AddItem(butts);
 			_settingsMenu.AddItem(counterItem);
 	        _settingsMenu.AddItem(snapper);
 			_settingsMenu.AddItem(validate);
@@ -363,12 +384,22 @@ namespace MapEditor
 				    _settings.ActivationKey = Keys.F7;
 					SaveSettings();
 			    }
-		    }
+
+		        if (_settings.GamepadCameraSensitivity == 0)
+		            _settings.GamepadCameraSensitivity = 5;
+                if (_settings.KeyboardMovementSensitivity == 0)
+                    _settings.KeyboardMovementSensitivity = 30;
+                if (_settings.GamepadMovementSensitivity == 0)
+                    _settings.GamepadMovementSensitivity = 30;
+            }
 		    else
 		    {
 			    _settings = new Settings()
 			    {
 				    CameraSensivity = 30,
+                    GamepadCameraSensitivity = 5,
+                    KeyboardMovementSensitivity = 30,
+                    GamepadMovementSensitivity = 15,
 					Gamepad = true,
 					InstructionalButtons = true,
 					CrosshairType = CrosshairType.Crosshair,
@@ -566,9 +597,11 @@ namespace MapEditor
 
             if (!_isInFreecam) return;
 			if(_settings.InstructionalButtons && !_objectsMenu.Visible)
-				_scaleform.Render2D();
+                Function.Call(Hash._0x0DF606929C105BE1, _scaleform.Handle, 255, 255, 255, 255, 0);
+            
+            // _scaleform.Render2D(); // SHDN bug
 
-			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.CharacterWheel);
+            Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.CharacterWheel);
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.SelectWeapon);
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.FrontendPause);
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.NextCamera);
@@ -692,6 +725,9 @@ namespace MapEditor
                 if (Game.IsControlJustPressed(0, Control.Jump))
                 {
                     string query = Game.GetUserInput(255);
+                    if(String.IsNullOrWhiteSpace(query)) return;
+                    if (query[0] == ' ')
+                        query = query.Remove(0, 1);
                     RedrawObjectsMenu(query, _currentObjectType);
                     if(_objectsMenu.Size != 0)
                         OnIndexChange(_objectsMenu, 0);
@@ -745,27 +781,57 @@ namespace MapEditor
 				Sprite.DrawTexture(crossColor, new Point(wi - 15, he - 15), new Size(30, 30));
 			}
 
-			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.CharacterWheel);
-            Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.SelectWeapon);
-			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.FrontendPause);
+			//Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.CharacterWheel);
+            //Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.SelectWeapon);
+			//Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.FrontendPause);
+            Function.Call(Hash.DISABLE_ALL_CONTROL_ACTIONS, 0);
+            Function.Call(Hash.ENABLE_CONTROL_ACTION, 0, (int)Control.LookLeftRight);
+            Function.Call(Hash.ENABLE_CONTROL_ACTION, 0, (int)Control.LookUpDown);
 
-			var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.LookLeftRight);
+            var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.LookLeftRight);
 			var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.LookUpDown);
 
 
 			mouseX *= -1;
 			mouseY *= -1;
 
-            mouseX *= _settings.CameraSensivity;
-            mouseY *= _settings.CameraSensivity;
-            
+		    switch (Game.CurrentInputMode)
+		    {
+		        case InputMode.MouseAndKeyboard:
+		            mouseX *= _settings.CameraSensivity;
+		            mouseY *= _settings.CameraSensivity;
+		            break;
+		        case InputMode.GamePad:
+		            mouseX *= _settings.GamepadCameraSensitivity;
+		            mouseY *= _settings.GamepadCameraSensitivity;
+		            break;
+		    }
+
+
+            float movementModifier = 1f;
+            if (Game.IsControlPressed(0, Control.Sprint))
+                movementModifier = 5f;
+            else if (Game.IsControlPressed(0, Control.CharacterWheel))
+                movementModifier = 0.3f;
+
+		    switch (Game.CurrentInputMode)
+		    {
+                case InputMode.MouseAndKeyboard:
+		            float baseSpeed = _settings.KeyboardMovementSensitivity / 30f; // 1 - 60, baseSpeed = 0.03 - 2
+		            movementModifier *= baseSpeed;
+		            break;
+                case InputMode.GamePad:
+                    float gamepadSpeed = _settings.GamepadMovementSensitivity / 30f; // 1 - 60, baseSpeed = 0.03 - 2
+                    movementModifier *= gamepadSpeed;
+                    break;
+		    }
 
             float modifier = 1f;
             if (Game.IsControlPressed(0, Control.Sprint))
                 modifier = 5f;
             else if (Game.IsControlPressed(0, Control.CharacterWheel))
                 modifier = 0.3f;
-
+            
 
 			if (_selectedProp == null && _selectedMarker == null)
             {
@@ -778,19 +844,19 @@ namespace MapEditor
 
 				if (Game.IsControlPressed(0, Control.MoveUpOnly))
                 {
-                    _mainCamera.Position += dir*modifier;
+                    _mainCamera.Position += dir* movementModifier;
                 }
                 if (Game.IsControlPressed(0, Control.MoveDownOnly))
                 {
-                    _mainCamera.Position -= dir*modifier;
+                    _mainCamera.Position -= dir* movementModifier;
                 }
                 if (Game.IsControlPressed(0, Control.MoveLeftOnly))
                 {
-                    _mainCamera.Position += right*modifier;
+                    _mainCamera.Position += right* movementModifier;
                 }
                 if (Game.IsControlPressed(0, Control.MoveRightOnly))
                 {
-                    _mainCamera.Position -= right*modifier;
+                    _mainCamera.Position -= right* movementModifier;
                 }
                 Game.Player.Character.Position = _mainCamera.Position - dir*8f;
 

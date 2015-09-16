@@ -68,7 +68,20 @@ namespace MapEditor
 
 		public static Vehicle CreateVehicle(Model model, Vector3 position, float heading, bool dynamic, Quaternion q = null)
 		{
-			var veh = World.CreateVehicle(model, position, heading);
+			Vehicle veh;
+			int counter = 0;
+			do
+			{
+				veh = World.CreateVehicle(model, position, heading);
+				counter++;
+			} while (veh == null && counter < 2000);
+
+			if (veh == null)
+			{
+				UI.Notify("~r~~h~Map Editor~h~~w~~n~I tried very hard, but the vehicle failed to load.");
+				return null;
+			}
+
 			Vehicles.Add(veh.Handle);
 			if (!dynamic)
 			{
