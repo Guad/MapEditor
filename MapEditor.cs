@@ -77,6 +77,10 @@ namespace MapEditor
 		private readonly List<dynamic> _possiblePositions = new List<dynamic>();
 		private readonly List<dynamic> _possibleRoll = new List<dynamic>();
 
+        // Autosaving
+        private int _loadedEntities = 0;
+        private int _changesMade = 0;
+        private DateTime _lastAutosave = DateTime.Now;
 
 		public MapEditor()
         {
@@ -168,6 +172,9 @@ namespace MapEditor
 			                t.Position = o.Position;
 		                }
 						PropStreamer.RemovedObjects.Clear();
+                        _loadedEntities = 0;
+                        _changesMade = 0;
+                        _lastAutosave = DateTime.Now;
 						UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded new map.");
 						break;
 					case 2:
@@ -262,7 +269,25 @@ namespace MapEditor
 				_settings.CrosshairType = outHash;
 				SaveSettings();
 			};
-			List<dynamic> senslist = new List<dynamic>();
+
+            List<dynamic> autosaveList = new List<dynamic> {"Disable"};
+            for (int i = 5; i <= 60; i += 5)
+            {
+                autosaveList.Add(i);
+            }
+		    int aIndex = autosaveList.IndexOf(_settings.AutosaveInterval);
+		    if (aIndex == -1)
+                aIndex = 0;
+
+            var autosaveItem = new UIMenuListItem("Autosave Interval", autosaveList, aIndex, "Interval in minutes between automatic autosaves.");
+            autosaveItem.OnListChanged += (item, index) =>
+            {
+                var sel = item.IndexToItem(index);
+                _settings.AutosaveInterval = (sel as string) == "Disable" ? -1 : Convert.ToInt32(item.IndexToItem(index));
+                SaveSettings();
+            };
+
+            List<dynamic> senslist = new List<dynamic>();
 			for (int i = 1; i < 60; i++)
 			{
 				senslist.Add(i);
@@ -334,6 +359,7 @@ namespace MapEditor
 			};
 
 			_settingsMenu.AddItem(gamepadItem);
+            _settingsMenu.AddItem(autosaveItem);
 			_settingsMenu.AddItem(checkem);
 			_settingsMenu.AddItem(gamboy);
             _settingsMenu.AddItem(gampadSens);
@@ -391,7 +417,9 @@ namespace MapEditor
                     _settings.KeyboardMovementSensitivity = 30;
                 if (_settings.GamepadMovementSensitivity == 0)
                     _settings.GamepadMovementSensitivity = 30;
-            }
+		        if (_settings.AutosaveInterval == 0)
+		            _settings.AutosaveInterval = 5;
+		    }
 		    else
 		    {
 			    _settings = new Settings()
@@ -406,6 +434,7 @@ namespace MapEditor
 					PropCounterDisplay = true,
 					SnapCameraToSelectedObject = true,
 					ActivationKey = Keys.F7,
+                    AutosaveInterval = 5,
 			    };
 				SaveSettings();
 		    }
@@ -459,6 +488,7 @@ namespace MapEditor
 			    foreach (MapObject o in map2Load.Objects)
 			    {
 				    if(o == null) continue;
+			        _loadedEntities++;
 				    switch (o.Type)
 				    {
 					    case ObjectTypes.Prop:
@@ -560,6 +590,7 @@ namespace MapEditor
 				tmpmap.Markers.AddRange(PropStreamer.Markers);
 				ser.Serialize(filename, tmpmap, format);
 				UI.Notify("~b~~h~Map Editor~h~~w~~n~Saved current map as ~h~" + filename + "~h~.");
+			    _changesMade = 0;
 			}
 			catch (Exception e)
 			{
@@ -594,6 +625,17 @@ namespace MapEditor
 			{
 				_mainMenu.Visible = !_mainMenu.Visible;
 			}
+
+		    
+		    if (DateTime.Now.Subtract(_lastAutosave).Minutes >= _settings.AutosaveInterval && PropStreamer.EntityCount > 0 && _changesMade > 0 && PropStreamer.EntityCount != _loadedEntities)
+		    {
+                SaveMap("Autosave.xml", MapSerializer.Format.NormalXml);
+		        _lastAutosave = DateTime.Now;
+		    }
+
+            // 
+            // BELOW ONLY WHEN MAP EDITOR IS ACTIVE
+            //
 
             if (!_isInFreecam) return;
 			if(_settings.InstructionalButtons && !_objectsMenu.Visible)
@@ -677,6 +719,7 @@ namespace MapEditor
 				PropStreamer.Markers.Add(tmpMark);
 				_snappedMarker = tmpMark;
 				_markerCounter++;
+			    _changesMade++;
 				AddItemToEntityMenu(_snappedMarker);
 			}
 
@@ -787,6 +830,7 @@ namespace MapEditor
             Function.Call(Hash.DISABLE_ALL_CONTROL_ACTIONS, 0);
             Function.Call(Hash.ENABLE_CONTROL_ACTION, 0, (int)Control.LookLeftRight);
             Function.Call(Hash.ENABLE_CONTROL_ACTION, 0, (int)Control.LookUpDown);
+            Function.Call(Hash.ENABLE_CONTROL_ACTION, 0, (int)Control.FrontendPauseAlternate);
 
             var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.LookLeftRight);
 			var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.LookUpDown);
@@ -1009,6 +1053,7 @@ namespace MapEditor
 								else if(!PropStreamer.ActiveWeapons.ContainsKey(_snappedProp.Handle))
 									PropStreamer.ActiveWeapons.Add(_snappedProp.Handle, WeaponHash.Unarmed);
 							}
+							_changesMade++;
 						}
 						else
 						{
@@ -1034,7 +1079,8 @@ namespace MapEditor
 								AddItemToEntityMenu(tmpMark);
 								PropStreamer.Markers.Add(tmpMark);
 								_snappedMarker = tmpMark;
-							}
+                                _changesMade++;
+                            }
 						}
 					}
 
@@ -1050,7 +1096,8 @@ namespace MapEditor
 							if (PropStreamer.ActiveWeapons.ContainsKey(hitEnt.Handle))
 								PropStreamer.ActiveWeapons.Remove(hitEnt.Handle);
 							PropStreamer.RemoveEntity(hitEnt.Handle);
-						}
+                            _changesMade++;
+                        }
 						else if(hitEnt != null && !PropStreamer.GetAllHandles().Contains(hitEnt.Handle) && Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt.Handle))
 						{
 							MapObject tmpObj = new MapObject()
@@ -1066,7 +1113,8 @@ namespace MapEditor
 							PropStreamer.RemovedObjects.Add(tmpObj);
 							AddItemToEntityMenu(tmpObj);
 							hitEnt.Delete();
-						}
+                            _changesMade++;
+                        }
 						else
 						{
 							var pos = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, Game.Player.Character);
@@ -1075,7 +1123,8 @@ namespace MapEditor
 							{
 								PropStreamer.Markers.Remove(mark);
 								RemoveMarkerFromEntityMenu(mark.Id);
-							}
+                                _changesMade++;
+                            }
 						}
 					}
 					InstructionalButtonsStart();
@@ -1243,11 +1292,12 @@ namespace MapEditor
 							PropStreamer.ActiveWeapons.Add(mainProp.Handle, WeaponHash.Unarmed);
 					}
 
+                    _changesMade++;
 					_selectedProp = mainProp;
 					if(_settings.SnapCameraToSelectedObject)
 						_mainCamera.PointAt(_selectedProp);
 					if(_selectedProp != null) RedrawObjectInfoMenu(_selectedProp);
-				}
+                }
 
 				if (Game.IsControlJustPressed(0, Control.CreatorDelete))
 				{
@@ -1262,7 +1312,8 @@ namespace MapEditor
 					_selectedProp = null;
 					_objectInfoMenu.Visible = false;
 					_mainCamera.StopPointing();
-				}
+                    _changesMade++;
+                }
 
 				if (Game.IsControlJustPressed(0, Control.PhoneCancel) || Game.IsControlJustPressed(0, Control.Attack))
                 {
@@ -1372,7 +1423,8 @@ namespace MapEditor
 					AddItemToEntityMenu(tmpMark);
 					_selectedMarker = tmpMark;
 					RedrawObjectInfoMenu(_selectedMarker);
-				}
+                    _changesMade++;
+                }
 
 				if (Game.IsControlJustPressed(0, Control.CreatorDelete))
 				{
@@ -1381,7 +1433,8 @@ namespace MapEditor
 					_selectedMarker = null;
 					_objectInfoMenu.Visible = false;
 					_mainCamera.StopPointing();
-				}
+                    _changesMade++;
+                }
 
 				if (Game.IsControlJustPressed(0, Control.PhoneCancel) || Game.IsControlJustPressed(0, Control.Attack))
 				{
@@ -1444,6 +1497,9 @@ namespace MapEditor
         private void OnObjectSelect(UIMenu sender, UIMenuItem item, int index)
         {
 	        int objectHash;
+            if (PropStreamer.EntityCount == 0)
+                _lastAutosave = DateTime.Now;
+
 	        switch (_currentObjectType)
 	        {
 			    case ObjectTypes.Prop:
@@ -1465,6 +1521,7 @@ namespace MapEditor
             _isChoosingObject = false;
             _objectsMenu.Visible = false;
 			_previewProp?.Delete();
+            _changesMade++;
         }
 
         private void RedrawObjectsMenu(string searchQuery = null, ObjectTypes type = ObjectTypes.Prop)
@@ -1589,7 +1646,7 @@ namespace MapEditor
 			_scaleform.CallFunction("SET_DATA_SLOT", 0, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendRb, 0), "");
 			_scaleform.CallFunction("SET_DATA_SLOT", 1, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendLb, 0), "Rotate Entity");
 			_scaleform.CallFunction("SET_DATA_SLOT", 2, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.CreatorDelete, 0), "Delete Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 3, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Attack, 0), "Accept");
+			_scaleform.CallFunction("SET_DATA_SLOT", 3, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Attack, 0), "Accept"); 
 		}
 
 		private void InstructionalButtonsEnd()

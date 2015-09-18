@@ -14,5 +14,6 @@ namespace MapEditor
 		public bool PropCounterDisplay;
 		public bool SnapCameraToSelectedObject;
 		public Keys ActivationKey;
+	    public int AutosaveInterval;
 	}
 }
