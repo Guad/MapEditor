@@ -16,6 +16,19 @@
       </Translations>
     </TranslatedString>
     <TranslatedString>
+        <Original>Bounding Box</Original>
+        <Translations>
+            <TranslatedPair>
+                <Language>American</Language>
+                <String>Bounding Box</String>
+            </TranslatedPair>
+            <TranslatedPair>
+                <Language>Spanish</Language>
+                <String>Caja de Limites</String>
+            </TranslatedPair>
+        </Translations>
+    </TranslatedString>
+    <TranslatedString>
       <Original>PROPERTIES</Original>
       <Translations>
         <TranslatedPair>
