@@ -15,5 +15,7 @@ namespace MapEditor
 		public bool SnapCameraToSelectedObject;
 		public Keys ActivationKey;
 	    public int AutosaveInterval;
+	    public int DrawDistance;
+	    public bool? BoundingBox;
 	}
 }

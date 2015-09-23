@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.SymbolStore;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
@@ -76,6 +77,7 @@ namespace MapEditor
 
 		private readonly List<dynamic> _possiblePositions = new List<dynamic>();
 		private readonly List<dynamic> _possibleRoll = new List<dynamic>();
+        
 
         // Autosaving
         private int _loadedEntities = 0;
@@ -88,21 +90,30 @@ namespace MapEditor
             KeyDown += OnKeyDown;
 
 			ObjectDatabase.SetupRelationships();
+			LoadSettings();
+		    try
+		    {
+		        Translation.Load("scripts\\MapEditor_Translation.xml");
+		    }
+		    catch (Exception e) 
+		    {
+		        UI.Notify("~b~~h~Map Editor~h~~w~~n~Failed to load translations. Falling back to English.");
+		        UI.Notify(e.Message);
+		    }
 
-			_scaleform = new Scaleform(0);
+		    _scaleform = new Scaleform(0);
 			_scaleform.Load("instructional_buttons");
 
-			_objectInfoMenu = new UIMenu("", "~b~PROPERTIES", new Point(0, -107));
+			_objectInfoMenu = new UIMenu("", "~b~" + Translation.Translate("PROPERTIES"), new Point(0, -107));
 			_objectInfoMenu.ResetKey(UIMenu.MenuControls.Back);
 			_objectInfoMenu.DisableInstructionalButtons(true);
 			_objectInfoMenu.SetBannerType(new UIResRectangle(new Point(), new Size()));
 			_menuPool.Add(_objectInfoMenu);
 
-			LoadSettings();
 
 			ModManager.InitMenu();
 
-			_objectsMenu = new UIMenu("Map Editor", "~b~PLACE OBJECT");
+			_objectsMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("PLACE OBJECT"));
 
             ObjectDatabase.LoadFromFile("scripts\\ObjectList.ini");
 			ObjectDatabase.LoadInvalidHashes();
@@ -119,26 +130,26 @@ namespace MapEditor
             _menuPool.Add(_objectsMenu);
 
 			_objectsMenu.ResetKey(UIMenu.MenuControls.Back);
-            _objectsMenu.AddInstructionalButton(new InstructionalButton(Control.SelectWeapon, "Change Axis"));
-            _objectsMenu.AddInstructionalButton(new InstructionalButton(Control.MoveUpDown, "Zoom"));
-            _objectsMenu.AddInstructionalButton(new InstructionalButton(Control.Jump, "Search"));
+            _objectsMenu.AddInstructionalButton(new InstructionalButton(Control.SelectWeapon, Translation.Translate("Change Axis")));
+            _objectsMenu.AddInstructionalButton(new InstructionalButton(Control.MoveUpDown, Translation.Translate("Zoom")));
+            _objectsMenu.AddInstructionalButton(new InstructionalButton(Control.Jump, Translation.Translate("Search")));
 
-            _mainMenu = new UIMenu("Map Editor", "~b~MAIN MENU");
-            _mainMenu.AddItem(new UIMenuItem("Enter/Exit Map Editor"));
-            _mainMenu.AddItem(new UIMenuItem("New Map", "Remove all current objects and start a new map."));
-            _mainMenu.AddItem(new UIMenuItem("Save Map", "Save all current objects to a file."));
-			_mainMenu.AddItem(new UIMenuItem("Load Map", "Load objects from a file and add them to the world."));
+            _mainMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("MAIN MENU"));
+            _mainMenu.AddItem(new UIMenuItem(Translation.Translate("Enter/Exit Map Editor")));
+            _mainMenu.AddItem(new UIMenuItem(Translation.Translate("New Map"), Translation.Translate("Remove all current objects and start a new map.")));
+            _mainMenu.AddItem(new UIMenuItem(Translation.Translate("Save Map"), Translation.Translate("Save all current objects to a file.")));
+			_mainMenu.AddItem(new UIMenuItem(Translation.Translate("Load Map"), Translation.Translate("Load objects from a file and add them to the world.")));
 			_mainMenu.RefreshIndex();
 			_mainMenu.DisableInstructionalButtons(true);
             _menuPool.Add(_mainMenu);
 
-			_formatMenu = new UIMenu("Map Editor", "~b~SELECT FORMAT");
+			_formatMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("SELECT FORMAT"));
 			_formatMenu.DisableInstructionalButtons(true);
 			_formatMenu.ParentMenu = _mainMenu;
 	        RedrawFormatMenu();
 			_menuPool.Add(_formatMenu);
 
-			_mainMenu.OnItemSelect += (m, it, i) =>
+            _mainMenu.OnItemSelect += (m, it, i) =>
             {
                 switch (i)
                 {
@@ -175,7 +186,7 @@ namespace MapEditor
                         _loadedEntities = 0;
                         _changesMade = 0;
                         _lastAutosave = DateTime.Now;
-						UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded new map.");
+						UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("Loaded new map."));
 						break;
 					case 2:
 		                if (ModManager.CurrentMod != null)
@@ -183,14 +194,14 @@ namespace MapEditor
 			                string filename = Game.GetUserInput(255);
 			                if (String.IsNullOrWhiteSpace(filename))
 			                {
-				                UI.Notify("~r~~h~Map Editor~h~~n~~w~The filename was empty.");
+				                UI.Notify("~r~~h~Map Editor~h~~n~~w~" + Translation.Translate("The filename was empty."));
 								return;
 			                }
 							Map tmpMap = new Map();
 							tmpMap.Objects.AddRange(PropStreamer.GetAllEntities());
 							tmpMap.RemoveFromWorld.AddRange(PropStreamer.RemovedObjects);
 							tmpMap.Markers.AddRange(PropStreamer.Markers);
-			                UI.Notify("~b~~h~Map Editor~h~~n~~w~Map sent to external mod for saving.");
+			                UI.Notify("~b~~h~Map Editor~h~~n~~w~" + Translation.Translate("Map sent to external mod for saving."));
 							ModManager.CurrentMod.MapSavedInvoker(tmpMap, filename);
 			                return;
 		                }
@@ -249,7 +260,7 @@ namespace MapEditor
 		        _formatMenu.Visible = false;
 	        };
 
-			_settingsMenu = new UIMenu("Map Editor", "~b~SETTINGS");
+			_settingsMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("SETTINGS"));
 
 			for (int i = -500000; i <= 500000; i++)
 			{
@@ -261,7 +272,7 @@ namespace MapEditor
 				_possibleRoll.Add(i * 0.01);
 			}
 
-			var checkem = new UIMenuListItem("Marker", new List<dynamic>(Enum.GetNames(typeof(CrosshairType))), Enum.GetNames(typeof(CrosshairType)).ToList().FindIndex(x => x == _settings.CrosshairType.ToString()));
+			var checkem = new UIMenuListItem(Translation.Translate("Marker"), new List<dynamic>(Enum.GetNames(typeof(CrosshairType))), Enum.GetNames(typeof(CrosshairType)).ToList().FindIndex(x => x == _settings.CrosshairType.ToString()));
 			checkem.OnListChanged += (i, indx) =>
 			{
 				CrosshairType outHash;
@@ -270,7 +281,7 @@ namespace MapEditor
 				SaveSettings();
 			};
 
-            List<dynamic> autosaveList = new List<dynamic> {"Disable"};
+            List<dynamic> autosaveList = new List<dynamic> {Translation.Translate("Disable")};
             for (int i = 5; i <= 60; i += 5)
             {
                 autosaveList.Add(i);
@@ -279,11 +290,27 @@ namespace MapEditor
 		    if (aIndex == -1)
                 aIndex = 0;
 
-            var autosaveItem = new UIMenuListItem("Autosave Interval", autosaveList, aIndex, "Interval in minutes between automatic autosaves.");
+            var autosaveItem = new UIMenuListItem(Translation.Translate("Autosave Interval"), autosaveList, aIndex, Translation.Translate("Interval in minutes between automatic autosaves."));
             autosaveItem.OnListChanged += (item, index) =>
             {
                 var sel = item.IndexToItem(index);
-                _settings.AutosaveInterval = (sel as string) == "Disable" ? -1 : Convert.ToInt32(item.IndexToItem(index));
+                _settings.AutosaveInterval = (sel as string) == Translation.Translate("Disable") ? -1 : Convert.ToInt32(item.IndexToItem(index));
+                SaveSettings();
+            };
+
+		    List<dynamic> possibleDrawDistances = new List<dynamic> {Translation.Translate("Default"), 50, 75};
+		    for (int i = 100; i <= 3000; i += 100)
+            {
+                possibleDrawDistances.Add(i);
+            }
+            int dIndex = possibleDrawDistances.IndexOf(_settings.DrawDistance);
+            if (dIndex == -1)
+                dIndex = 0;
+            var drawDistanceItem = new UIMenuListItem(Translation.Translate("Draw Distance"), possibleDrawDistances, dIndex, Translation.Translate("Draw distance for props, vehicles and peds. Reload the map for changes to take effect."));
+            drawDistanceItem.OnListChanged += (item, index) =>
+            {
+                var sel = item.IndexToItem(index);
+                _settings.DrawDistance = (sel as string) == Translation.Translate("Default") ? -1 : Convert.ToInt32(item.IndexToItem(index));
                 SaveSettings();
             };
 
@@ -292,75 +319,84 @@ namespace MapEditor
 			{
 				senslist.Add(i);
 			}
-			var gamboy = new UIMenuListItem("Mouse Camera Sensitivity", senslist, _settings.CameraSensivity - 1);
+			var gamboy = new UIMenuListItem(Translation.Translate("Mouse Camera Sensitivity"), senslist, _settings.CameraSensivity - 1);
 			gamboy.OnListChanged += (item, index) =>
 			{
 				_settings.CameraSensivity = index + 1;
 				SaveSettings();
 			};
-            var gampadSens = new UIMenuListItem("Gamepad Camera Sensitivity", senslist, _settings.GamepadCameraSensitivity - 1);
+            var gampadSens = new UIMenuListItem(Translation.Translate("Gamepad Camera Sensitivity"), senslist, _settings.GamepadCameraSensitivity - 1);
             gampadSens.OnListChanged += (item, index) =>
             {
                 _settings.GamepadCameraSensitivity = index + 1;
                 SaveSettings();
             };
 
-            var keymovesens = new UIMenuListItem("Keyboard Movement Sensitivity", senslist, _settings.KeyboardMovementSensitivity - 1);
+            var keymovesens = new UIMenuListItem(Translation.Translate("Keyboard Movement Sensitivity"), senslist, _settings.KeyboardMovementSensitivity - 1);
             keymovesens.OnListChanged += (item, index) =>
             {
                 _settings.KeyboardMovementSensitivity = index + 1;
                 SaveSettings();
             };
 
-            var gammovesens = new UIMenuListItem("Gamepad Movement Sensitivity", senslist, _settings.GamepadMovementSensitivity - 1);
+            var gammovesens = new UIMenuListItem(Translation.Translate("Gamepad Movement Sensitivity"), senslist, _settings.GamepadMovementSensitivity - 1);
             gammovesens.OnListChanged += (item, index) =>
             {
                 _settings.GamepadMovementSensitivity = index + 1;
                 SaveSettings();
             };
 
-            var butts = new UIMenuCheckboxItem("Instructional Buttons", _settings.InstructionalButtons);
+            var butts = new UIMenuCheckboxItem(Translation.Translate("Instructional Buttons"), _settings.InstructionalButtons);
 			butts.CheckboxEvent += (i, checkd) =>
 			{
 				_settings.InstructionalButtons = checkd;
 				SaveSettings();
 			};
-	        var gamepadItem = new UIMenuCheckboxItem("Enable Gamepad Shortcut", _settings.Gamepad);
+	        var gamepadItem = new UIMenuCheckboxItem(Translation.Translate("Enable Gamepad Shortcut"), _settings.Gamepad);
 	        gamepadItem.CheckboxEvent += (i, checkd) =>
 	        {
 		        _settings.Gamepad = checkd;
 				SaveSettings();
 	        };
 
-	        var counterItem = new UIMenuCheckboxItem("Entity Counter", _settings.PropCounterDisplay);
+	        var counterItem = new UIMenuCheckboxItem(Translation.Translate("Entity Counter"), _settings.PropCounterDisplay);
 	        counterItem.CheckboxEvent += (i, checkd) =>
 	        {
 		        _settings.PropCounterDisplay = checkd;
 				SaveSettings();
 	        };
 
-	        var snapper = new UIMenuCheckboxItem("Follow Object With Camera", _settings.SnapCameraToSelectedObject);
+	        var snapper = new UIMenuCheckboxItem(Translation.Translate("Follow Object With Camera"), _settings.SnapCameraToSelectedObject);
 	        snapper.CheckboxEvent += (i, checkd) =>
 	        {
 		        _settings.SnapCameraToSelectedObject = checkd;
 				SaveSettings();
 	        };
 
-			var validate = new UIMenuItem("Validate Object Database",
+            var boundItem = new UIMenuCheckboxItem(Translation.Translate("Bounding Box"), _settings.BoundingBox.GetValueOrDefault(false));
+            boundItem.CheckboxEvent += (i, checkd) =>
+            {
+                _settings.BoundingBox = checkd;
+                SaveSettings();
+            };
+
+            var validate = new UIMenuItem(Translation.Translate("Validate Object Database"),Translation.Translate(
 				"This will update the current object database, removing any invalid objects. The changes will take effect after you restart the script." +
-				" It will take a couple of minutes.");
+				" It will take a couple of minutes."));
 			validate.Activated += (men, item) => ValidateDatabase();
 
-			var resetGrps = new UIMenuItem("Reset Active Relationship Groups",
-				"This will set all ped's relationship groups to Companion.");
+			var resetGrps = new UIMenuItem(Translation.Translate("Reset Active Relationship Groups"),
+				Translation.Translate("This will set all ped's relationship groups to Companion."));
 			resetGrps.Activated += (men, item) =>
 			{
 				PropStreamer.Peds.ForEach(ped => ObjectDatabase.SetPedRelationshipGroup(new Ped(ped), "Companion"));
 			};
 
 			_settingsMenu.AddItem(gamepadItem);
+            _settingsMenu.AddItem(drawDistanceItem);
             _settingsMenu.AddItem(autosaveItem);
 			_settingsMenu.AddItem(checkem);
+            _settingsMenu.AddItem(boundItem);
 			_settingsMenu.AddItem(gamboy);
             _settingsMenu.AddItem(gampadSens);
             _settingsMenu.AddItem(keymovesens);
@@ -375,16 +411,16 @@ namespace MapEditor
 			_menuPool.Add(_settingsMenu);
 
 
-			_currentObjectsMenu = new UIMenu("Map Editor", "~b~CURRENT ENTITES");
+			_currentObjectsMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("CURRENT ENTITES"));
 	        _currentObjectsMenu.OnItemSelect += OnEntityTeleport;
 			_currentObjectsMenu.DisableInstructionalButtons(true);
             _menuPool.Add(_currentObjectsMenu);
 
 
-	        var binder = new UIMenuItem("Settings");
-	        _currentEntitiesItem = new UIMenuItem("Current Entities");
+	        var binder = new UIMenuItem(Translation.Translate("Settings"));
+	        _currentEntitiesItem = new UIMenuItem(Translation.Translate("Current Entities"));
 
-	        var binder2 = new UIMenuItem("Create Map for External Mod");
+	        var binder2 = new UIMenuItem(Translation.Translate("Create Map for External Mod"));
 
 			_mainMenu.AddItem(_currentEntitiesItem);
             _mainMenu.AddItem(binder);
@@ -419,6 +455,10 @@ namespace MapEditor
                     _settings.GamepadMovementSensitivity = 30;
 		        if (_settings.AutosaveInterval == 0)
 		            _settings.AutosaveInterval = 5;
+		        if (_settings.DrawDistance == 0)
+		            _settings.DrawDistance = -1;
+		        if (!_settings.BoundingBox.HasValue)
+		            _settings.BoundingBox = true;
 		    }
 		    else
 		    {
@@ -435,6 +475,7 @@ namespace MapEditor
 					SnapCameraToSelectedObject = true,
 					ActivationKey = Keys.F7,
                     AutosaveInterval = 5,
+                    DrawDistance = -1,
 			    };
 				SaveSettings();
 		    }
@@ -477,7 +518,7 @@ namespace MapEditor
 					return;
 				}
 					
-				UI.Notify("~b~~h~Map Editor~h~~w~~n~The filename was empty or the file does not exist!");
+				UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("The filename was empty or the file does not exist!"));
 				return;
 			}
 			var des = new MapSerializer();
@@ -492,12 +533,11 @@ namespace MapEditor
 				    switch (o.Type)
 				    {
 					    case ObjectTypes.Prop:
-						    AddItemToEntityMenu(PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic,
-							    o.Quaternion == new Quaternion() {X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion));
+						    AddItemToEntityMenu(PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, o.Quaternion == new Quaternion() {X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion, drawDistance: _settings.DrawDistance));
 						    break;
 					    case ObjectTypes.Vehicle:
 						    Vehicle tmpVeh;
-						    AddItemToEntityMenu(tmpVeh = PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic));
+						    AddItemToEntityMenu(tmpVeh = PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic, drawDistance: _settings.DrawDistance));
 						    if (o.SirensActive)
 						    {
 							    PropStreamer.ActiveSirens.Add(tmpVeh.Handle);
@@ -506,7 +546,7 @@ namespace MapEditor
 						    break;
 					    case ObjectTypes.Ped:
 						    Ped pedid;
-						    AddItemToEntityMenu(pedid = PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic));
+						    AddItemToEntityMenu(pedid = PropStreamer.CreatePed(ObjectPreview.LoadObject(o.Hash), o.Position - new Vector3(0f, 0f, 1f), o.Rotation.Z, o.Dynamic, drawDistance: _settings.DrawDistance));
 							if((o.Action == null || o.Action == "None") && !PropStreamer.ActiveScenarios.ContainsKey(pedid.Handle))
 								PropStreamer.ActiveScenarios.Add(pedid.Handle, "None");
 							else if (o.Action != null && o.Action != "None" && !PropStreamer.ActiveScenarios.ContainsKey(pedid.Handle))
@@ -563,11 +603,11 @@ namespace MapEditor
 					PropStreamer.Markers.Add(marker);
 					AddItemToEntityMenu(marker);
 			    }
-			    UI.Notify("~b~~h~Map Editor~h~~w~~n~Loaded map ~h~" + filename + "~h~.");
+			    UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("Loaded map") + " ~h~" + filename + "~h~.");
 		    }
 		    catch (Exception e)
 		    {
-				UI.Notify("~r~~h~Map Editor~h~~w~~n~Map failed to load, see error below.");
+				UI.Notify("~r~~h~Map Editor~h~~w~~n~" + Translation.Translate("Map failed to load, see error below."));
 				UI.Notify(e.Message);
 			}
 	    }
@@ -576,7 +616,7 @@ namespace MapEditor
 	    {
 			if (String.IsNullOrWhiteSpace(filename))
 			{
-				UI.Notify("~b~~h~Map Editor~h~~w~~n~The filename was empty!");
+				UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("The filename was empty!"));
 				return;
 			}
 			var ser = new MapSerializer();
@@ -589,12 +629,12 @@ namespace MapEditor
 				tmpmap.RemoveFromWorld.AddRange(PropStreamer.RemovedObjects);
 				tmpmap.Markers.AddRange(PropStreamer.Markers);
 				ser.Serialize(filename, tmpmap, format);
-				UI.Notify("~b~~h~Map Editor~h~~w~~n~Saved current map as ~h~" + filename + "~h~.");
+				UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("Saved current map as") + " ~h~" + filename + "~h~.");
 			    _changesMade = 0;
 			}
 			catch (Exception e)
 			{
-				UI.Notify("~r~~h~Map Editor~h~~w~~n~Map failed to save, see error below.");
+				UI.Notify("~r~~h~Map Editor~h~~w~~n~" + Translation.Translate("Map failed to save, see error below."));
 				UI.Notify(e.Message);
 			}
 		}
@@ -618,7 +658,7 @@ namespace MapEditor
 			else
 			{
 				_currentEntitiesItem.Enabled = false;
-				_currentEntitiesItem.Description = "There are no current entities.";
+				_currentEntitiesItem.Description = Translation.Translate("There are no current entities.");
 			}
 
 			if (Game.IsControlPressed(0, Control.LookBehind) && Game.IsControlJustPressed(0, Control.FrontendLb) && !_menuPool.IsAnyMenuOpen() && _settings.Gamepad)
@@ -631,6 +671,33 @@ namespace MapEditor
                 SaveMap("Autosave.xml", MapSerializer.Format.NormalXml);
 		        _lastAutosave = DateTime.Now;
 		    }
+
+		    if (_currentObjectsMenu.Visible)
+		    {
+                if (Game.IsControlJustPressed(0, Control.PhoneLeft))
+                {
+                    if (_currentObjectsMenu.CurrentSelection <= 100)
+                    {
+                        _currentObjectsMenu.CurrentSelection = 0;
+                    }
+                    else
+                    {
+                        _currentObjectsMenu.CurrentSelection -= 100;
+                    }
+                }
+
+                if (Game.IsControlJustPressed(0, Control.PhoneRight))
+                {
+                    if (_currentObjectsMenu.CurrentSelection >= _currentObjectsMenu.Size - 101)
+                    {
+                        _currentObjectsMenu.CurrentSelection = _currentObjectsMenu.Size - 1;
+                    }
+                    else
+                    {
+                        _currentObjectsMenu.CurrentSelection += 100;
+                    }
+                }
+            }
 
             // 
             // BELOW ONLY WHEN MAP EDITOR IS ACTIVE
@@ -662,7 +729,7 @@ namespace MapEditor
 				_menuPool.CloseAllMenus();
                 _objectsMenu.Visible = true;
                 OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
-				_objectsMenu.Subtitle.Caption = "~b~PLACE " + _currentObjectType.ToString().ToUpper();
+				_objectsMenu.Subtitle.Caption = "~b~" + Translation.Translate("PLACE") + " " + _currentObjectType.ToString().ToUpper();
 			}
 
 			if (Game.IsControlJustPressed(0, Control.NextCamera) && !_isChoosingObject)
@@ -678,7 +745,7 @@ namespace MapEditor
 				_menuPool.CloseAllMenus();
 				_objectsMenu.Visible = true;
 				OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
-				_objectsMenu.Subtitle.Caption = "~b~PLACE " + _currentObjectType.ToString().ToUpper();
+				_objectsMenu.Subtitle.Caption = "~b~" + Translation.Translate("PLACE") + " " + _currentObjectType.ToString().ToUpper();
 			}
 
 			if (Game.IsControlJustPressed(0, Control.FrontendPause) && !_isChoosingObject)
@@ -694,7 +761,7 @@ namespace MapEditor
 				_menuPool.CloseAllMenus();
 				_objectsMenu.Visible = true;
 				OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
-				_objectsMenu.Subtitle.Caption = "~b~PLACE " + _currentObjectType.ToString().ToUpper();
+				_objectsMenu.Subtitle.Caption = "~b~" + Translation.Translate("PLACE") + " " + _currentObjectType.ToString().ToUpper();
 			}
 
 			if (Game.IsControlJustPressed(0, Control.Phone) && !_isChoosingObject && !_menuPool.IsAnyMenuOpen())
@@ -727,6 +794,7 @@ namespace MapEditor
                 if (_previewProp != null)
                 {
                     _previewProp.Rotation = _previewProp.Rotation + (_zAxis ? new Vector3(0f, 0f, 2.5f) : new Vector3(2.5f, 0f, 0f));
+                    DrawEntityBox(_previewProp, Color.White);
                 }
 
                 if (Game.IsControlJustPressed(0, Control.SelectWeapon))
@@ -747,6 +815,35 @@ namespace MapEditor
                 {
                     _objectPreviewCamera.Position += new Vector3(0f, 0.5f, 0f);
                 }
+
+                if (Game.IsControlJustPressed(0, Control.PhoneLeft))
+                {
+                    if (_objectsMenu.CurrentSelection <= 100)
+                    {
+                        _objectsMenu.CurrentSelection = 0;
+                        OnIndexChange(_objectsMenu, 0);
+                    }
+                    else
+                    {
+                        _objectsMenu.CurrentSelection -= 100;
+                        OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
+                    }
+                }
+
+                if (Game.IsControlJustPressed(0, Control.PhoneRight))
+                {
+                    if (_objectsMenu.CurrentSelection >= _objectsMenu.Size - 101)
+                    {
+                        _objectsMenu.CurrentSelection = _objectsMenu.Size - 1;
+                        OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
+                    }
+                    else
+                    {
+                        _objectsMenu.CurrentSelection += 100;
+                        OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
+                    }
+                }
+
                 World.RenderingCamera = _objectPreviewCamera;
 
                 if (Game.IsControlJustPressed(0, Control.PhoneCancel) && !_searchResultsOn)
@@ -761,7 +858,7 @@ namespace MapEditor
                     RedrawObjectsMenu(type: _currentObjectType);
                     OnIndexChange(_objectsMenu, 0);
                     _searchResultsOn = false;
-                    _objectsMenu.Subtitle.Caption = "~b~PLACE " + _currentObjectType.ToString().ToUpper();
+                    _objectsMenu.Subtitle.Caption = "~b~" + Translation.Translate("PLACE") + " " + _currentObjectType.ToString().ToUpper();
                 }
 
                 if (Game.IsControlJustPressed(0, Control.Jump))
@@ -773,7 +870,7 @@ namespace MapEditor
                     RedrawObjectsMenu(query, _currentObjectType);
                     if(_objectsMenu.Size != 0)
                         OnIndexChange(_objectsMenu, 0);
-                    _objectsMenu.Subtitle.Caption = "~b~SEARCH RESULTS FOR \"" + query.ToUpper() + "\"";
+                    _objectsMenu.Subtitle.Caption = "~b~" + Translation.Translate("SEARCH RESULTS FOR") + " \"" + query.ToUpper() + "\"";
                     _searchResultsOn = true;
                 }
                 return;
@@ -787,23 +884,23 @@ namespace MapEditor
 			{
 				const int interval = 45;
 
-				new UIResText("MARKERS", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - (90 + (4 * interval))), 0.3f, Color.White).Draw();
+				new UIResText(Translation.Translate("MARKERS"), new Point(Convert.ToInt32(res.Width) - safe.X - 90, Convert.ToInt32(res.Height) - safe.Y - (90 + (4 * interval))), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
 				new UIResText(PropStreamer.Markers.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (4 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
 				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (4 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 
-				new UIResText("WORLD", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - (90 + (3 * interval))), 0.3f, Color.White).Draw();
+				new UIResText(Translation.Translate("WORLD"), new Point(Convert.ToInt32(res.Width) - safe.X - 90, Convert.ToInt32(res.Height) - safe.Y - (90 + (3 * interval))), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
 				new UIResText(PropStreamer.RemovedObjects.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (3 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
 				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (3 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 
-				new UIResText("PROPS", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - (90 + (2*interval))), 0.3f, Color.White).Draw();
+				new UIResText(Translation.Translate("PROPS"), new Point(Convert.ToInt32(res.Width) - safe.X - 90, Convert.ToInt32(res.Height) - safe.Y - (90 + (2*interval))), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
 				new UIResText(PropStreamer.PropCount.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (2 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
 				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (2 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 
-				new UIResText("VEHICLES", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - (90 + interval)), 0.3f, Color.White).Draw();
+				new UIResText(Translation.Translate("VEHICLES"), new Point(Convert.ToInt32(res.Width) - safe.X - 90, Convert.ToInt32(res.Height) - safe.Y - (90 + interval)), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
 				new UIResText(PropStreamer.Vehicles.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + interval)), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
 				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + interval)), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 				
-				new UIResText("PEDS", new Point(Convert.ToInt32(res.Width) - safe.X - 180, Convert.ToInt32(res.Height) - safe.Y - 90), 0.3f, Color.White).Draw();
+				new UIResText(Translation.Translate("PEDS"), new Point(Convert.ToInt32(res.Width) - safe.X - 90, Convert.ToInt32(res.Height) - safe.Y - 90), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
 				new UIResText(PropStreamer.Peds.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - 102), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
 				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - 100), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 			}
@@ -1041,14 +1138,17 @@ namespace MapEditor
 						if (hitEnt != null)
 						{
 							if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt.Handle))
-								AddItemToEntityMenu(_snappedProp = PropStreamer.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, !PropStreamer.StaticProps.Contains(hitEnt.Handle), force: true));
+								AddItemToEntityMenu(_snappedProp = PropStreamer.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, !PropStreamer.StaticProps.Contains(hitEnt.Handle), force: true, drawDistance: _settings.DrawDistance));
 							else if (Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, hitEnt.Handle))
-								AddItemToEntityMenu(_snappedProp = PropStreamer.CreateVehicle(hitEnt.Model, hitEnt.Position, hitEnt.Rotation.Z, !PropStreamer.StaticProps.Contains(hitEnt.Handle)));
+								AddItemToEntityMenu(_snappedProp = PropStreamer.CreateVehicle(hitEnt.Model, hitEnt.Position, hitEnt.Rotation.Z, !PropStreamer.StaticProps.Contains(hitEnt.Handle), drawDistance: _settings.DrawDistance));
 							else if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, hitEnt.Handle))
 							{
 								AddItemToEntityMenu(_snappedProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped)hitEnt).Handle, hitEnt.Rotation.Z, 1, 1));
 								if(_snappedProp != null)
 									PropStreamer.Peds.Add(_snappedProp.Handle);
+
+							    if (_settings.DrawDistance != -1)
+							        _snappedProp.LodDistance = _settings.DrawDistance;
 
 								if(!PropStreamer.ActiveScenarios.ContainsKey(_snappedProp.Handle))
 									PropStreamer.ActiveScenarios.Add(_snappedProp.Handle, "None");
@@ -1145,7 +1245,12 @@ namespace MapEditor
             else if(_selectedProp != null)//_selectedProp isnt null
             {
 	            var tmp = _controlsRotate ? Color.FromArgb(200, 200, 20, 20) : Color.FromArgb(200, 200, 200, 10);
-                Function.Call(Hash.DRAW_MARKER, 0, _selectedProp.Position.X, _selectedProp.Position.Y, _selectedProp.Position.Z + 5f, 0f, 0f, 0f, 0f, 0f, 0f, 2f, 2f, 2f, tmp.R, tmp.G, tmp.B, tmp.A, 1, 0, 2, 2, 0, 0, 0);
+                var modelDims = _selectedProp.Model.GetDimensions();
+                Function.Call(Hash.DRAW_MARKER, 0, _selectedProp.Position.X, _selectedProp.Position.Y, _selectedProp.Position.Z + modelDims.Z + 2f, 0f, 0f, 0f, 0f, 0f, 0f, 2f, 2f, 2f, tmp.R, tmp.G, tmp.B, tmp.A, 1, 0, 2, 2, 0, 0, 0);
+                
+                // TODO: Draw box
+                DrawEntityBox(_selectedProp, tmp);
+
 	            if (Game.IsControlJustReleased(0, Control.Duck))
 	            {
 		            _controlsRotate = !_controlsRotate;
@@ -1287,15 +1392,18 @@ namespace MapEditor
 				{
 					Entity mainProp = new Prop(0);
 					if (_selectedProp is Prop)
-						AddItemToEntityMenu(mainProp = PropStreamer.CreateProp(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation, !PropStreamer.StaticProps.Contains(_selectedProp.Handle), force: true));
+						AddItemToEntityMenu(mainProp = PropStreamer.CreateProp(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation, !PropStreamer.StaticProps.Contains(_selectedProp.Handle), force: true, drawDistance: _settings.DrawDistance));
 					else if (_selectedProp is Vehicle)
-						AddItemToEntityMenu(mainProp = PropStreamer.CreateVehicle(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation.Z, !PropStreamer.StaticProps.Contains(_selectedProp.Handle)));
+						AddItemToEntityMenu(mainProp = PropStreamer.CreateVehicle(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation.Z, !PropStreamer.StaticProps.Contains(_selectedProp.Handle), drawDistance: _settings.DrawDistance));
 					else if (_selectedProp is Ped)
 					{
 						AddItemToEntityMenu(mainProp = Function.Call<Ped>(Hash.CLONE_PED, ((Ped) _selectedProp).Handle, _selectedProp.Rotation.Z, 1, 1));
 						PropStreamer.Peds.Add(mainProp.Handle);
 						if(!PropStreamer.ActiveScenarios.ContainsKey(mainProp.Handle))
 							PropStreamer.ActiveScenarios.Add(mainProp.Handle, "None");
+
+					    if (_settings.DrawDistance != -1)
+					        mainProp.LodDistance = _settings.DrawDistance;
 
 						if (PropStreamer.ActiveRelationships.ContainsKey(_selectedProp.Handle))
 							PropStreamer.ActiveRelationships.Add(mainProp.Handle, PropStreamer.ActiveRelationships[_selectedProp.Handle]);
@@ -1481,6 +1589,52 @@ namespace MapEditor
             }
         }
 
+        private void DrawEntityBox(Entity ent, Color color)
+        {
+            if(ent == null || (_settings.BoundingBox.HasValue && !_settings.BoundingBox.Value)) return;
+            var pos = ent.Position;
+            var modelSize = ent.Model.GetDimensions();
+
+            modelSize = new Vector3(modelSize.X/2, modelSize.Y/2, modelSize.Z/2);
+
+            var b1 = GetEntityOffset(ent, new Vector3(-modelSize.X, -modelSize.Y, -modelSize.Z * 0));
+            var b2 = GetEntityOffset(ent, new Vector3(-modelSize.X, modelSize.Y, -modelSize.Z * 0));
+            var b3 = GetEntityOffset(ent, new Vector3(modelSize.X, -modelSize.Y, -modelSize.Z * 0));
+            var b4 = GetEntityOffset(ent, new Vector3(modelSize.X, modelSize.Y, -modelSize.Z * 0));
+
+            var a1 = GetEntityOffset(ent, new Vector3(-modelSize.X, -modelSize.Y, modelSize.Z * 2));
+            var a2 = GetEntityOffset(ent, new Vector3(-modelSize.X, modelSize.Y, modelSize.Z * 2));
+            var a3 = GetEntityOffset(ent, new Vector3(modelSize.X, -modelSize.Y, modelSize.Z * 2));
+            var a4 = GetEntityOffset(ent, new Vector3(modelSize.X, modelSize.Y, modelSize.Z * 2));
+
+            DrawLine(a1, a2, color);
+            DrawLine(a2, a4, color);
+            DrawLine(a4, a3, color);
+            DrawLine(a3, a1, color);
+
+            DrawLine(b1, b2, color);
+            DrawLine(b2, b4, color);
+            DrawLine(b4, b3, color);
+            DrawLine(b3, b1, color);
+
+            DrawLine(a1, b1, color);
+            DrawLine(a2, b2, color);
+            DrawLine(a3, b3, color);
+            DrawLine(a4, b4, color);
+        }
+
+        private void DrawLine(Vector3 start, Vector3 end, Color color)
+        {
+            Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, color.R, color.G, color.B, color.A);
+        }
+
+        private Vector3 GetEntityOffset(Entity ent, Vector3 offset)
+        {
+            var v = Function.Call<Vector3>(Hash.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS, ent.Handle, offset.X, offset.Y,offset.Z);
+            UI.ShowSubtitle(String.Format("X: {0} Y: {1} Z: {2}", v.X, v.Y, v.Z));
+            return v;
+        }
+
         private void OnIndexChange(UIMenu sender, int index)
         {
 	        int requestedHash = 0;
@@ -1528,15 +1682,15 @@ namespace MapEditor
 	        {
 			    case ObjectTypes.Prop:
 					objectHash = ObjectDatabase.MainDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
-					AddItemToEntityMenu(_snappedProp = PropStreamer.CreateProp(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), new Vector3(0, 0, 0), false, force: true));
+                    AddItemToEntityMenu(_snappedProp = PropStreamer.CreateProp(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), new Vector3(0, 0, 0), false, force: true, drawDistance: _settings.DrawDistance));
 					break;
 				case ObjectTypes.Vehicle:
 			        objectHash = ObjectDatabase.VehicleDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
-			        AddItemToEntityMenu(_snappedProp = PropStreamer.CreateVehicle(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true));
+			        AddItemToEntityMenu(_snappedProp = PropStreamer.CreateVehicle(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true, drawDistance: _settings.DrawDistance));
 					break;
 				case ObjectTypes.Ped:
 					objectHash = ObjectDatabase.PedDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
-			        AddItemToEntityMenu(_snappedProp = PropStreamer.CreatePed(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true));
+			        AddItemToEntityMenu(_snappedProp = PropStreamer.CreatePed(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true, drawDistance: _settings.DrawDistance));
 					PropStreamer.ActiveScenarios.Add(_snappedProp.Handle, "None");
 					PropStreamer.ActiveRelationships.Add(_snappedProp.Handle, DefaultRelationship.ToString());
 					PropStreamer.ActiveWeapons.Add(_snappedProp.Handle, WeaponHash.Unarmed);
@@ -1616,15 +1770,15 @@ namespace MapEditor
 	    private void RedrawFormatMenu()
 	    {
 			_formatMenu.Clear();
-			_formatMenu.AddItem(new UIMenuItem("XML", "Default format for Map Editor. Choose this one if you have no idea. This saves props, vehicles and peds."));
+			_formatMenu.AddItem(new UIMenuItem("XML", Translation.Translate("Default format for Map Editor. Choose this one if you have no idea. This saves props, vehicles and peds.")));
 		    _formatMenu.AddItem(new UIMenuItem("Simple Trainer",
-				"Format used in Simple Trainer mod (objects.ini). Only saves props."));
+				Translation.Translate("Format used in Simple Trainer mod (objects.ini). Only saves props.")));
 		    if (_savingMap)
 		    {
-			    _formatMenu.AddItem(new UIMenuItem("C# Code",
-				    "Directly outputs to C# code to spawn your entities. Saves props, vehicles and peds."));
-			    _formatMenu.AddItem(new UIMenuItem("Raw",
-				"Writes the entity and their position and rotation. Useful for taking coordinates."));
+			    _formatMenu.AddItem(new UIMenuItem(Translation.Translate("C# Code"),
+				    Translation.Translate("Directly outputs to C# code to spawn your entities. Saves props, vehicles and peds.")));
+			    _formatMenu.AddItem(new UIMenuItem(Translation.Translate("Raw"),
+				Translation.Translate("Writes the entity and their position and rotation. Useful for taking coordinates.")));
 		    }
 		    _formatMenu.RefreshIndex();
 		}
@@ -1641,14 +1795,14 @@ namespace MapEditor
 	    private void InstructionalButtonsFreelook()
 	    {
 			if (!_settings.InstructionalButtons) return;
-			_scaleform.CallFunction("SET_DATA_SLOT", 0, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Enter, 0), "Spawn Prop");
-			_scaleform.CallFunction("SET_DATA_SLOT", 1, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendPause, 0), "Spawn Ped");
-			_scaleform.CallFunction("SET_DATA_SLOT", 2, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.NextCamera, 0), "Spawn Vehicle");
-			_scaleform.CallFunction("SET_DATA_SLOT", 3, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Phone, 0), "Spawn Marker");
-			_scaleform.CallFunction("SET_DATA_SLOT", 4, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Aim, 0), "Move Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 5, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Attack, 0), "Select Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 6, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.LookBehind, 0), "Copy Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 7, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.CreatorDelete, 0), "Delete Entity");
+			_scaleform.CallFunction("SET_DATA_SLOT", 0, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Enter, 0), Translation.Translate("Spawn Prop"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 1, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendPause, 0), Translation.Translate("Spawn Ped"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 2, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.NextCamera, 0), Translation.Translate("Spawn Vehicle"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 3, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Phone, 0), Translation.Translate("Spawn Marker"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 4, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Aim, 0), Translation.Translate("Move Entity"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 5, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Attack, 0), Translation.Translate("Select Entity"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 6, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.LookBehind, 0), Translation.Translate("Copy Entity"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 7, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.CreatorDelete, 0), Translation.Translate("Delete Entity"));
 		}
 
 		private void InstructionalButtonsSelected()
@@ -1657,20 +1811,20 @@ namespace MapEditor
 			_scaleform.CallFunction("SET_DATA_SLOT", 0, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.MoveLeftRight, 0), "");
 			_scaleform.CallFunction("SET_DATA_SLOT", 1, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.MoveUpDown, 0), "");
 			_scaleform.CallFunction("SET_DATA_SLOT", 2, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendRb, 0), "");
-			_scaleform.CallFunction("SET_DATA_SLOT", 3, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendLb, 0), "Move Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 4, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Duck, 0), "Switch to Rotation");
-			_scaleform.CallFunction("SET_DATA_SLOT", 5, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.LookBehind, 0), "Copy Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 6, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.CreatorDelete, 0), "Delete Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 7, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Attack, 0), "Accept");
+			_scaleform.CallFunction("SET_DATA_SLOT", 3, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendLb, 0), Translation.Translate("Move Entity"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 4, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Duck, 0), Translation.Translate("Switch to Rotation"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 5, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.LookBehind, 0), Translation.Translate("Copy Entity"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 6, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.CreatorDelete, 0), Translation.Translate("Delete Entity"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 7, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Attack, 0), Translation.Translate("Accept"));
 		}
 
 		private void InstructionalButtonsSnapped()
 		{
 			if (!_settings.InstructionalButtons) return;
 			_scaleform.CallFunction("SET_DATA_SLOT", 0, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendRb, 0), "");
-			_scaleform.CallFunction("SET_DATA_SLOT", 1, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendLb, 0), "Rotate Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 2, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.CreatorDelete, 0), "Delete Entity");
-			_scaleform.CallFunction("SET_DATA_SLOT", 3, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Attack, 0), "Accept"); 
+			_scaleform.CallFunction("SET_DATA_SLOT", 1, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.FrontendLb, 0), Translation.Translate("Rotate Entity"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 2, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.CreatorDelete, 0), Translation.Translate("Delete Entity"));
+			_scaleform.CallFunction("SET_DATA_SLOT", 3, Function.Call<string>(Hash._0x0499D7B09FC9B407, 2, (int)Control.Attack, 0), Translation.Translate("Accept")); 
 		}
 
 		private void InstructionalButtonsEnd()
@@ -1701,20 +1855,20 @@ namespace MapEditor
 			_objectInfoMenu.Clear();
 			
 			
-			var posXitem = new UIMenuListItem("Position X", _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 100) + 500000)));
-			var posYitem = new UIMenuListItem("Position Y", _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 100) + 500000)));
-			var posZitem = new UIMenuListItem("Position Z", _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 100) + 500000)));
+			var posXitem = new UIMenuListItem(Translation.Translate("Position X"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 100) + 500000)));
+			var posYitem = new UIMenuListItem(Translation.Translate("Position Y"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 100) + 500000)));
+			var posZitem = new UIMenuListItem(Translation.Translate("Position Z"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 100) + 500000)));
 
 			Quaternion localQ = Quaternion.GetEntityQuaternion(_selectedProp);
 			GTA.Math.Quaternion realQ = new GTA.Math.Quaternion(localQ.X, localQ.Y, localQ.Z, localQ.W);
 
-			var rotXitem = new UIMenuListItem("Rotation X", _possibleRoll, Convert.ToInt32(Math.Round((realQ.Axis.X * 100) + 36000)));
-			var rotYitem = new UIMenuListItem("Rotation Y", _possibleRoll, Convert.ToInt32(Math.Round(realQ.Axis.Y * 100)) + 36000);
-			var rotZitem = new UIMenuListItem("Rotation Z", _possibleRoll, Convert.ToInt32(Math.Round((realQ.Axis.Z * 100) + 36000)));
+			var rotXitem = new UIMenuListItem(Translation.Translate("Rotation X"), _possibleRoll, Convert.ToInt32(Math.Round((realQ.Axis.X * 100) + 36000)));
+			var rotYitem = new UIMenuListItem(Translation.Translate("Rotation Y"), _possibleRoll, Convert.ToInt32(Math.Round(realQ.Axis.Y * 100)) + 36000);
+			var rotZitem = new UIMenuListItem(Translation.Translate("Rotation Z"), _possibleRoll, Convert.ToInt32(Math.Round((realQ.Axis.Z * 100) + 36000)));
 
 			
 
-		    var dynamic = new UIMenuCheckboxItem("Dynamic", !PropStreamer.StaticProps.Contains(ent.Handle));
+		    var dynamic = new UIMenuCheckboxItem(Translation.Translate("Dynamic"), !PropStreamer.StaticProps.Contains(ent.Handle));
 		    dynamic.CheckboxEvent += (ite, checkd) =>
 		    {
 			    if (checkd && PropStreamer.StaticProps.Contains(ent.Handle)) { PropStreamer.StaticProps.Remove(ent.Handle);}
@@ -1735,7 +1889,7 @@ namespace MapEditor
 		    {
 				List<dynamic> actions = new List<dynamic> {"None", "Any - Walk", "Any - Warp"};
 				actions.AddRange(ObjectDatabase.ScrenarioDatabase.Keys);
-			    var scenarioItem = new UIMenuListItem("Idle Action", actions, actions.IndexOf(PropStreamer.ActiveScenarios[ent.Handle]));
+			    var scenarioItem = new UIMenuListItem(Translation.Translate("Idle Action"), actions, actions.IndexOf(PropStreamer.ActiveScenarios[ent.Handle]));
 			    scenarioItem.OnListChanged += (item, index) =>
 			    {
 			        PropStreamer.ActiveScenarios[ent.Handle] = item.IndexToItem(index).ToString();
@@ -1770,7 +1924,7 @@ namespace MapEditor
 
 				List<dynamic> rels = new List<dynamic> { "Ballas", "Grove"};
 				Enum.GetNames(typeof(Relationship)).ToList().ForEach(rel => rels.Add(rel));
-			    var relItem = new UIMenuListItem("Relationship", rels, rels.IndexOf(PropStreamer.ActiveRelationships[ent.Handle]));
+			    var relItem = new UIMenuListItem(Translation.Translate("Relationship"), rels, rels.IndexOf(PropStreamer.ActiveRelationships[ent.Handle]));
 			    relItem.OnListChanged += (item, index) =>
 			    {
 			        PropStreamer.ActiveRelationships[ent.Handle] = item.IndexToItem(index).ToString();
@@ -1785,7 +1939,7 @@ namespace MapEditor
 
 				List<dynamic> weps = new List<dynamic>();
 				Enum.GetNames(typeof(WeaponHash)).ToList().ForEach(rel => weps.Add(rel));
-				var wepItem = new UIMenuListItem("Weapon", weps, weps.IndexOf(PropStreamer.ActiveWeapons[ent.Handle].ToString()));
+				var wepItem = new UIMenuListItem(Translation.Translate("Weapon"), weps, weps.IndexOf(PropStreamer.ActiveWeapons[ent.Handle].ToString()));
 				wepItem.OnListChanged += (item, index) =>
 				{
 					PropStreamer.ActiveWeapons[ent.Handle] = Enum.Parse(typeof(WeaponHash), item.IndexToItem(index).ToString());
@@ -1802,7 +1956,7 @@ namespace MapEditor
 
 		    if (Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, ent.Handle))
 		    {
-			    var sirentBool = new UIMenuCheckboxItem("Siren", PropStreamer.ActiveSirens.Contains(ent.Handle));
+			    var sirentBool = new UIMenuCheckboxItem(Translation.Translate("Siren"), PropStreamer.ActiveSirens.Contains(ent.Handle));
 			    sirentBool.CheckboxEvent += (item, check) =>
 			    {
 				    if (check && !PropStreamer.ActiveSirens.Contains(ent.Handle)) PropStreamer.ActiveSirens.Add(ent.Handle);
@@ -1889,27 +2043,27 @@ namespace MapEditor
 				possibleColors.Add(i);
 			}
 
-			var posXitem = new UIMenuListItem("Position X", _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 100) + 500000)));
-			var posYitem = new UIMenuListItem("Position Y", _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 100) + 500000)));
-			var posZitem = new UIMenuListItem("Position Z", _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 100) + 500000)));
+			var posXitem = new UIMenuListItem(Translation.Translate("Position X"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 100) + 500000)));
+			var posYitem = new UIMenuListItem(Translation.Translate("Position Y"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 100) + 500000)));
+			var posZitem = new UIMenuListItem(Translation.Translate("Position Z"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 100) + 500000)));
 
-			var rotXitem = new UIMenuListItem("Rotation X", _possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.X * 100) + 500000)));
-			var rotYitem = new UIMenuListItem("Rotation Y", _possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Y * 100) + 500000)));
-			var rotZitem = new UIMenuListItem("Rotation Z", _possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Z * 100) + 500000)));
+			var rotXitem = new UIMenuListItem(Translation.Translate("Rotation X"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.X * 100) + 500000)));
+			var rotYitem = new UIMenuListItem(Translation.Translate("Rotation Y"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Y * 100) + 500000)));
+			var rotZitem = new UIMenuListItem(Translation.Translate("Rotation Z"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Z * 100) + 500000)));
 
-			var dynamic = new UIMenuCheckboxItem("Bob Up And Down", ent.BobUpAndDown);
+			var dynamic = new UIMenuCheckboxItem(Translation.Translate("Bop Up And Down"), ent.BobUpAndDown);
 			dynamic.CheckboxEvent += (ite, checkd) =>
 			{
 				ent.BobUpAndDown = checkd;
 			};
 
-			var faceCam = new UIMenuCheckboxItem("Face Camera", ent.RotateToCamera);
+			var faceCam = new UIMenuCheckboxItem(Translation.Translate("Face Camera"), ent.RotateToCamera);
 			dynamic.CheckboxEvent += (ite, checkd) =>
 			{
 				ent.RotateToCamera = checkd;
 			};
 
-			var type = new UIMenuListItem("Type", new List<dynamic>(_markersTypes), _markersTypes.ToList().IndexOf(ent.Type.ToString()));
+			var type = new UIMenuListItem(Translation.Translate("Type"), new List<dynamic>(_markersTypes), _markersTypes.ToList().IndexOf(ent.Type.ToString()));
 			type.OnListChanged += (ite, index) =>
 			{
 				MarkerType hash;
@@ -1917,14 +2071,14 @@ namespace MapEditor
 				ent.Type = hash;
 			};
 
-			var scaleXitem = new UIMenuListItem("Scale X", possbileScale, Convert.ToInt32(Math.Round((ent.Scale.X * 100))));
-			var scaleYitem = new UIMenuListItem("Scale Y", possbileScale, Convert.ToInt32(Math.Round((ent.Scale.Y * 100))));
-			var scaleZitem = new UIMenuListItem("Scale Z", possbileScale, Convert.ToInt32(Math.Round((ent.Scale.Z * 100))));
+			var scaleXitem = new UIMenuListItem(Translation.Translate("Scale X"), possbileScale, Convert.ToInt32(Math.Round((ent.Scale.X * 100))));
+			var scaleYitem = new UIMenuListItem(Translation.Translate("Scale Y"), possbileScale, Convert.ToInt32(Math.Round((ent.Scale.Y * 100))));
+			var scaleZitem = new UIMenuListItem(Translation.Translate("Scale Z"), possbileScale, Convert.ToInt32(Math.Round((ent.Scale.Z * 100))));
 
-			var colorR = new UIMenuListItem("Red Color", possibleColors, ent.Red);
-			var colorG = new UIMenuListItem("Green Color", possibleColors, ent.Green);
-			var colorB = new UIMenuListItem("Blue Color", possibleColors, ent.Blue);
-			var colorA = new UIMenuListItem("Transparency", possibleColors, ent.Alpha);
+			var colorR = new UIMenuListItem(Translation.Translate("Red Color"), possibleColors, ent.Red);
+			var colorG = new UIMenuListItem(Translation.Translate("Green Color"), possibleColors, ent.Green);
+			var colorB = new UIMenuListItem(Translation.Translate("Blue Color"), possibleColors, ent.Blue);
+			var colorA = new UIMenuListItem(Translation.Translate("Transparency"), possibleColors, ent.Alpha);
 
 			_objectInfoMenu.AddItem(type);
 			_objectInfoMenu.AddItem(posXitem);

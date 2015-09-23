@@ -64,6 +64,7 @@
     <Compile Include="PropStreamer.cs" />
     <Compile Include="Quaternion.cs" />
     <Compile Include="Settings.cs" />
+    <Compile Include="Translation.cs" />
     <Compile Include="VectorExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -75,6 +76,9 @@
   <ItemGroup>
     <EmbeddedResource Include="crosshair_blue.png" />
     <EmbeddedResource Include="crosshair_yellow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="MapEditor_Translation.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

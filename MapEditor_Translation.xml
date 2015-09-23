@@ -1,0 +1,1279 @@
+<?xml version="1.0"?>
+<TranslationFile xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Translations>
+    <TranslatedString>
+      <Original>Enter/Exit Map Editor</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Enter/Exit Map Editor</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Salir/Entrar al Editor</String>
+        </TranslatedPair>
+        <!-- More translations here -->
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>PROPERTIES</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>PROPERTIES</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>PROPIEDADES</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>EXTERNAL MODS</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>EXTERNAL MODS</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>MODS EXTERNOS</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>PLACE OBJECT</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>PLACE OBJECT</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>COLOCAR OBJECTO</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Change Axis</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Change Axis</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Cambiar Eje</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Zoom</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Zoom</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Zoom</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Search</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Search</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Buscar</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>MAIN MENU</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>MAIN MENU</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>MENU PRINCIPAL</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>New Map</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>New Map</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Mapa Nuevo</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Remove all current objects and start a new map.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Remove all current objects and start a new map.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Eliminar todas las entidades y empezar un mapa nuevo.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Save Map</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Save Map</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Guardar Mapa</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Save all current objects to a file.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Save all current objects to a file.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Guardad todas las entidades a un archivo.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Load Map</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Load Map</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Cargar Mapa</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Load objects from a file and add them to the world.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Load objects from a file and add them to the world.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Cargar objetos desde un archivo y añadirlos al mundo.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>SELECT FORMAT</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>SELECT FORMAT</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>SELECCIONA FORMATO</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Loaded new map.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Loaded new map.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Mapa nuevo cargado.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>The filename was empty.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>The filename was empty.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>El nombre del archivo estaba vacío.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+        <Original>The filename was empty!</Original>
+        <Translations>
+            <TranslatedPair>
+                <Language>American</Language>
+                <String>The filename was empty!</String>
+            </TranslatedPair>
+            <TranslatedPair>
+                <Language>Spanish</Language>
+                <String>El nombre del archivo estaba vacío!</String>
+            </TranslatedPair>
+        </Translations>
+    </TranslatedString>
+    <TranslatedString>
+        <Original>Saved current map as</Original>
+        <Translations>
+            <TranslatedPair>
+                <Language>American</Language>
+                <String>Saved current map as</String>
+            </TranslatedPair>
+            <TranslatedPair>
+                <Language>Spanish</Language>
+                <String>El mapa ha sido guardado como</String>
+            </TranslatedPair>
+        </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Save all current objects to a file.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Save all current objects to a file.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Guardad todas las entidades a un archivo.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Map sent to external mod for saving.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Map sent to external mod for saving.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Mapa enviado al mod externo para el guardado.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>SETTINGS</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>SETTINGS</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>AJUSTES</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Marker</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Marker</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Marker</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Disable</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Disable</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Desactivar</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Autosave Interval</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Autosave Interval</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Intervalo de Autoguardado</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Interval in minutes between automatic autosaves.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Interval in minutes between automatic autosaves.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Intervalo en minutos entre guardados automáticos.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Default</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Default</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Por Defecto</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Draw Distance</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Draw Distance</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Distancia de Objetos</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString><TranslatedString>
+      <Original>SELECT FORMAT</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>SELECT FORMAT</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>SELECCIONA FORMATO</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Draw distance for props, vehicles and peds. Reload the map for changes to take effect.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Draw distance for props, vehicles and peds. Reload the map for changes to take effect.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Distancia a la que el objeto se hace visible. Recargue el mapa para que los cambios tengan efecto.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Mouse Camera Sensitivity</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Mouse Camera Sensitivity</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Sensibilidad de Cámara de Ratón</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Gamepad Camera Sensitivity</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Gamepad Camera Sensitivity</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Sensibilidad de Cámara de Gamepad</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Keyboard Movement Sensitivity</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Keyboard Movement Sensitivity</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Sensibilidad de Movimiento (Teclado)</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Gamepad Movement Sensitivity</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Gamepad Movement Sensitivity</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Sensibilidad de Movimiento (Gamepad)</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Instructional Buttons</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Instructional Buttons</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Botones de Instrucción</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Enable Gamepad Shortcut</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Enable Gamepad Shortcut</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Habilitar Atajo de Gamepad</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Entity Counter</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Entity Counter</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Contador de Entidades</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Follow Object With Camera</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Follow Object With Camera</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Seguir el Objeto con la Cámara</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Validate Object Database</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Validate Object Database</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Validar la Base de Datos de Objetos</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>This will update the current object database, removing any invalid objects. The changes will take effect after you restart the script. It will take a couple of minutes.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>This will update the current object database, removing any invalid objects. The changes will take effect after you restart the script. It will take a couple of minutes.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Eso actualizará la base de datos de objetos, quitando todos los objetos inválidos. Los cambias tendrán efecto despues del reinicio del mod.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Reset Active Relationship Groups</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Reset Active Relationship Groups</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Resetear Grupos de Relación</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>This will set all ped's relationship groups to Companion.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>This will set all ped's relationship groups to Companion.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Esto reseteará los grupos de relación de todos los peds activos.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>CURRENT ENTITES</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>CURRENT ENTITES</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>ENTIDADES ACTUALES</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Settings</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Settings</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Ajustes</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Current Entities</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Current Entities</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Entidades Actuales</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Create Map for External Mod</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Create Map for External Mod</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Crear Mapa para Mod Externo</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>The filename was empty or the file does not exist!</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>The filename was empty or the file does not exist!</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>El nombre estaba vacío o el archivo no existe!</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Loaded map</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Loaded map</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Cargado el mapa</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Map failed to load, see error below.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Map failed to load, see error below.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Carga de mapa fallida, mire el error inferior.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+        <Original>Map failed to save, see error below.</Original>
+        <Translations>
+            <TranslatedPair>
+                <Language>American</Language>
+                <String>Map failed to save, see error below.</String>
+            </TranslatedPair>
+            <TranslatedPair>
+                <Language>Spanish</Language>
+                <String>Guardado de mapa fallida, mire el error inferior.</String>
+            </TranslatedPair>
+        </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>There are no current entities.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>There are no current entities.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>No hay entidades.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>PLACE</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>PLACE</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>COLOCAR</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>SEARCH RESULTS FOR</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>SEARCH RESULTS FOR</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>RESULTADOS DE BÚSQUEDA PARA</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>WORLD</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>WORLD</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>MUNDO</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>MARKERS</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>MARKERS</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>MARCADORES</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>PROPS</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>PROPS</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>OBJETOS</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>VEHICLES</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>VEHICLES</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>VEHÍCULOS</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>PEDS</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>PEDS</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>PERSONAS</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Default format for Map Editor. Choose this one if you have no idea. This saves props, vehicles and peds.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Default format for Map Editor. Choose this one if you have no idea. This saves props, vehicles and peds.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Formato por defecto de Map Editor. Elige este si no tienes ni idea. Guarda objetos, vehiculos y personas.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Format used in Simple Trainer mod (objects.ini). Only saves props.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Format used in Simple Trainer mod (objects.ini). Only saves props.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Formato usado en el mod Simple Trainer (objects.ini). Solo guarda objetos.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>C# Code</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>C# Code</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Código C#</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Directly outputs to C# code to spawn your entities. Saves props, vehicles and peds.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Directly outputs to C# code to spawn your entities. Saves props, vehicles and peds.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Directamente escribe código C# para espawnear sus entidades. Guarda objetos, vehiculos y personas.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Raw</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Raw</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Puro</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Writes the entity and their position and rotation. Useful for taking coordinates.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Writes the entity and their position and rotation. Useful for taking coordinates.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Escribe toda la información de las entidades. Útil para tomar coordenadas.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>    
+    <TranslatedString>
+      <Original>Position X</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Position X</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Posición X</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Position Y</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Position Y</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Posición Y</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Position Z</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Position Z</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Posición Z</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Rotation X</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Rotation X</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Rotación X</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Rotation Y</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Rotation Y</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Rotación Y</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Rotation Z</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Rotation Z</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Rotación Z</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Dynamic</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Dynamic</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Dinámico</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Idle Action</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Idle Action</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Acción Libre</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Relationship</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Relationship</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Relación</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Weapon</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Weapon</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Arma</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Siren</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Siren</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Sirena</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Bop Up And Down</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Bop Up And Down</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Botar Arriba y Abajo</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>    
+    <TranslatedString>
+      <Original>Face Camera</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Face Camera</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Rotar a la Cámara</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Type</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Type</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Tipo</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Scale X</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Scale X</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Tamaño X</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Scale Y</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Scale Y</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Tamaño Y</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Scale Z</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Scale Z</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Tamaño Z</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Red Color</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Red Color</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Color Rojo</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Green Color</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Green Color</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Color Verde</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Blue Color</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Blue Color</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Color Azul</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>has been disconnected.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>has been disconnected.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>ha sido desconectado.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>has been connected.</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>has been connected.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>ha sido conectado.</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Transparency</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Transparency</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Transparencia</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>  
+    <TranslatedString>
+      <Original>Spawn Prop</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Spawn Prop</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Crear Objeto</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Spawn Ped</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Spawn Ped</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Crear Persona</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Spawn Vehicle</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Spawn Vehicle</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Crear Vehículo</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Spawn Marker</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Spawn Marker</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Crear Marcador</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Move Entity</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Move Entity</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Mover Entidad</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Select Entity</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Select Entity</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Seleccionar Entidad</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Copy Entity</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Copy Entity</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Copiar Entidad</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Delete Entity</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Delete Entity</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Eliminar Entidad</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Switch to Rotation</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Switch to Rotation</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Cambiar a Rotación</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Accept</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Accept</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Aceptar</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>
+    <TranslatedString>
+      <Original>Rotate Entity</Original>
+      <Translations>
+        <TranslatedPair>
+          <Language>American</Language>
+          <String>Rotate Entity</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Spanish</Language>
+          <String>Rotar Entidad</String>
+        </TranslatedPair>
+      </Translations>
+    </TranslatedString>    
+  </Translations>
+</TranslationFile>

@@ -14,7 +14,7 @@ namespace MapEditor.API
 	{
 		internal static List<ModListener> Mods = new List<ModListener>();
 		internal static ModListener CurrentMod;
-		internal static UIMenu ModMenu = new UIMenu("Map Editor", "~b~EXTERNAL MODS");
+		internal static UIMenu ModMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("EXTERNAL MODS"));
 
 		internal static void InitMenu()
 		{
@@ -24,13 +24,13 @@ namespace MapEditor.API
 				var tmpMod = Mods[index];
 				if (CurrentMod == tmpMod)
 				{
-					UI.Notify("~b~~h~Map Editor~h~~n~~w~Mod ~h~" + tmpMod.Name + "~h~ has been disconnected.");
+					UI.Notify("~b~~h~Map Editor~h~~n~~w~Mod ~h~" + tmpMod.Name + "~h~ " + Translation.Translate("has been disconnected."));
 					CurrentMod.ModDisconnectInvoker();
 					CurrentMod = null;
 				}
 				else
 				{
-					UI.Notify("~b~~h~Map Editor~h~~n~~w~Mod ~h~" + tmpMod.Name + "~h~ has been connected.");
+					UI.Notify("~b~~h~Map Editor~h~~n~~w~Mod ~h~" + tmpMod.Name + "~h~ " + Translation.Translate("has been connected."));
 					tmpMod.ModSelectInvoker();
 					CurrentMod = tmpMod;
 				}

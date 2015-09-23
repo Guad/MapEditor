@@ -18,6 +18,8 @@ namespace MapEditor
 	{
 		public static int MAX_OBJECTS = 2048;
 
+	    public static List<int> UsedModels = new List<int>();
+
 		public static List<MapObject> MemoryObjects = new List<MapObject>();
 
 		public static List<int> StreamedInHandles = new List<int>();
@@ -44,7 +46,7 @@ namespace MapEditor
 
 		public static List<MapObject> RemovedObjects = new List<MapObject>();
 
-		public static Prop CreateProp(Model model, Vector3 position, Vector3 rotation, bool dynamic, Quaternion q = null, bool force = false)
+		public static Prop CreateProp(Model model, Vector3 position, Vector3 rotation, bool dynamic, Quaternion q = null, bool force = false, int drawDistance = -1)
 		{
 			
 			if (StreamedInHandles.Count >= MAX_OBJECTS)
@@ -63,10 +65,13 @@ namespace MapEditor
 			if (q != null)
 				Quaternion.SetEntityQuaternion(prop, q);
 			prop.Position = position;
+		    if (drawDistance != -1)
+		        prop.LodDistance = drawDistance;
+            UsedModels.Add(model.Hash);
 			return prop;
 		}
 
-		public static Vehicle CreateVehicle(Model model, Vector3 position, float heading, bool dynamic, Quaternion q = null)
+		public static Vehicle CreateVehicle(Model model, Vector3 position, float heading, bool dynamic, Quaternion q = null, int drawDistance = -1)
 		{
 			Vehicle veh;
 			int counter = 0;
@@ -90,10 +95,13 @@ namespace MapEditor
 			}
 			if(q != null)
 				Quaternion.SetEntityQuaternion(veh, q);
-			return veh;
+		    if (drawDistance != -1)
+		        veh.LodDistance = drawDistance;
+            UsedModels.Add(model.Hash);
+            return veh;
 		}
 
-		public static Ped CreatePed(Model model, Vector3 position, float heading, bool dynamic, Quaternion q = null)
+		public static Ped CreatePed(Model model, Vector3 position, float heading, bool dynamic, Quaternion q = null, int drawDistance = -1)
 		{
 			var veh = World.CreatePed(model, position, heading);
 			Peds.Add(veh.Handle);
@@ -104,11 +112,18 @@ namespace MapEditor
 			}
 			if (q != null)
 				Quaternion.SetEntityQuaternion(veh, q);
-			return veh;
+		    if (drawDistance != -1)
+		        veh.LodDistance = drawDistance;
+            UsedModels.Add(model.Hash);
+            return veh;
 		}
 
 		public static void RemoveVehicle(int handle)
 		{
+		    UsedModels.Remove(new Vehicle(handle).Model.Hash);
+            if(!UsedModels.Contains(new Vehicle(handle).Model.Hash))
+                new Vehicle(handle).Model.MarkAsNoLongerNeeded();
+
 			new Vehicle(handle).Delete();
 			if (Vehicles.Contains(handle)) Vehicles.Remove(handle);
 			if (StaticProps.Contains(handle)) StaticProps.Remove(handle);
@@ -116,15 +131,25 @@ namespace MapEditor
 
 		public static void RemovePed(int handle)
 		{
-			new Ped(handle).Delete();
+            UsedModels.Remove(new Ped(handle).Model.Hash);
+            if (!UsedModels.Contains(new Ped(handle).Model.Hash))
+                new Ped(handle).Model.MarkAsNoLongerNeeded();
+
+            new Ped(handle).Delete();
 			if (Peds.Contains(handle)) Peds.Remove(handle);
 			if (StaticProps.Contains(handle)) StaticProps.Remove(handle);
-		}
+        }
 
 		public static void RemoveEntity(int handle)
 		{
-			new Prop(handle).Delete();
-			if (Peds.Contains(handle)) Peds.Remove(handle);
+		    if (handle != 0 && new Prop(handle).Model != null)
+		    {
+		        UsedModels.Remove(new Prop(handle).Model.Hash);
+		        if (!UsedModels.Contains(new Prop(handle).Model.Hash))
+		            new Prop(handle).Model.MarkAsNoLongerNeeded();
+		    }
+		    new Prop(handle).Delete();
+            if (Peds.Contains(handle)) Peds.Remove(handle);
 			if (Vehicles.Contains(handle)) Vehicles.Remove(handle);
 			if (StreamedInHandles.Contains(handle)) StreamedInHandles.Remove(handle);
 		}
