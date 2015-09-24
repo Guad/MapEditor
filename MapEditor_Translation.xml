@@ -12,6 +12,10 @@
           <Language>Spanish</Language>
           <String>Salir/Entrar al Editor</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Вход/Выход в Редактор</String>
+        </TranslatedPair>
         <!-- More translations here -->
       </Translations>
     </TranslatedString>
@@ -26,6 +30,10 @@
                 <Language>Spanish</Language>
                 <String>Caja de Limites</String>
             </TranslatedPair>
+            <TranslatedPair>
+                <Language>Russian</Language>
+                <String>Отображать рамку</String>
+            </TranslatedPair>
         </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -38,6 +46,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>PROPIEDADES</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>СВОЙСТВА</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -52,6 +64,10 @@
           <Language>Spanish</Language>
           <String>MODS EXTERNOS</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>ДОПОЛНЕНИЯ</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -64,6 +80,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>COLOCAR OBJECTO</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>РАЗМЕСТИТЬ ПРЕДМЕТ</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -78,6 +98,10 @@
           <Language>Spanish</Language>
           <String>Cambiar Eje</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Угол поворота</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -90,6 +114,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Zoom</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Увеличение</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -104,6 +132,10 @@
           <Language>Spanish</Language>
           <String>Buscar</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Поиск</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -116,6 +148,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>MENU PRINCIPAL</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>ГЛАВНОЕ МЕНЮ</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -130,6 +166,10 @@
           <Language>Spanish</Language>
           <String>Mapa Nuevo</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Создать</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -142,6 +182,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Eliminar todas las entidades y empezar un mapa nuevo.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Убрать все текущие предметы и создать~n~новую карту.</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -156,6 +200,10 @@
           <Language>Spanish</Language>
           <String>Guardar Mapa</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Сохранить</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -168,6 +216,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Guardad todas las entidades a un archivo.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Сохранить все данные о текущих~n~предметах в файл.</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -182,6 +234,10 @@
           <Language>Spanish</Language>
           <String>Cargar Mapa</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Загрузить</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -195,6 +251,10 @@
           <Language>Spanish</Language>
           <String>Cargar objetos desde un archivo y añadirlos al mundo.</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Загрузить предметы из файла и~n~добавить их в карту.</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -207,6 +267,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>SELECCIONA FORMATO</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>ВЫБОР РАСШИРЕНИЯ</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -221,6 +285,10 @@
           <Language>Spanish</Language>
           <String>Mapa nuevo cargado.</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Новая карта загружена.</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -233,6 +301,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>El nombre del archivo estaba vacío.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Имя файла не прописано.</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -247,6 +319,10 @@
                 <Language>Spanish</Language>
                 <String>El nombre del archivo estaba vacío!</String>
             </TranslatedPair>
+            <TranslatedPair>
+                <Language>Russian</Language>
+                <String>Имя файла не прописано!</String>
+            </TranslatedPair>
         </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -259,6 +335,10 @@
             <TranslatedPair>
                 <Language>Spanish</Language>
                 <String>El mapa ha sido guardado como</String>
+            </TranslatedPair>
+            <TranslatedPair>
+                <Language>Russian</Language>
+                <String>Текущая карта сохранена как</String>
             </TranslatedPair>
         </Translations>
     </TranslatedString>
@@ -273,6 +353,10 @@
           <Language>Spanish</Language>
           <String>Guardad todas las entidades a un archivo.</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Сохранить все текущие предметы в файл.</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -285,6 +369,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Mapa enviado al mod externo para el guardado.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Карта к дополнению отправлена на сохранение.</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -299,6 +387,10 @@
           <Language>Spanish</Language>
           <String>AJUSTES</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>НАСТРОЙКИ</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -311,6 +403,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Marker</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Метка</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -325,6 +421,10 @@
           <Language>Spanish</Language>
           <String>Desactivar</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Отключено</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -337,6 +437,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Intervalo de Autoguardado</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Время самосохранения</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -351,6 +455,10 @@
           <Language>Spanish</Language>
           <String>Intervalo en minutos entre guardados automáticos.</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Время в минутах между~n~самостоятельными сохранениями.</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -363,6 +471,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Por Defecto</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Исходно</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -377,8 +489,13 @@
           <Language>Spanish</Language>
           <String>Distancia de Objetos</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Расстояние прорисовки</String>
+        </TranslatedPair>
       </Translations>
-    </TranslatedString><TranslatedString>
+    </TranslatedString>
+    <TranslatedString>
       <Original>SELECT FORMAT</Original>
       <Translations>
         <TranslatedPair>
@@ -388,6 +505,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>SELECCIONA FORMATO</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>ВЫБОР РАСШИРЕНИЯ</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -402,6 +523,10 @@
           <Language>Spanish</Language>
           <String>Distancia a la que el objeto se hace visible. Recargue el mapa para que los cambios tengan efecto.</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Расстояние прорисовки предметов,~n~машин и пешеходов. Перезагрузите карту, чтобы применить изменения.</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -414,6 +539,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Sensibilidad de Cámara de Ratón</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Чувствительность мыши</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -428,6 +557,10 @@
           <Language>Spanish</Language>
           <String>Sensibilidad de Cámara de Gamepad</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Чувствительность джойстика</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -440,6 +573,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Sensibilidad de Movimiento (Teclado)</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Чувствительность кнопок движения</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -454,6 +591,10 @@
           <Language>Spanish</Language>
           <String>Sensibilidad de Movimiento (Gamepad)</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Чувствительность движения (джойстик)</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -466,6 +607,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Botones de Instrucción</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Подсказки по управлению</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -480,6 +625,10 @@
           <Language>Spanish</Language>
           <String>Habilitar Atajo de Gamepad</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Быстрые клавиши для джойстика</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -492,6 +641,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Contador de Entidades</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Счётчик предметов</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -506,6 +659,10 @@
           <Language>Spanish</Language>
           <String>Seguir el Objeto con la Cámara</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Движение камеры к предмету</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -518,6 +675,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Validar la Base de Datos de Objetos</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Проверить свод данных</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -532,6 +693,10 @@
           <Language>Spanish</Language>
           <String>Eso actualizará la base de datos de objetos, quitando todos los objetos inválidos. Los cambias tendrán efecto despues del reinicio del mod.</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Проверка и обновление текущего свода~n~данных о предметах, удаление из их числа всех недействительных. Это займёт пару~n~минут, для применения изменений~n~необходим перезапуск.</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -544,6 +709,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Resetear Grupos de Relación</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Сброс данных о взаимоотношениях</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -558,6 +727,10 @@
           <Language>Spanish</Language>
           <String>Esto reseteará los grupos de relación de todos los peds activos.</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Сброс всех данных о взаимоотношениях~n~между созданными пешеходами.</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -570,6 +743,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>ENTIDADES ACTUALES</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>ТЕКУЩИЕ ПРЕДМЕТЫ</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -584,6 +761,10 @@
           <Language>Spanish</Language>
           <String>Ajustes</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Настройки</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -596,6 +777,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Entidades Actuales</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Текущие предметы</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -610,6 +795,10 @@
           <Language>Spanish</Language>
           <String>Crear Mapa para Mod Externo</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Создать карту для Дополнения</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -622,6 +811,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>El nombre estaba vacío o el archivo no existe!</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Имя файла не прописано или такой файл не существует!</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -636,6 +829,10 @@
           <Language>Spanish</Language>
           <String>Cargado el mapa</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Загружена карта</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -648,6 +845,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Carga de mapa fallida, mire el error inferior.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Не удалось загрузить карту, смотрите ошибку ниже.</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -662,6 +863,10 @@
                 <Language>Spanish</Language>
                 <String>Guardado de mapa fallida, mire el error inferior.</String>
             </TranslatedPair>
+            <TranslatedPair>
+                <Language>Russian</Language>
+                <String>Не удалось сохранить карту, смотрите ошибку ниже.</String>
+            </TranslatedPair>
         </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -674,6 +879,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>No hay entidades.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Нет текущих предметов.</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -688,6 +897,10 @@
           <Language>Spanish</Language>
           <String>COLOCAR</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>РАЗМЕЩЕНИЕ</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -700,6 +913,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>RESULTADOS DE BÚSQUEDA PARA</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>НАЙДЕНО ПО ЗАПРОСУ</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -714,6 +931,10 @@
           <Language>Spanish</Language>
           <String>MUNDO</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>УДАЛЁННЫЕ</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -726,6 +947,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>MARCADORES</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>МЕТКИ</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -740,6 +965,10 @@
           <Language>Spanish</Language>
           <String>OBJETOS</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>ВЕЩИ</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -752,6 +981,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>VEHÍCULOS</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>МАШИНЫ</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -766,6 +999,10 @@
           <Language>Spanish</Language>
           <String>PERSONAS</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>ПЕШЕХОДЫ</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -778,6 +1015,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Formato por defecto de Map Editor. Elige este si no tienes ni idea. Guarda objetos, vehiculos y personas.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Обычное расширение для Редактора.~n~Выберите, если не знаете, куда сохранять. Сохраняет все данные.</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -792,6 +1033,10 @@
           <Language>Spanish</Language>
           <String>Formato usado en el mod Simple Trainer (objects.ini). Solo guarda objetos.</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Расширение для Simple Trainer~n~(objects.ini). Сохраняет только данные о вещах.</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -804,6 +1049,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Código C#</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Сценарий C#</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -818,6 +1067,10 @@
           <Language>Spanish</Language>
           <String>Directamente escribe código C# para espawnear sus entidades. Guarda objetos, vehiculos y personas.</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Сохраняет прямо в код C# сценария~n~(в скрипт) основные данные о вещах, машинах и пешеходах.</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -830,6 +1083,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Puro</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Простое</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -844,6 +1101,10 @@
           <Language>Spanish</Language>
           <String>Escribe toda la información de las entidades. Útil para tomar coordenadas.</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Прописывает в виде простого текста~n~данные о предметах в виде их положения и поворота.</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>    
     <TranslatedString>
@@ -856,6 +1117,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Posición X</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Положение X</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -870,6 +1135,10 @@
           <Language>Spanish</Language>
           <String>Posición Y</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Положение Y</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -882,6 +1151,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Posición Z</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Положение Z</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -896,6 +1169,10 @@
           <Language>Spanish</Language>
           <String>Rotación X</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Поворот X</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -908,6 +1185,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Rotación Y</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Поворот Y</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -922,6 +1203,10 @@
           <Language>Spanish</Language>
           <String>Rotación Z</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Поворот Z</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -934,6 +1219,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Dinámico</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Подвижность</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -948,6 +1237,10 @@
           <Language>Spanish</Language>
           <String>Acción Libre</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Исходное действие</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -960,6 +1253,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Relación</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Отношение</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -974,6 +1271,10 @@
           <Language>Spanish</Language>
           <String>Arma</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Оружие</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -986,6 +1287,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Sirena</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Мигалка</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -1000,6 +1305,10 @@
           <Language>Spanish</Language>
           <String>Botar Arriba y Abajo</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Отскок вверх и вниз</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>    
     <TranslatedString>
@@ -1012,6 +1321,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Rotar a la Cámara</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Поворот к камере</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -1026,6 +1339,10 @@
           <Language>Spanish</Language>
           <String>Tipo</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Вид</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -1038,6 +1355,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Tamaño X</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Размер X</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -1052,6 +1373,10 @@
           <Language>Spanish</Language>
           <String>Tamaño Y</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Размер Y</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -1064,6 +1389,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Tamaño Z</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Размер Z</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -1078,6 +1407,10 @@
           <Language>Spanish</Language>
           <String>Color Rojo</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Уровень красного</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -1090,6 +1423,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Color Verde</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Уровень зелёного</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -1104,6 +1441,10 @@
           <Language>Spanish</Language>
           <String>Color Azul</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Уровень синего</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -1116,6 +1457,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>ha sido desconectado.</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>был(а) отключен(а).</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -1130,6 +1475,10 @@
           <Language>Spanish</Language>
           <String>ha sido conectado.</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>был(а) соединен(а).</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -1142,6 +1491,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Transparencia</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Прозрачность</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>  
@@ -1156,6 +1509,10 @@
           <Language>Spanish</Language>
           <String>Crear Objeto</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Вещь</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -1168,6 +1525,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Crear Persona</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Пешеход</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -1182,6 +1543,10 @@
           <Language>Spanish</Language>
           <String>Crear Vehículo</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Машина</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -1194,6 +1559,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Crear Marcador</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Метка</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -1208,6 +1577,10 @@
           <Language>Spanish</Language>
           <String>Mover Entidad</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Перемещать</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -1220,6 +1593,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Seleccionar Entidad</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Выбрать</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -1234,6 +1611,10 @@
           <Language>Spanish</Language>
           <String>Copiar Entidad</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Копировать</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -1246,6 +1627,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Eliminar Entidad</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Удалить</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>
@@ -1260,6 +1645,10 @@
           <Language>Spanish</Language>
           <String>Cambiar a Rotación</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Перемещение/Вращение</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -1273,6 +1662,10 @@
           <Language>Spanish</Language>
           <String>Aceptar</String>
         </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Принять</String>
+        </TranslatedPair>
       </Translations>
     </TranslatedString>
     <TranslatedString>
@@ -1285,6 +1678,10 @@
         <TranslatedPair>
           <Language>Spanish</Language>
           <String>Rotar Entidad</String>
+        </TranslatedPair>
+        <TranslatedPair>
+          <Language>Russian</Language>
+          <String>Вращать</String>
         </TranslatedPair>
       </Translations>
     </TranslatedString>    

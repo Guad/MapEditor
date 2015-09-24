@@ -1630,9 +1630,7 @@ namespace MapEditor
 
         private Vector3 GetEntityOffset(Entity ent, Vector3 offset)
         {
-            var v = Function.Call<Vector3>(Hash.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS, ent.Handle, offset.X, offset.Y,offset.Z);
-            UI.ShowSubtitle(String.Format("X: {0} Y: {1} Z: {2}", v.X, v.Y, v.Z));
-            return v;
+            return Function.Call<Vector3>(Hash.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS, ent.Handle, offset.X, offset.Y, offset.Z); ;
         }
 
         private void OnIndexChange(UIMenu sender, int index)

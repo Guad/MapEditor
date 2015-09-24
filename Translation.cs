@@ -42,7 +42,7 @@ namespace MapEditor
             Language currentLanguage = Game.Language;
             if (_stringList.All(ts => ts.Original != original)) return original;
             var ourTs = _stringList.First(ts => ts.Original == original).Translations;
-            return ourTs.FirstOrDefault(pair => pair.Language == currentLanguage)?.String ?? original;
+            return ourTs.FirstOrDefault(pair => pair.Language == currentLanguage)?.String.Replace("~n~", "\n") ?? original;
         }
     }
 
