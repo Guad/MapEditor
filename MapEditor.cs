@@ -25,6 +25,7 @@ namespace MapEditor
         private bool _searchResultsOn;
 
         private readonly UIMenu _objectsMenu;
+        private readonly UIMenu _searchMenu;
         private readonly UIMenu _mainMenu;
 	    private readonly UIMenu _formatMenu;
 	    private readonly UIMenu _objectInfoMenu;
@@ -38,6 +39,7 @@ namespace MapEditor
         private Entity _previewProp;
         private Entity _snappedProp;
         private Entity _selectedProp;
+        private Entity _snappedRemovable;
 
 	    private Marker _snappedMarker;
 	    private Marker _selectedMarker;
@@ -49,6 +51,8 @@ namespace MapEditor
 
         private bool _zAxis = true;
 	    private bool _controlsRotate;
+        private bool _quitWithSearchVisible;
+
 		
 	    private readonly string _crosshairPath;
 	    private readonly string _crosshairBluePath;
@@ -115,9 +119,10 @@ namespace MapEditor
 
 			_objectsMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("PLACE OBJECT"));
 
-            ObjectDatabase.LoadFromFile("scripts\\ObjectList.ini");
+            ObjectDatabase.LoadFromFile("scripts\\ObjectList.ini", ref ObjectDatabase.MainDb);
 			ObjectDatabase.LoadInvalidHashes();
-			ObjectDatabase.LoadEnumDatabases();
+			ObjectDatabase.LoadFromFile("scripts\\PedList.ini", ref ObjectDatabase.PedDb);
+            ObjectDatabase.LoadFromFile("scripts\\VehicleList.ini", ref ObjectDatabase.VehicleDb);
 			
 			_crosshairPath = Sprite.WriteFileFromResources(Assembly.GetExecutingAssembly(), "MapEditor.crosshair.png");
 			_crosshairBluePath = Sprite.WriteFileFromResources(Assembly.GetExecutingAssembly(), "MapEditor.crosshair_blue.png");
@@ -133,6 +138,18 @@ namespace MapEditor
             _objectsMenu.AddInstructionalButton(new InstructionalButton(Control.SelectWeapon, Translation.Translate("Change Axis")));
             _objectsMenu.AddInstructionalButton(new InstructionalButton(Control.MoveUpDown, Translation.Translate("Zoom")));
             _objectsMenu.AddInstructionalButton(new InstructionalButton(Control.Jump, Translation.Translate("Search")));
+
+            _searchMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("PLACE OBJECT"));
+            _searchMenu.OnItemSelect += OnObjectSelect;
+            _searchMenu.OnIndexChange += OnIndexChange;
+            _menuPool.Add(_searchMenu);
+
+            _searchMenu.ResetKey(UIMenu.MenuControls.Back);
+            _searchMenu.AddInstructionalButton(new InstructionalButton(Control.SelectWeapon, Translation.Translate("Change Axis")));
+            _searchMenu.AddInstructionalButton(new InstructionalButton(Control.MoveUpDown, Translation.Translate("Zoom")));
+            _searchMenu.AddInstructionalButton(new InstructionalButton(Control.Jump, Translation.Translate("Search")));
+
+
 
             _mainMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("MAIN MENU"));
             _mainMenu.AddItem(new UIMenuItem(Translation.Translate("Enter/Exit Map Editor")));
@@ -240,7 +257,13 @@ namespace MapEditor
 						case 3: // Raw
 							SaveMap(filename, MapSerializer.Format.Raw);
 							break;
-					}
+                        case 4: // SpoonerLegacy
+                            SaveMap(filename, MapSerializer.Format.SpoonerLegacy);
+			                break;
+                        case 5: // Menyoo
+                            SaveMap(filename, MapSerializer.Format.Menyoo);
+                            break;
+                    }
 				}
 		        else
 		        {
@@ -254,7 +277,13 @@ namespace MapEditor
 						case 1: // Objects.ini
 							tmpFor = MapSerializer.Format.SimpleTrainer;
 					        break;
-			        }
+                        case 2: // Spooner
+                            tmpFor = MapSerializer.Format.SpoonerLegacy;
+			                break;
+                        case 3: // Spooner
+                            tmpFor = MapSerializer.Format.Menyoo;
+                            break;
+                    }
 					LoadMap(filename, tmpFor);
 				}
 		        _formatMenu.Visible = false;
@@ -462,21 +491,7 @@ namespace MapEditor
 		    }
 		    else
 		    {
-			    _settings = new Settings()
-			    {
-				    CameraSensivity = 30,
-                    GamepadCameraSensitivity = 5,
-                    KeyboardMovementSensitivity = 30,
-                    GamepadMovementSensitivity = 15,
-					Gamepad = true,
-					InstructionalButtons = true,
-					CrosshairType = CrosshairType.Crosshair,
-					PropCounterDisplay = true,
-					SnapCameraToSelectedObject = true,
-					ActivationKey = Keys.F7,
-                    AutosaveInterval = 5,
-                    DrawDistance = -1,
-			    };
+		        _settings = new Settings();
 				SaveSettings();
 		    }
 	    }
@@ -727,8 +742,19 @@ namespace MapEditor
 	            _snappedProp = null;
 	            _selectedProp = null;
 				_menuPool.CloseAllMenus();
-                _objectsMenu.Visible = true;
-                OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
+
+                if (_quitWithSearchVisible && oldType == _currentObjectType)
+                {
+                    _searchMenu.Visible = true;
+                    OnIndexChange(_searchMenu, _searchMenu.CurrentSelection);
+                }
+                else
+                {
+                    _objectsMenu.Visible = true;
+                    OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
+                }
+
+                
 				_objectsMenu.Subtitle.Caption = "~b~" + Translation.Translate("PLACE") + " " + _currentObjectType.ToString().ToUpper();
 			}
 
@@ -743,12 +769,21 @@ namespace MapEditor
 				_snappedProp = null;
 				_selectedProp = null;
 				_menuPool.CloseAllMenus();
-				_objectsMenu.Visible = true;
-				OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
-				_objectsMenu.Subtitle.Caption = "~b~" + Translation.Translate("PLACE") + " " + _currentObjectType.ToString().ToUpper();
-			}
 
-			if (Game.IsControlJustPressed(0, Control.FrontendPause) && !_isChoosingObject)
+			    if (_quitWithSearchVisible && oldType == _currentObjectType)
+                {
+                    _searchMenu.Visible = true;
+                    OnIndexChange(_searchMenu, _searchMenu.CurrentSelection);
+                }
+                else
+                {
+                    _objectsMenu.Visible = true;
+                    OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
+                }
+                _objectsMenu.Subtitle.Caption = "~b~" + Translation.Translate("PLACE") + " " + _currentObjectType.ToString().ToUpper();
+			}
+            
+            if (Game.IsControlJustPressed(0, Control.FrontendPause) && !_isChoosingObject)
 			{
 				var oldType = _currentObjectType;
 				_currentObjectType = ObjectTypes.Ped;
@@ -759,9 +794,18 @@ namespace MapEditor
 				_snappedProp = null;
 				_selectedProp = null;
 				_menuPool.CloseAllMenus();
-				_objectsMenu.Visible = true;
-				OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
-				_objectsMenu.Subtitle.Caption = "~b~" + Translation.Translate("PLACE") + " " + _currentObjectType.ToString().ToUpper();
+
+			    if (_quitWithSearchVisible && oldType == _currentObjectType)
+                {
+                    _searchMenu.Visible = true;
+                    OnIndexChange(_searchMenu, _searchMenu.CurrentSelection);
+                }
+                else
+                {
+                    _objectsMenu.Visible = true;
+                    OnIndexChange(_objectsMenu, _objectsMenu.CurrentSelection);
+                }
+                _objectsMenu.Subtitle.Caption = "~b~" + Translation.Translate("PLACE") + " " + _currentObjectType.ToString().ToUpper();
 			}
 
 			if (Game.IsControlJustPressed(0, Control.Phone) && !_isChoosingObject && !_menuPool.IsAnyMenuOpen())
@@ -794,6 +838,8 @@ namespace MapEditor
                 if (_previewProp != null)
                 {
                     _previewProp.Rotation = _previewProp.Rotation + (_zAxis ? new Vector3(0f, 0f, 2.5f) : new Vector3(2.5f, 0f, 0f));
+                    if (_zAxis && IsPed(_previewProp))
+                        _previewProp.Heading = _previewProp.Rotation.Z;
                     DrawEntityBox(_previewProp, Color.White);
                 }
 
@@ -855,7 +901,9 @@ namespace MapEditor
 
                 if (Game.IsControlJustPressed(0, Control.PhoneCancel) && _searchResultsOn)
                 {
-                    RedrawObjectsMenu(type: _currentObjectType);
+                    //RedrawObjectsMenu(type: _currentObjectType);
+                    _searchMenu.Visible = false;
+                    _objectsMenu.Visible = true;
                     OnIndexChange(_objectsMenu, 0);
                     _searchResultsOn = false;
                     _objectsMenu.Subtitle.Caption = "~b~" + Translation.Translate("PLACE") + " " + _currentObjectType.ToString().ToUpper();
@@ -867,10 +915,12 @@ namespace MapEditor
                     if(String.IsNullOrWhiteSpace(query)) return;
                     if (query[0] == ' ')
                         query = query.Remove(0, 1);
-                    RedrawObjectsMenu(query, _currentObjectType);
-                    if(_objectsMenu.Size != 0)
-                        OnIndexChange(_objectsMenu, 0);
-                    _objectsMenu.Subtitle.Caption = "~b~" + Translation.Translate("SEARCH RESULTS FOR") + " \"" + query.ToUpper() + "\"";
+                    _objectsMenu.Visible = false;
+                    RedrawSearchMenu(query, _currentObjectType);
+                    if(_searchMenu.Size != 0)
+                        OnIndexChange(_searchMenu, 0);
+                    _searchMenu.Subtitle.Caption = "~b~" + Translation.Translate("SEARCH RESULTS FOR") + " \"" + query.ToUpper() + "\"";
+                    _searchMenu.Visible = true;
                     _searchResultsOn = true;
                 }
                 return;
@@ -985,22 +1035,25 @@ namespace MapEditor
 				var rotRight = _mainCamera.Rotation + new Vector3(0, 0, 10);
 				var right = VectorExtensions.RotationToDirection(rotRight) - VectorExtensions.RotationToDirection(rotLeft);
 
+
+                var newPos = _mainCamera.Position;
 				if (Game.IsControlPressed(0, Control.MoveUpOnly))
                 {
-                    _mainCamera.Position += dir* movementModifier;
+                    newPos += dir* movementModifier;
                 }
                 if (Game.IsControlPressed(0, Control.MoveDownOnly))
                 {
-                    _mainCamera.Position -= dir* movementModifier;
+                    newPos -= dir* movementModifier;
                 }
                 if (Game.IsControlPressed(0, Control.MoveLeftOnly))
                 {
-                    _mainCamera.Position += right* movementModifier;
+                    newPos += right* movementModifier;
                 }
                 if (Game.IsControlPressed(0, Control.MoveRightOnly))
                 {
-                    _mainCamera.Position -= right* movementModifier;
+                    newPos -= right* movementModifier;
                 }
+                _mainCamera.Position = newPos;
                 Game.Player.Character.Position = _mainCamera.Position - dir*8f;
 
                 if (_snappedProp != null)
@@ -1008,12 +1061,16 @@ namespace MapEditor
                     _snappedProp.Position = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, _snappedProp);
                     if (Game.IsControlPressed(0, Control.CursorScrollUp) || Game.IsControlPressed(0, Control.FrontendRb))
                     {
-                        _snappedProp.Rotation = _snappedProp.Rotation + new Vector3(0f, 0f, modifier);
+                        _snappedProp.Rotation = _snappedProp.Rotation - new Vector3(0f, 0f, modifier);
+                        if (IsPed(_snappedProp))
+                            _snappedProp.Heading = _snappedProp.Rotation.Z;
                     }
 
                     if (Game.IsControlPressed(0, Control.CursorScrollDown) || Game.IsControlPressed(0, Control.FrontendLb))
                     {
-                        _snappedProp.Rotation = _snappedProp.Rotation - new Vector3(0f, 0f, modifier);
+                        _snappedProp.Rotation = _snappedProp.Rotation + new Vector3(0f, 0f, modifier);
+                        if (IsPed(_snappedProp))
+                            _snappedProp.Heading = _snappedProp.Rotation.Z;
                     }
 
 					if (Game.IsControlJustPressed(0, Control.CreatorDelete))
@@ -1038,12 +1095,12 @@ namespace MapEditor
 					_snappedMarker.Position = VectorExtensions.RaycastEverything(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation, Game.Player.Character);
 					if (Game.IsControlPressed(0, Control.CursorScrollUp) || Game.IsControlPressed(0, Control.FrontendRb))
 					{
-						_snappedMarker.Rotation = _snappedMarker.Rotation + new Vector3(0f, 0f, modifier);
+						_snappedMarker.Rotation = _snappedMarker.Rotation - new Vector3(0f, 0f, modifier);
 					}
 
 					if (Game.IsControlPressed(0, Control.CursorScrollDown) || Game.IsControlPressed(0, Control.FrontendLb))
 					{
-						_snappedMarker.Rotation = _snappedMarker.Rotation - new Vector3(0f, 0f, modifier);
+						_snappedMarker.Rotation = _snappedMarker.Rotation + new Vector3(0f, 0f, modifier);
 					}
 
 					if (Game.IsControlJustPressed(0, Control.CreatorDelete))
@@ -1150,6 +1207,12 @@ namespace MapEditor
 							    if (_settings.DrawDistance != -1)
 							        _snappedProp.LodDistance = _settings.DrawDistance;
 
+							    if (PropStreamer.StaticProps.Contains(hitEnt.Handle))
+							    {
+							        _snappedProp.FreezePosition = true;
+                                    PropStreamer.StaticProps.Add(_snappedProp.Handle);
+							    }
+
 								if(!PropStreamer.ActiveScenarios.ContainsKey(_snappedProp.Handle))
 									PropStreamer.ActiveScenarios.Add(_snappedProp.Handle, "None");
 
@@ -1248,7 +1311,6 @@ namespace MapEditor
                 var modelDims = _selectedProp.Model.GetDimensions();
                 Function.Call(Hash.DRAW_MARKER, 0, _selectedProp.Position.X, _selectedProp.Position.Y, _selectedProp.Position.Z + modelDims.Z + 2f, 0f, 0f, 0f, 0f, 0f, 0f, 2f, 2f, 2f, tmp.R, tmp.G, tmp.B, tmp.A, 1, 0, 2, 2, 0, 0, 0);
                 
-                // TODO: Draw box
                 DrawEntityBox(_selectedProp, tmp);
 
 	            if (Game.IsControlJustReleased(0, Control.Duck))
@@ -1265,11 +1327,13 @@ namespace MapEditor
 	                else
 	                {
 						Quaternion oldq = Quaternion.GetEntityQuaternion(_selectedProp);
-						GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(0f, 0f, modifier * 0.01f);
+						GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(0f, 0f, modifier * -0.01f);
 						GTA.Math.Quaternion entQ = new GTA.Math.Quaternion(oldq.X, oldq.Y, oldq.Z, oldq.W);
 						GTA.Math.Quaternion newQuaternion = tmpQ * entQ;
 						Quaternion.SetEntityQuaternion(_selectedProp, newQuaternion);
-					}
+                        if (IsPed(_selectedProp))
+                            _selectedProp.Heading = _selectedProp.Rotation.Z;
+                    }
                     _changesMade++;
                 }
                 if (Game.IsControlPressed(0, Control.FrontendLb))
@@ -1282,11 +1346,13 @@ namespace MapEditor
 	                else
 	                {
 						Quaternion oldq = Quaternion.GetEntityQuaternion(_selectedProp);
-						GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(0f, 0f, modifier * -0.01f);
+						GTA.Math.Quaternion tmpQ = GTA.Math.Quaternion.RotationYawPitchRoll(0f, 0f, modifier * 0.01f);
 						GTA.Math.Quaternion entQ = new GTA.Math.Quaternion(oldq.X, oldq.Y, oldq.Z, oldq.W);
 						GTA.Math.Quaternion newQuaternion = tmpQ * entQ;
 						Quaternion.SetEntityQuaternion(_selectedProp, newQuaternion);
-					}
+                        if (IsPed(_selectedProp))
+	                        _selectedProp.Heading = _selectedProp.Rotation.Z;
+	                }
                     _changesMade++;
                 }
 				
@@ -1307,7 +1373,8 @@ namespace MapEditor
 						GTA.Math.Quaternion entQ = new GTA.Math.Quaternion(oldq.X, oldq.Y, oldq.Z, oldq.W);
 						GTA.Math.Quaternion newQuaternion = tmpQ * entQ;
 						Quaternion.SetEntityQuaternion(_selectedProp, newQuaternion);
-					}
+                        
+                    }
                     _changesMade++;
                 }
                 if (Game.IsControlPressed(0, Control.MoveDownOnly))
@@ -1656,7 +1723,7 @@ namespace MapEditor
 					sender.MenuItems[index].SetRightLabel("~r~Invalid");
 	            switch (_currentObjectType)
 	            {
-					case ObjectTypes.Prop:
+                    case ObjectTypes.Prop:
 						_previewProp = World.CreateProp(tmpModel, _objectPreviewPos, false, false);
 						break;
 					case ObjectTypes.Vehicle:
@@ -1666,7 +1733,13 @@ namespace MapEditor
 			            _previewProp = World.CreatePed(tmpModel, _objectPreviewPos);
 			            break;
 	            }
-				if(_previewProp != null) _previewProp.FreezePosition = true;
+                if (_previewProp != null)
+                {
+                    _previewProp.FreezePosition = true;
+                    _previewProp.Rotation = new Vector3(0, 0, 180f);
+                    if (_previewProp.Model.IsPed)
+                        _previewProp.Heading = 180f;
+                }
             }
         }
 
@@ -1676,19 +1749,21 @@ namespace MapEditor
             if (PropStreamer.EntityCount == 0)
                 _lastAutosave = DateTime.Now;
 
+            _quitWithSearchVisible = _searchMenu.Visible;
+
 	        switch (_currentObjectType)
 	        {
 			    case ObjectTypes.Prop:
-					objectHash = ObjectDatabase.MainDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
+					objectHash = _searchMenu.Visible ? ObjectDatabase.MainDb[_searchMenu.MenuItems[_searchMenu.CurrentSelection].Text] : ObjectDatabase.MainDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
                     AddItemToEntityMenu(_snappedProp = PropStreamer.CreateProp(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), new Vector3(0, 0, 0), false, force: true, drawDistance: _settings.DrawDistance));
 					break;
 				case ObjectTypes.Vehicle:
-			        objectHash = ObjectDatabase.VehicleDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
+                    objectHash = _searchMenu.Visible ? ObjectDatabase.VehicleDb[_searchMenu.MenuItems[_searchMenu.CurrentSelection].Text] : ObjectDatabase.VehicleDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
 			        AddItemToEntityMenu(_snappedProp = PropStreamer.CreateVehicle(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true, drawDistance: _settings.DrawDistance));
 					break;
 				case ObjectTypes.Ped:
-					objectHash = ObjectDatabase.PedDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
-			        AddItemToEntityMenu(_snappedProp = PropStreamer.CreatePed(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true, drawDistance: _settings.DrawDistance));
+                    objectHash = _searchMenu.Visible ? ObjectDatabase.PedDb[_searchMenu.MenuItems[_searchMenu.CurrentSelection].Text] : ObjectDatabase.PedDb[_objectsMenu.MenuItems[_objectsMenu.CurrentSelection].Text];
+                    AddItemToEntityMenu(_snappedProp = PropStreamer.CreatePed(ObjectPreview.LoadObject(objectHash), VectorExtensions.RaycastEverything(new Vector2(0f, 0f)), 0f, true, drawDistance: _settings.DrawDistance));
 					PropStreamer.ActiveScenarios.Add(_snappedProp.Handle, "None");
 					PropStreamer.ActiveRelationships.Add(_snappedProp.Handle, DefaultRelationship.ToString());
 					PropStreamer.ActiveWeapons.Add(_snappedProp.Handle, WeaponHash.Unarmed);
@@ -1696,76 +1771,76 @@ namespace MapEditor
 	        }
             _isChoosingObject = false;
             _objectsMenu.Visible = false;
+            _searchMenu.Visible = false;
 			_previewProp?.Delete();
             _changesMade++;
         }
 
-        private void RedrawObjectsMenu(string searchQuery = null, ObjectTypes type = ObjectTypes.Prop)
+        private void RedrawObjectsMenu(ObjectTypes type = ObjectTypes.Prop)
         {
             _objectsMenu.Clear();
-            if (searchQuery == null)
-            {
-	            switch (type)
-	            {
-					case ObjectTypes.Prop:
-						foreach (var u in ObjectDatabase.MainDb)
-						{
-							var object1 = new UIMenuItem(u.Key);
-							if(ObjectDatabase.InvalidHashes.Contains(u.Value))
-								object1.SetRightLabel("~r~Invalid");
-							_objectsMenu.AddItem(object1);
-						}
-			            break;
-					case ObjectTypes.Vehicle:
-						foreach (var u in ObjectDatabase.VehicleDb)
-						{
-							var object1 = new UIMenuItem(u.Key);
-							_objectsMenu.AddItem(object1);
-						}
-						break;
-					case ObjectTypes.Ped:
-						foreach (var u in ObjectDatabase.PedDb)
-						{
-							var object1 = new UIMenuItem(u.Key);
-							_objectsMenu.AddItem(object1);
-						}
-						break;
-				}
-                _objectsMenu.RefreshIndex();
-            }
-            else
-            {
-	            switch (type)
-	            {
-			        case ObjectTypes.Prop:
-							foreach (var u in ObjectDatabase.MainDb.Where(pair => CultureInfo.InvariantCulture.CompareInfo.IndexOf(pair.Key, searchQuery, CompareOptions.IgnoreCase) >= 0))
-							{
-								var object1 = new UIMenuItem(u.Key);
-								if (ObjectDatabase.InvalidHashes.Contains(u.Value))
-									object1.SetRightLabel("~r~Invalid");
-								_objectsMenu.AddItem(object1);
-							}
-			            break;
-					case ObjectTypes.Vehicle:
-						foreach (var u in ObjectDatabase.VehicleDb.Where(pair => CultureInfo.InvariantCulture.CompareInfo.IndexOf(pair.Key, searchQuery, CompareOptions.IgnoreCase) >= 0))
-						{
-							var object1 = new UIMenuItem(u.Key);
-							_objectsMenu.AddItem(object1);
-						}
-						break;
-					case ObjectTypes.Ped:
-						foreach (var u in ObjectDatabase.PedDb.Where(pair => CultureInfo.InvariantCulture.CompareInfo.IndexOf(pair.Key, searchQuery, CompareOptions.IgnoreCase) >= 0))
-						{
-							var object1 = new UIMenuItem(u.Key);
-							_objectsMenu.AddItem(object1);
-						}
-						break;
-				}
-                _objectsMenu.RefreshIndex();
-            }
+	        switch (type)
+	        {
+				case ObjectTypes.Prop:
+					foreach (var u in ObjectDatabase.MainDb)
+					{
+						var object1 = new UIMenuItem(u.Key);
+						if(ObjectDatabase.InvalidHashes.Contains(u.Value))
+							object1.SetRightLabel("~r~Invalid");
+						_objectsMenu.AddItem(object1);
+					}
+			        break;
+				case ObjectTypes.Vehicle:
+					foreach (var u in ObjectDatabase.VehicleDb)
+					{
+						var object1 = new UIMenuItem(u.Key);
+						_objectsMenu.AddItem(object1);
+					}
+					break;
+				case ObjectTypes.Ped:
+					foreach (var u in ObjectDatabase.PedDb)
+					{
+						var object1 = new UIMenuItem(u.Key);
+						_objectsMenu.AddItem(object1);
+					}
+					break;
+			}
+            _objectsMenu.RefreshIndex();
         }
 
-	    private void RedrawFormatMenu()
+        private void RedrawSearchMenu(string searchQuery, ObjectTypes type = ObjectTypes.Prop)
+        {
+            _searchMenu.Clear();
+            switch (type)
+            {
+                case ObjectTypes.Prop:
+                    foreach (var u in ObjectDatabase.MainDb.Where(pair => CultureInfo.InvariantCulture.CompareInfo.IndexOf(pair.Key, searchQuery, CompareOptions.IgnoreCase) >= 0))
+                    {
+                        var object1 = new UIMenuItem(u.Key);
+                        if (ObjectDatabase.InvalidHashes.Contains(u.Value))
+                            object1.SetRightLabel("~r~Invalid");
+                        _searchMenu.AddItem(object1);
+                    }
+                    break;
+                case ObjectTypes.Vehicle:
+                    foreach (var u in ObjectDatabase.VehicleDb.Where(pair => CultureInfo.InvariantCulture.CompareInfo.IndexOf(pair.Key, searchQuery, CompareOptions.IgnoreCase) >= 0))
+                    {
+                        var object1 = new UIMenuItem(u.Key);
+                        _searchMenu.AddItem(object1);
+                    }
+                    break;
+                case ObjectTypes.Ped:
+                    foreach (var u in ObjectDatabase.PedDb.Where(pair => CultureInfo.InvariantCulture.CompareInfo.IndexOf(pair.Key, searchQuery, CompareOptions.IgnoreCase) >= 0))
+                    {
+                        var object1 = new UIMenuItem(u.Key);
+                        _searchMenu.AddItem(object1);
+                    }
+                    break;
+            }
+            _searchMenu.RefreshIndex();
+        }
+
+        private void RedrawFormatMenu()
 	    {
 			_formatMenu.Clear();
 			_formatMenu.AddItem(new UIMenuItem("XML", Translation.Translate("Default format for Map Editor. Choose this one if you have no idea. This saves props, vehicles and peds.")));
@@ -1778,7 +1853,10 @@ namespace MapEditor
 			    _formatMenu.AddItem(new UIMenuItem(Translation.Translate("Raw"),
 				Translation.Translate("Writes the entity and their position and rotation. Useful for taking coordinates.")));
 		    }
-		    _formatMenu.RefreshIndex();
+            _formatMenu.AddItem(new UIMenuItem("Spooner (Legacy)",
+                Translation.Translate("Format used in Object Spooner mod (.SP00N).")));
+            _formatMenu.AddItem(new UIMenuItem("Menyoo", Translation.Translate("Format used in Meynoo mod (.xml).")));
+            _formatMenu.RefreshIndex();
 		}
 
 	    private readonly Scaleform _scaleform;
@@ -2115,21 +2193,34 @@ namespace MapEditor
 
 		}
 
+        public static bool IsPed(Entity ent)
+        {
+            return Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent);
+        }
+
 		public void ValidateDatabase()
 	    {
 		    // Validate object list.
 		    Dictionary<string, int> tmpDict = new Dictionary<string, int>();
-
 		    int counter = 0;
 		    while (counter < ObjectDatabase.MainDb.Count)
 		    {
 			    var pair = ObjectDatabase.MainDb.ElementAt(counter);
 			    counter++;
-			    new UIResText((counter) + "/" + ObjectDatabase.MainDb.Count + " done. (" + (counter/(float) ObjectDatabase.MainDb.Count)*100 +
-				    "%)\nValid objects: " + tmpDict.Count, new Point(200, 200), 0.5f).Draw();
-			    Yield();
-			    if (!new Model(pair.Value).IsValid || !new Model(pair.Value).IsInCdImage) continue;
-			    if (!tmpDict.ContainsKey(pair.Key))
+		        UI.ShowSubtitle((counter) + "/" + ObjectDatabase.MainDb.Count + " done. (" +
+		            (counter/(float) ObjectDatabase.MainDb.Count)*100 +
+		            "%)\nValid objects: " + tmpDict.Count, 2000);
+                Yield();
+			    
+		        var model = new Model(pair.Value);
+		        model.Request(100);
+		        if (!model.IsLoaded)
+		        {
+                    model.MarkAsNoLongerNeeded();
+		            continue;
+		        }
+                model.MarkAsNoLongerNeeded();
+                if (!tmpDict.ContainsKey(pair.Key))
 				    tmpDict.Add(pair.Key, pair.Value);
 		    }
 			string output = tmpDict.Aggregate("", (current, pair) => current + (pair.Key + "=" + pair.Value + "\r\n"));
@@ -2190,7 +2281,7 @@ namespace MapEditor
 		    var found = _currentObjectsMenu.MenuItems.FirstOrDefault(item => item.Description == id.ToString());
 			if(found == null) return;
 			_currentObjectsMenu.RemoveItemAt(_currentObjectsMenu.MenuItems.IndexOf(found));
-		    if (_currentObjectsMenu.Size != 0)
+		    if (_currentObjectsMenu.MenuItems.Count > 0)
 			    _currentObjectsMenu.RefreshIndex();
 		    else
 			    _currentObjectsMenu.Visible = false;
@@ -2209,15 +2300,16 @@ namespace MapEditor
 
 		public void OnEntityTeleport(UIMenu menu, UIMenuItem item, int index)
 	    {
+            if (!_isInFreecam) return;
 		    if (item.Text.StartsWith("~h~[WORLD]~h~ "))
 		    {
 			    var mapObj = PropStreamer.RemovedObjects.FirstOrDefault(obj => obj.Id == int.Parse(item.Description, CultureInfo.InvariantCulture));
 				if(mapObj == null) return;
 			    var t = World.CreateProp(mapObj.Hash, mapObj.Position, mapObj.Rotation, true, false);
 			    t.Position = mapObj.Position;
+				_menuPool.CloseAllMenus();
 				RemoveItemFromEntityMenu(mapObj.Id);
 			    PropStreamer.RemovedObjects.Remove(mapObj);
-				_menuPool.CloseAllMenus();
 			    return;
 		    }
 			if (item.Text.StartsWith("~h~[MARK]~h~ "))
@@ -2235,9 +2327,11 @@ namespace MapEditor
 			}
 		    var prop = new Prop(int.Parse(item.Description, CultureInfo.InvariantCulture));
 			if(!prop.Exists()) return;
-		    _mainCamera.Position = prop.Position + new Vector3(5f, 5f, 10f);
-			if(_settings.SnapCameraToSelectedObject)
+		    if (_settings.SnapCameraToSelectedObject)
+		    {
+		        _mainCamera.Position = prop.Position + new Vector3(5f, 5f, 10f);
 				_mainCamera.PointAt(prop);
+		    }
 			_menuPool.CloseAllMenus();
 			_selectedProp = prop;
 			RedrawObjectInfoMenu(_selectedProp);

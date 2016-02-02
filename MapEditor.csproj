@@ -58,6 +58,7 @@
     <Compile Include="MapObject.cs" />
     <Compile Include="MapSerializer.cs" />
     <Compile Include="Marker.cs" />
+    <Compile Include="MenyooCompatibility.cs" />
     <Compile Include="ObjectDatabase.cs" />
     <Compile Include="ObjectPreview.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

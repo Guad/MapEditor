@@ -8,6 +8,8 @@ namespace MapEditor
 {
     public static class ObjectPreview
     {
+        private static int globalCounter = 0;
+
         public static Model LoadObject(int hash)
         {
             int counter = 0;
@@ -24,13 +26,13 @@ namespace MapEditor
 		        }
 		        return null;
 	        }
-
+            globalCounter++;
 			while (!m.IsLoaded && counter < 200)
 			{
                 m.Request();
                 Script.Yield();
                 counter++;
-                new UIResText("LOADING . . .", new Point(wid, hei), 2f, Color.White, GTA.Font.Pricedown, UIResText.Alignment.Centered).Draw();
+                new UIResText("LOADING . . . " + globalCounter, new Point(wid, hei), 2f, Color.White, GTA.Font.Pricedown, UIResText.Alignment.Centered).Draw();
             }
             return m;
         }

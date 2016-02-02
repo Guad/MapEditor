@@ -4,6 +4,22 @@ namespace MapEditor
 {
 	public class Settings
 	{
+	    public Settings()
+	    {
+	        CameraSensivity = 30;
+	        GamepadCameraSensitivity = 5;
+	        KeyboardMovementSensitivity = 30;
+	        GamepadMovementSensitivity = 15;
+	        Gamepad = true;
+	        InstructionalButtons = true;
+	        CrosshairType = MapEditor.CrosshairType.Crosshair;
+	        PropCounterDisplay = true;
+	        SnapCameraToSelectedObject = true;
+	        ActivationKey = Keys.F7;
+	        AutosaveInterval = 5;
+	        DrawDistance = -1;
+	    }
+
 		public bool Gamepad;
 		public MapEditor.CrosshairType CrosshairType;
 		public int CameraSensivity;

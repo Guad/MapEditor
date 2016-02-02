@@ -45,15 +45,18 @@ namespace MapEditor
 		public static int EntityCount => StreamedInHandles.Count + MemoryObjects.Count + Vehicles.Count + Peds.Count;
 
 		public static List<MapObject> RemovedObjects = new List<MapObject>();
-
-		public static Prop CreateProp(Model model, Vector3 position, Vector3 rotation, bool dynamic, Quaternion q = null, bool force = false, int drawDistance = -1)
+        
+        public static Prop CreateProp(Model model, Vector3 position, Vector3 rotation, bool dynamic, Quaternion q = null, bool force = false, int drawDistance = -1)
 		{
-			
 			if (StreamedInHandles.Count >= MAX_OBJECTS)
 			{
 				UI.Notify("~r~~h~Map Editor~h~~w~\nYou have reached the prop limit. You cannot place any more props.");
 				return null;
-			} // */
+			} 
+
+            if (PropCount > 0 && PropCount % 249 == 0)
+                Script.Wait(100);
+
 			var prop = World.CreateProp(model, position, rotation, dynamic, false);
 			if (prop == null) return null;
 			StreamedInHandles.Add(prop.Handle);
@@ -68,6 +71,7 @@ namespace MapEditor
 		    if (drawDistance != -1)
 		        prop.LodDistance = drawDistance;
             UsedModels.Add(model.Hash);
+            model.MarkAsNoLongerNeeded();
 			return prop;
 		}
 
@@ -98,6 +102,7 @@ namespace MapEditor
 		    if (drawDistance != -1)
 		        veh.LodDistance = drawDistance;
             UsedModels.Add(model.Hash);
+            model.MarkAsNoLongerNeeded();
             return veh;
 		}
 
@@ -115,6 +120,7 @@ namespace MapEditor
 		    if (drawDistance != -1)
 		        veh.LodDistance = drawDistance;
             UsedModels.Add(model.Hash);
+            model.MarkAsNoLongerNeeded();
             return veh;
 		}
 
@@ -285,8 +291,8 @@ namespace MapEditor
 				if (returnedProp == null || returnedProp.Handle == 0 || StreamedInHandles.Contains(returnedProp.Handle)) continue;
 				returnedProp.Delete();
 			}
-
-			foreach (Marker marker in Markers)
+            
+            foreach (Marker marker in Markers)
 			{
 				Function.Call(Hash.DRAW_MARKER, (int) marker.Type, marker.Position.X, marker.Position.Y, marker.Position.Z, 0f, 0f, 0f,
 				 marker.Rotation.X, marker.Rotation.Y, marker.Rotation.Z, marker.Scale.X, marker.Scale.Y, marker.Scale.Z,

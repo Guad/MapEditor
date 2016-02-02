@@ -7,6 +7,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace MapEditor
 {
@@ -17,6 +18,8 @@ namespace MapEditor
 			NormalXml,
 			SimpleTrainer,
 			CSharpCode,
+            SpoonerLegacy,
+            Menyoo,
 			Raw,
 		}
 
@@ -31,68 +34,144 @@ namespace MapEditor
 					var map = (Map) reader.Deserialize(file);
 					file.Close();
 					return map;
+                case Format.Menyoo:
+                    var spReader = new XmlSerializer(typeof(MenyooCompatibility.SpoonerPlacements));
+                    var spFile = new StreamReader(path);
+			        var spMap = (MenyooCompatibility.SpoonerPlacements) spReader.Deserialize(spFile);
+                    spFile.Close();
+
+                    var outputMap = new Map();
+
+			        foreach (var placement in spMap.Placement)
+			        {
+                        var obj = new MapObject();
+                        switch (placement.Type)
+			            {
+                            case 3: // Props
+			                    {
+                                    obj.Type = ObjectTypes.Prop;
+                                }
+			                    break;
+                            case 1: // Peds
+                                {
+                                    
+                                    obj.Type = ObjectTypes.Ped;
+                                }
+                                break;
+                            case 2: // Vehicles
+                                {
+                                    obj.Type = ObjectTypes.Vehicle;
+                                }
+                                break;
+                        }
+                        obj.Dynamic = placement.Dynamic;
+                        obj.Hash = Convert.ToInt32(placement.ModelHash, 16);
+                        obj.Position = new Vector3(placement.PositionRotation.X, placement.PositionRotation.Y, placement.PositionRotation.Z);
+                        obj.Rotation = new Vector3(placement.PositionRotation.Pitch, placement.PositionRotation.Roll, placement.PositionRotation.Yaw);
+                        outputMap.Objects.Add(obj);
+                    }
+			        return outputMap;
 				case Format.SimpleTrainer:
-					var tmpMap = new Map();
-					string currentSection = "";
-					string oldSection = "";
-					Dictionary<string, string> tmpData = new Dictionary<string, string>();
-					foreach (string line in File.ReadAllLines(path))
-					{
-						if (line.StartsWith("[") && line.EndsWith("]"))
-						{
-							oldSection = currentSection;
-							currentSection = line;
-							tip = currentSection;
-							if (oldSection == "" || oldSection == "[Player]") continue;
-							Vector3 pos = new Vector3(float.Parse(tmpData["x"], CultureInfo.InvariantCulture),
-								float.Parse(tmpData["y"], CultureInfo.InvariantCulture),
-								float.Parse(tmpData["z"], CultureInfo.InvariantCulture));
-							Vector3 rot = new Vector3(float.Parse(tmpData["qz"]), float.Parse(tmpData["qw"]), float.Parse(tmpData["h"]));
-							Quaternion q = new Quaternion()
-							{
-								X = float.Parse(tmpData["qx"]),
-								Y = float.Parse(tmpData["qy"]),
-								Z = float.Parse(tmpData["qz"]),
-								W = float.Parse(tmpData["qw"]),
-							};
-							int mod = Convert.ToInt32(tmpData["Model"], CultureInfo.InvariantCulture);
-							int dyn = Convert.ToInt32(tmpData["Dynamic"], CultureInfo.InvariantCulture);
-							tmpMap.Objects.Add(new MapObject()
-							{
-								Hash = mod,
-								Position = pos,
-								Rotation = rot,
-								Dynamic = dyn == 1,
-								Quaternion = q
-							});
-							tmpData = new Dictionary<string, string>();
-							continue;
-						}
-						if (currentSection == "[Player]") continue;
-						string[] spl = line.Split('=');
-						tmpData.Add(spl[0], spl[1]);
-					}
-					Vector3 lastPos = new Vector3(float.Parse(tmpData["x"], CultureInfo.InvariantCulture),
-						float.Parse(tmpData["y"], CultureInfo.InvariantCulture), float.Parse(tmpData["z"], CultureInfo.InvariantCulture));
-					Vector3 lastRot = new Vector3(float.Parse(tmpData["qz"]), float.Parse(tmpData["qw"]), float.Parse(tmpData["h"]));
-					Quaternion lastQ = new Quaternion()
-					{
-						X = float.Parse(tmpData["qx"]),
-						Y = float.Parse(tmpData["qy"]),
-						Z = float.Parse(tmpData["qz"]),
-						W = float.Parse(tmpData["qw"]),
-					};
-					int lastMod = Convert.ToInt32(tmpData["Model"], CultureInfo.InvariantCulture);
-					int lastDyn = Convert.ToInt32(tmpData["Dynamic"], CultureInfo.InvariantCulture);
-					tmpMap.Objects.Add(new MapObject()
-					{
-						Hash = lastMod,
-						Position = lastPos,
-						Rotation = lastRot,
-						Dynamic = lastDyn == 1,
-						Quaternion = lastQ
-					});
-					return tmpMap;
+			    {
+			        var tmpMap = new Map();
+			        string currentSection = "";
+			        string oldSection = "";
+			        Dictionary<string, string> tmpData = new Dictionary<string, string>();
+			        foreach (string line in File.ReadAllLines(path))
+			        {
+			            if (line.StartsWith("[") && line.EndsWith("]"))
+			            {
+			                oldSection = currentSection;
+			                currentSection = line;
+			                tip = currentSection;
+			                if (oldSection == "" || oldSection == "[Player]") continue;
+			                Vector3 pos = new Vector3(float.Parse(tmpData["x"], CultureInfo.InvariantCulture),
+			                    float.Parse(tmpData["y"], CultureInfo.InvariantCulture),
+			                    float.Parse(tmpData["z"], CultureInfo.InvariantCulture));
+			                Vector3 rot = new Vector3(float.Parse(tmpData["qz"]), float.Parse(tmpData["qw"]), float.Parse(tmpData["h"]));
+			                Quaternion q = new Quaternion()
+			                {
+			                    X = float.Parse(tmpData["qx"]),
+			                    Y = float.Parse(tmpData["qy"]),
+			                    Z = float.Parse(tmpData["qz"]),
+			                    W = float.Parse(tmpData["qw"]),
+			                };
+			                int mod = Convert.ToInt32(tmpData["Model"], CultureInfo.InvariantCulture);
+			                int dyn = Convert.ToInt32(tmpData["Dynamic"], CultureInfo.InvariantCulture);
+			                tmpMap.Objects.Add(new MapObject()
+			                {
+			                    Hash = mod,
+			                    Position = pos,
+			                    Rotation = rot,
+			                    Dynamic = dyn == 1,
+			                    Quaternion = q
+			                });
+			                tmpData = new Dictionary<string, string>();
+			                continue;
+			            }
+			            if (currentSection == "[Player]") continue;
+			            string[] spl = line.Split('=');
+			            tmpData.Add(spl[0], spl[1]);
+			        }
+			        Vector3 lastPos = new Vector3(float.Parse(tmpData["x"], CultureInfo.InvariantCulture),
+			            float.Parse(tmpData["y"], CultureInfo.InvariantCulture), float.Parse(tmpData["z"], CultureInfo.InvariantCulture));
+			        Vector3 lastRot = new Vector3(float.Parse(tmpData["qz"]), float.Parse(tmpData["qw"]), float.Parse(tmpData["h"]));
+			        Quaternion lastQ = new Quaternion()
+			        {
+			            X = float.Parse(tmpData["qx"]),
+			            Y = float.Parse(tmpData["qy"]),
+			            Z = float.Parse(tmpData["qz"]),
+			            W = float.Parse(tmpData["qw"]),
+			        };
+			        int lastMod = Convert.ToInt32(tmpData["Model"], CultureInfo.InvariantCulture);
+			        int lastDyn = Convert.ToInt32(tmpData["Dynamic"], CultureInfo.InvariantCulture);
+			        tmpMap.Objects.Add(new MapObject()
+			        {
+			            Hash = lastMod,
+			            Position = lastPos,
+			            Rotation = lastRot,
+			            Dynamic = lastDyn == 1,
+			            Quaternion = lastQ
+			        });
+			        return tmpMap;
+			    }
+                case Format.SpoonerLegacy:
+			    {
+                        var tmpMap = new Map();
+                        string currentSection = "";
+                        string oldSection = "";
+                        Dictionary<string, string> tmpData = new Dictionary<string, string>();
+                        foreach (string line in File.ReadAllLines(path))
+                        {
+                            if (line.StartsWith("[") && line.EndsWith("]"))
+                            {
+                                oldSection = currentSection;
+                                currentSection = line;
+                                tip = currentSection;
+                                if (!tmpData.ContainsKey("Type")) continue;
+                                Vector3 pos = new Vector3(float.Parse(tmpData["X"], CultureInfo.InvariantCulture),
+                                    float.Parse(tmpData["Y"], CultureInfo.InvariantCulture),
+                                    float.Parse(tmpData["Z"], CultureInfo.InvariantCulture));
+                                Vector3 rot = new Vector3(float.Parse(tmpData["Pitch"]), float.Parse(tmpData["Roll"]), float.Parse(tmpData["Yaw"]));
+                                
+                                int mod = Convert.ToInt32("0x" + tmpData["Hash"], 16);
+                                tmpMap.Objects.Add(new MapObject()
+                                {
+                                    Hash = mod,
+                                    Position = pos,
+                                    Rotation = rot,
+                                    Type = tmpData["Type"] == "1" ? ObjectTypes.Ped : tmpData["Type"] == "2" ? ObjectTypes.Vehicle : ObjectTypes.Prop,
+                                });
+                                tmpData = new Dictionary<string, string>();
+                                continue;
+                            }
+                            string[] spl = line.Split('=');
+                            if (spl.Length >= 2)
+                                tmpData.Add(spl[0].Trim(), spl[1].Trim());
+                        }
+                        return tmpMap;
+                    }
+			        break;
 				default:
 					throw new NotImplementedException("This is not implemented yet.");
 			}
@@ -136,6 +215,26 @@ namespace MapEditor
 					}
 					File.WriteAllText(path, mainOutput);
 					break;
+                case Format.SpoonerLegacy:
+			        string main = "";
+                    int c = 1;
+                    for (int i = 0; i < map.Objects.Count; i++)
+                    {
+                        if (map.Objects[i].Position == new Vector3(0, 0, 0)) continue;
+                        main += "[" + c + "]\r\n";
+                        main += "Type = " + (map.Objects[i].Type == ObjectTypes.Ped ? 1 : map.Objects[i].Type == ObjectTypes.Vehicle ? 2 : 3) + "\r\n";
+                        main += "Hash = " + map.Objects[i].Hash.ToString("x8") + "\r\n";
+                        main += "X = " + map.Objects[i].Position.X.ToString(CultureInfo.InvariantCulture) + "\r\n";
+                        main += "Y = " + map.Objects[i].Position.Y.ToString(CultureInfo.InvariantCulture) + "\r\n";
+                        main += "Z = " + map.Objects[i].Position.Z.ToString(CultureInfo.InvariantCulture) + "\r\n";
+                        main += "Pitch = " + map.Objects[i].Rotation.X.ToString(CultureInfo.InvariantCulture) + "\r\n";
+                        main += "Roll = " + map.Objects[i].Rotation.Y.ToString(CultureInfo.InvariantCulture) + "\r\n";
+                        main += "Yaw = " + map.Objects[i].Rotation.Z.ToString(CultureInfo.InvariantCulture) + "\r\n";
+                        main += "Opacity = 0x000000ff\r\n";
+                        c++;
+                    }
+                    File.WriteAllText(path, main);
+                    break;
 				case Format.CSharpCode:
 					string output = "";
 					foreach (var prop in map.Objects)
@@ -145,7 +244,7 @@ namespace MapEditor
 
 						if (prop.Type == ObjectTypes.Vehicle)
 						{
-							cmd = String.Format("GTA.World.CreateVehicle(new Model({0}) new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);",
+							cmd = String.Format("GTA.World.CreateVehicle(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);",
 								prop.Hash,
 								prop.Position.X,
 								prop.Position.Y,
@@ -216,7 +315,34 @@ namespace MapEditor
 					}
 					File.WriteAllText(path, flush);
 					break;
-			}
+                case Format.Menyoo:
+                    XmlSerializer menSer = new XmlSerializer(typeof(MenyooCompatibility.SpoonerPlacements));
+                    map.Objects.RemoveAll(mo => mo.Position == new Vector3(0, 0, 0));
+                    var menObj = new MenyooCompatibility.SpoonerPlacements();
+
+			        foreach (var o in map.Objects)
+			        {
+                        var pl = new MenyooCompatibility.Placement();
+                        pl.Type = o.Type == ObjectTypes.Ped ? 1 : o.Type == ObjectTypes.Vehicle ? 2 : 3;
+                        pl.Dynamic = o.Dynamic;
+			            pl.ModelHash = "0x" + o.Hash.ToString("x8");
+                        pl.PositionRotation = new MenyooCompatibility.PositionRotation()
+                        {
+                            X = o.Position.X,
+                            Y = o.Position.Y,
+                            Z = o.Position.Z,
+                            Pitch = o.Rotation.X,
+                            Roll = o.Rotation.Y,
+                            Yaw = o.Rotation.Z,
+                        };
+                        menObj.Placement.Add(pl);
+			        }
+
+                    var menF = new StreamWriter(path);
+                    menSer.Serialize(menF, menObj);
+                    menF.Close();
+                    break;
+            }
 		}
 	}
 }

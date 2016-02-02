@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Text;
 using GTA;
 using GTA.Native;
 using NativeUI;
@@ -47,19 +48,46 @@ namespace MapEditor
 				if (PedDb.ContainsKey(ped)) continue;
 				PedDb.Add(ped, (int)hash);
 			}
+
+            WriteEnumDatabase();
 		}
 
-		internal static void LoadFromFile(string path)
+        internal static void WriteEnumDatabase()
         {
-            MainDb = new Dictionary<string, int>();
+            StringBuilder sb = new StringBuilder();
+            foreach (var pair in PedDb)
+            {
+                sb.Append(pair.Key + "=" + pair.Value + Environment.NewLine);
+            }
+            File.WriteAllText("scripts\\PedList.ini", sb.ToString());
+
+            sb = new StringBuilder();
+
+            foreach (var pair in VehicleDb)
+            {
+                sb.Append(pair.Key + "=" + pair.Value + Environment.NewLine);
+            }
+            File.WriteAllText("scripts\\VehicleList.ini", sb.ToString());
+        }
+
+		internal static void LoadFromFile(string path, ref Dictionary<string, int> dictToLoadto)
+        {
+            dictToLoadto = new Dictionary<string, int>();
             string[] lines = File.ReadAllLines(path);
             foreach (string line in lines)
             {
                 string[] s = line.Split('=');
-                if(MainDb.ContainsKey(s[0])) continue;
-                //int val = unchecked((int)Convert.ToUInt32(s[1], 16));
-                int val = Convert.ToInt32(s[1]);
-                MainDb.Add(s[0], val);
+                if(dictToLoadto.ContainsKey(s[0])) continue;
+
+                if (s.Length == 1)
+                {
+                    dictToLoadto.Add(s[0], new Model(s[0]).Hash);
+                }
+                else
+                {
+                    int val = Convert.ToInt32(s[1]);
+                    dictToLoadto.Add(s[0], val);
+                }
             }
         }
 
