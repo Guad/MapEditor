@@ -202,6 +202,17 @@ namespace MapEditor
             }
         }
 
+        public void MoveProp(Prop prop, Vector3 newPos, Vector3 newRot, int duration)
+        {
+            var start = Game.GameTime;
+            while (Game.GameTime - start <= duration)
+            {
+                prop.Position = NativeUI.MiscExtensions.LinearVectorLerp(prop.Position, newPos, Game.GameTime - start, duration);
+                prop.Rotation = NativeUI.MiscExtensions.LinearVectorLerp(prop.Rotation, newRot, Game.GameTime - start, duration);
+                Script.Yield();
+            }
+        }
+
         public event EventHandler OnDispose;
         public event EventHandler OnTick;
         public event KeyEventHandler OnKeyDown;
