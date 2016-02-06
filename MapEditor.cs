@@ -662,9 +662,9 @@ namespace MapEditor
 			    }
 
 		        if (_settings.LoadScripts && format == MapSerializer.Format.NormalXml &&
-		            File.Exists(Path.GetFileNameWithoutExtension(filename) + ".js"))
+		            File.Exists(new FileInfo(filename).Directory.FullName + "\\" + Path.GetFileNameWithoutExtension(filename) + ".js"))
 		        {
-                    JavascriptHook.StartScript(File.ReadAllText(Path.GetFileNameWithoutExtension(filename) + ".js"), handles);
+                    JavascriptHook.StartScript(File.ReadAllText(new FileInfo(filename).Directory.FullName + "\\" + Path.GetFileNameWithoutExtension(filename) + ".js"), handles);
 		        }
                 
 			    UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("Loaded map") + " ~h~" + filename + "~h~.");

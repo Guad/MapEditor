@@ -83,7 +83,7 @@ namespace MapEditor
             scriptEngine.AddHostType("List", typeof(IList));
             scriptEngine.AddHostType("KeyEventArgs", typeof(KeyEventArgs));
             scriptEngine.AddHostType("Keys", typeof(Keys));
-
+            
             foreach (var obj in identEnts)
             {
                 var name = PropStreamer.Identifications[obj];
@@ -211,6 +211,26 @@ namespace MapEditor
                 prop.Rotation = NativeUI.MiscExtensions.LinearVectorLerp(prop.Rotation, newRot, Game.GameTime - start, duration);
                 Script.Yield();
             }
+        }
+
+        public bool IsPed(int ent)
+        {
+            return Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent);
+        }
+
+        public bool IsVehicle(int ent)
+        {
+            return Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, ent);
+        }
+
+        public bool IsProp(int ent)
+        {
+            return Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, ent);
+        }
+
+        public int[] GetCurrentMap()
+        {
+            return PropStreamer.GetAllHandles();
         }
 
         public event EventHandler OnDispose;
