@@ -11,6 +11,7 @@ using GTA.Math;
 using GTA.Native;
 using NativeUI;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 using MapEditor.API;
 using Control = GTA.Control;
@@ -186,9 +187,11 @@ namespace MapEditor
 						World.RenderingCamera = _mainCamera;
                         break;
                     case 1:
+                        JavascriptHook.StopAllScripts();
 						PropStreamer.RemoveAll();
 						PropStreamer.Markers.Clear();
 						_currentObjectsMenu.Clear();
+                        PropStreamer.Identifications.Clear();
 						PropStreamer.ActiveScenarios.Clear();
 						PropStreamer.ActiveRelationships.Clear();
 						PropStreamer.ActiveWeapons.Clear();
@@ -409,6 +412,13 @@ namespace MapEditor
                 SaveSettings();
             };
 
+            var scriptItem = new UIMenuCheckboxItem(Translation.Translate("Execute Scripts"), _settings.LoadScripts);
+            scriptItem.CheckboxEvent += (i, checkd) =>
+            {
+                _settings.LoadScripts = checkd;
+                SaveSettings();
+            };
+
             var validate = new UIMenuItem(Translation.Translate("Validate Object Database"),Translation.Translate(
 				"This will update the current object database, removing any invalid objects. The changes will take effect after you restart the script." +
 				" It will take a couple of minutes."));
@@ -433,6 +443,7 @@ namespace MapEditor
             _settingsMenu.AddItem(butts);
 			_settingsMenu.AddItem(counterItem);
 	        _settingsMenu.AddItem(snapper);
+            _settingsMenu.AddItem(scriptItem);
 			_settingsMenu.AddItem(validate);
 			_settingsMenu.AddItem(resetGrps);
 			_settingsMenu.RefreshIndex();
@@ -536,6 +547,7 @@ namespace MapEditor
 				UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("The filename was empty or the file does not exist!"));
 				return;
 			}
+            var handles = new List<int>();
 			var des = new MapSerializer();
 		    try
 		    {
@@ -548,12 +560,25 @@ namespace MapEditor
 				    switch (o.Type)
 				    {
 					    case ObjectTypes.Prop:
-						    AddItemToEntityMenu(PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation, o.Dynamic, o.Quaternion == new Quaternion() {X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion, drawDistance: _settings.DrawDistance));
+				            var newProp = PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation,
+				                o.Dynamic, o.Quaternion == new Quaternion() {X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion,
+				                drawDistance: _settings.DrawDistance);
+                            AddItemToEntityMenu(newProp);
+				            if (o.Id != null && !PropStreamer.Identifications.ContainsKey(newProp.Handle))
+				            {
+				                PropStreamer.Identifications.Add(newProp.Handle, o.Id);
+                                handles.Add(newProp.Handle);
+				            }
 						    break;
 					    case ObjectTypes.Vehicle:
 						    Vehicle tmpVeh;
 						    AddItemToEntityMenu(tmpVeh = PropStreamer.CreateVehicle(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation.Z, o.Dynamic, drawDistance: _settings.DrawDistance));
-						    if (o.SirensActive)
+				            if (o.Id != null && !PropStreamer.Identifications.ContainsKey(tmpVeh.Handle))
+				            {
+				                PropStreamer.Identifications.Add(tmpVeh.Handle, o.Id);
+				                handles.Add(tmpVeh.Handle);
+				            }
+                            if (o.SirensActive)
 						    {
 							    PropStreamer.ActiveSirens.Add(tmpVeh.Handle);
 							    tmpVeh.SirenActive = true;
@@ -579,7 +604,13 @@ namespace MapEditor
 								}
 							}
 
-						    if (o.Relationship == null)
+				            if (o.Id != null && !PropStreamer.Identifications.ContainsKey(pedid.Handle))
+				            {
+				                PropStreamer.Identifications.Add(pedid.Handle, o.Id);
+				                handles.Add(pedid.Handle);
+				            }
+
+                            if (o.Relationship == null)
 							    PropStreamer.ActiveRelationships.Add(pedid.Handle, DefaultRelationship.ToString());
 						    else
 						    {
@@ -610,7 +641,18 @@ namespace MapEditor
 				    Prop returnedProp = Function.Call<Prop>(Hash.GET_CLOSEST_OBJECT_OF_TYPE, o.Position.X, o.Position.Y,
 					    o.Position.Z, 1f, o.Hash, 0);
 				    if (returnedProp == null || returnedProp.Handle == 0) continue;
-				    returnedProp.Delete();
+                    MapObject tmpObj = new MapObject()
+                    {
+                        Hash = returnedProp.Model.Hash,
+                        Position = returnedProp.Position,
+                        Rotation = returnedProp.Rotation,
+                        Quaternion = Quaternion.GetEntityQuaternion(returnedProp),
+                        Type = ObjectTypes.Prop,
+                        Id = _mapObjCounter.ToString(),
+                    };
+                    _mapObjCounter++;
+                    AddItemToEntityMenu(tmpObj);
+                    returnedProp.Delete();
 			    }
 			    foreach (Marker marker in map2Load.Markers)
 			    {
@@ -618,6 +660,13 @@ namespace MapEditor
 					PropStreamer.Markers.Add(marker);
 					AddItemToEntityMenu(marker);
 			    }
+
+		        if (_settings.LoadScripts && format == MapSerializer.Format.NormalXml &&
+		            File.Exists(Path.GetFileNameWithoutExtension(filename) + ".js"))
+		        {
+                    JavascriptHook.StartScript(File.ReadAllText(Path.GetFileNameWithoutExtension(filename) + ".js"), handles);
+		        }
+                
 			    UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("Loaded map") + " ~h~" + filename + "~h~.");
 		    }
 		    catch (Exception e)
@@ -1077,6 +1126,8 @@ namespace MapEditor
 					{
 						RemoveItemFromEntityMenu(_snappedProp);
 						PropStreamer.RemoveEntity(_snappedProp.Handle);
+					    if (PropStreamer.Identifications.ContainsKey(_snappedProp.Handle))
+					        PropStreamer.Identifications.Remove(_snappedProp.Handle);
 						_snappedProp = null;
                         _changesMade++;
                     }
@@ -1262,7 +1313,9 @@ namespace MapEditor
 						if (hitEnt != null && PropStreamer.GetAllHandles().Contains(hitEnt.Handle))
 						{
 							RemoveItemFromEntityMenu(hitEnt);
-							if (PropStreamer.ActiveScenarios.ContainsKey(hitEnt.Handle))
+                            if (PropStreamer.Identifications.ContainsKey(hitEnt.Handle))
+                                PropStreamer.Identifications.Remove(hitEnt.Handle);
+                            if (PropStreamer.ActiveScenarios.ContainsKey(hitEnt.Handle))
 								PropStreamer.ActiveScenarios.Remove(hitEnt.Handle);
 							if (PropStreamer.ActiveRelationships.ContainsKey(hitEnt.Handle))
 								PropStreamer.ActiveRelationships.Remove(hitEnt.Handle);
@@ -1280,7 +1333,7 @@ namespace MapEditor
 								Rotation = hitEnt.Rotation,
 								Quaternion = Quaternion.GetEntityQuaternion(hitEnt),
 								Type = ObjectTypes.Prop,
-								Id = _mapObjCounter,
+								Id = _mapObjCounter.ToString(),
 							};
 							_mapObjCounter++;
 							PropStreamer.RemovedObjects.Add(tmpObj);
@@ -1492,7 +1545,9 @@ namespace MapEditor
 
 				if (Game.IsControlJustPressed(0, Control.CreatorDelete))
 				{
-					if (PropStreamer.ActiveScenarios.ContainsKey(_selectedProp.Handle))
+                    if (PropStreamer.Identifications.ContainsKey(_selectedProp.Handle))
+                        PropStreamer.Identifications.Remove(_selectedProp.Handle);
+                    if (PropStreamer.ActiveScenarios.ContainsKey(_selectedProp.Handle))
 						PropStreamer.ActiveScenarios.Remove(_selectedProp.Handle);
 					if (PropStreamer.ActiveRelationships.ContainsKey(_selectedProp.Handle))
 						PropStreamer.ActiveRelationships.Remove(_selectedProp.Handle);
@@ -1953,6 +2008,48 @@ namespace MapEditor
 			    ent.FreezePosition = PropStreamer.StaticProps.Contains(ent.Handle);
 		    };
 
+            var ident = new UIMenuItem("Identification", "Optional identification for easier access during scripting.");
+            if (PropStreamer.Identifications.ContainsKey(ent.Handle))
+                ident.SetRightLabel(PropStreamer.Identifications[ent.Handle]);
+
+	        ident.Activated += (sender, item) =>
+	        {
+	            if (PropStreamer.Identifications.ContainsKey(ent.Handle))
+	            {
+                    var newLabel = Game.GetUserInput(PropStreamer.Identifications[ent.Handle], 20);
+	                if (PropStreamer.Identifications.ContainsValue(newLabel))
+	                {
+	                    UI.Notify(Translation.Translate("~r~~h~Map Editor~h~~w~~n~The identification must be unique!"));
+                        return;
+	                }
+
+	                if (newLabel.Length > 0 && (Regex.IsMatch(newLabel, @"^\d") || newLabel.StartsWith(".") || newLabel.StartsWith(",") || newLabel.StartsWith("\\")))
+	                {
+                        UI.Notify(Translation.Translate("~r~~h~Map Editor~h~~w~~n~This identification is invalid!"));
+                        return;
+                    }
+
+	                PropStreamer.Identifications[ent.Handle] = newLabel;
+                    ident.SetRightLabel(newLabel);
+                }
+	            else
+	            {
+	                var newLabel = Game.GetUserInput(20);
+                    if (PropStreamer.Identifications.ContainsValue(newLabel))
+                    {
+                        UI.Notify(Translation.Translate("~r~~h~Map Editor~h~~w~~n~The identification must be unique!"));
+                        return;
+                    }
+                    if (newLabel.Length > 0 && (Regex.IsMatch(newLabel, @"^\d") || newLabel.StartsWith(".") || newLabel.StartsWith(",") || newLabel.StartsWith("\\")))
+                    {
+                        UI.Notify(Translation.Translate("~r~~h~Map Editor~h~~w~~n~This identification is invalid!"));
+                        return;
+                    }
+                    PropStreamer.Identifications.Add(ent.Handle, newLabel);
+                    ident.SetRightLabel(newLabel);
+	            }
+	        };
+
 			_objectInfoMenu.AddItem(posXitem);
 			_objectInfoMenu.AddItem(posYitem);
 			_objectInfoMenu.AddItem(posZitem);
@@ -1960,8 +2057,9 @@ namespace MapEditor
 			_objectInfoMenu.AddItem(rotYitem);
 			_objectInfoMenu.AddItem(rotZitem);
 			_objectInfoMenu.AddItem(dynamic);
-			
-		    if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent.Handle))
+            _objectInfoMenu.AddItem(ident);
+
+            if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent.Handle))
 		    {
 				List<dynamic> actions = new List<dynamic> {"None", "Any - Walk", "Any - Warp"};
 				actions.AddRange(ObjectDatabase.ScrenarioDatabase.Keys);
@@ -2097,7 +2195,10 @@ namespace MapEditor
 				oldRotY = (float)item.IndexToItem(index);
                 _changesMade++;
             };
-		}
+
+            _objectInfoMenu.RefreshIndex();
+
+        }
 
 		private void RedrawObjectInfoMenu(Marker ent)
 		{
@@ -2190,15 +2291,26 @@ namespace MapEditor
 			colorG.OnListChanged += (item, index) => ent.Green = index;
 			colorB.OnListChanged += (item, index) => ent.Blue = index;
 			colorA.OnListChanged += (item, index) => ent.Alpha = index;
+            _objectInfoMenu.RefreshIndex();
 
-		}
+        }
 
         public static bool IsPed(Entity ent)
         {
             return Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent);
         }
 
-		public void ValidateDatabase()
+        public static bool IsVehicle(Entity ent)
+        {
+            return Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, ent);
+        }
+
+        public static bool IsProp(Entity ent)
+        {
+            return Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, ent);
+        }
+
+        public void ValidateDatabase()
 	    {
 		    // Validate object list.
 		    Dictionary<string, int> tmpDict = new Dictionary<string, int>();
@@ -2276,9 +2388,9 @@ namespace MapEditor
 				_currentObjectsMenu.RefreshIndex(); //TODO: fix this, selected item remains after refresh.
 		}
 
-	    public void RemoveItemFromEntityMenu(int id)
+	    public void RemoveItemFromEntityMenu(string id)
 	    {
-		    var found = _currentObjectsMenu.MenuItems.FirstOrDefault(item => item.Description == id.ToString());
+		    var found = _currentObjectsMenu.MenuItems.FirstOrDefault(item => item.Description == id);
 			if(found == null) return;
 			_currentObjectsMenu.RemoveItemAt(_currentObjectsMenu.MenuItems.IndexOf(found));
 		    if (_currentObjectsMenu.MenuItems.Count > 0)
@@ -2303,7 +2415,7 @@ namespace MapEditor
             if (!_isInFreecam) return;
 		    if (item.Text.StartsWith("~h~[WORLD]~h~ "))
 		    {
-			    var mapObj = PropStreamer.RemovedObjects.FirstOrDefault(obj => obj.Id == int.Parse(item.Description, CultureInfo.InvariantCulture));
+			    var mapObj = PropStreamer.RemovedObjects.FirstOrDefault(obj => obj.Id == item.Description);
 				if(mapObj == null) return;
 			    var t = World.CreateProp(mapObj.Hash, mapObj.Position, mapObj.Rotation, true, false);
 			    t.Position = mapObj.Position;

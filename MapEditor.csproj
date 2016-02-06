@@ -33,6 +33,9 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ClearScript">
+      <HintPath>..\..\..\..\..\Program Files\Rockstar Games\Grand Theft Auto V\scripts\ClearScript.dll</HintPath>
+    </Reference>
     <Reference Include="NativeUI">
       <HintPath>..\..\..\..\..\Program Files\Rockstar Games\Grand Theft Auto V\scripts\NativeUI.dll</HintPath>
     </Reference>
@@ -53,6 +56,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API\ModManager.cs" />
+    <Compile Include="JavascriptHook.cs" />
     <Compile Include="Map.cs" />
     <Compile Include="MapEditor.cs" />
     <Compile Include="MapObject.cs" />

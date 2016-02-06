@@ -12,35 +12,31 @@ namespace MapEditor
         public static void Load(string path)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(TranslationFile));
-            _stringList = ((TranslationFile)serializer.Deserialize(System.IO.File.OpenRead(path))).Translations;
+            using (var stream = System.IO.File.OpenRead(path))
+                _stringList = ((TranslationFile)serializer.Deserialize(stream)).Translations;
         }
 
-        public static void Test()
+        public static void Save(string path)
         {
             System.Xml.Serialization.XmlSerializer serializer = new System.Xml.Serialization.XmlSerializer(typeof(TranslationFile));
-            TranslationFile f = new TranslationFile();
-            f.Translations = new List<TranslatedString>
-            {
-                new TranslatedString() { Original = "Enter/Exit Map Editor", Translations = new List<TranslatedPair>
-                {
-                    new TranslatedPair() {Language = Language.Spanish, String = "Enter/Exit Map Editor"},
-                    new TranslatedPair() {Language = Language.American, String = "Salir/Entrar del Editor"},
-                }},
-                new TranslatedString() { Original = "New Map", Translations = new List<TranslatedPair>
-                {
-                    new TranslatedPair() {Language = Language.Spanish, String = "New Map"},
-                    new TranslatedPair() {Language = Language.American, String = "Mapa Nuevo"},
-                }},
-
-            };
-            serializer.Serialize(System.IO.File.OpenWrite(@"C:\Users\Guad\Desktop\ts.xml"), f);
+            using (var stream = System.IO.File.OpenWrite(path))
+                serializer.Serialize(stream, new TranslationFile() { Translations = new List<TranslatedString>(_stringList) });
         }
 
         public static string Translate(string original)
         {
             if (_stringList == null) return original;
             Language currentLanguage = Game.Language;
-            if (_stringList.All(ts => ts.Original != original)) return original;
+            if (_stringList.All(ts => ts.Original != original))
+            {
+                _stringList.Add(new TranslatedString()
+                {
+                    Original = original,
+                    Translations = new List<TranslatedPair>()
+                });
+                Save("scripts\\MapEditor_Translation.xml");
+                return original;
+            }
             var ourTs = _stringList.First(ts => ts.Original == original).Translations;
             return ourTs.FirstOrDefault(pair => pair.Language == currentLanguage)?.String.Replace("~n~", "\n") ?? original;
         }

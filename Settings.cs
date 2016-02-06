@@ -18,6 +18,7 @@ namespace MapEditor
 	        ActivationKey = Keys.F7;
 	        AutosaveInterval = 5;
 	        DrawDistance = -1;
+	        LoadScripts = true;
 	    }
 
 		public bool Gamepad;
@@ -32,6 +33,7 @@ namespace MapEditor
 		public Keys ActivationKey;
 	    public int AutosaveInterval;
 	    public int DrawDistance;
+	    public bool LoadScripts;
 	    public bool? BoundingBox;
 	}
 }

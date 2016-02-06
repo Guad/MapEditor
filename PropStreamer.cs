@@ -29,6 +29,8 @@ namespace MapEditor
 		public static List<int> Vehicles = new List<int>();
 
 		public static List<int> Peds = new List<int>();
+        
+        public static Dictionary<int, string> Identifications = new Dictionary<int, string>();
 
 		public static List<Marker> Markers = new List<Marker>();
 
@@ -205,8 +207,9 @@ namespace MapEditor
 							Position = new Prop(handle).Position,
 							Quaternion = Quaternion.GetEntityQuaternion(new Prop(handle)),
 							Rotation = new Prop(handle).Rotation,
-							Type = ObjectTypes.Prop
-						}).ToList();
+							Type = ObjectTypes.Prop,
+                            Id = (Identifications.ContainsKey(handle) && !string.IsNullOrWhiteSpace(Identifications[handle])) ? Identifications[handle] : null,
+                        }).ToList();
 
 			outList.AddRange(MemoryObjects);
 			Vehicles.ForEach(
@@ -219,7 +222,8 @@ namespace MapEditor
 						Quaternion = Quaternion.GetEntityQuaternion(new Vehicle(v)),
 						Rotation = new Vehicle(v).Rotation,
 						Type = ObjectTypes.Vehicle,
-						SirensActive = ActiveSirens.Contains(v)
+                        Id = (Identifications.ContainsKey(v) && !string.IsNullOrWhiteSpace(Identifications[v])) ? Identifications[v] : null,
+                        SirensActive = ActiveSirens.Contains(v)
 					}));
 
 			Peds.ForEach(v => outList.Add(new MapObject()
@@ -231,7 +235,8 @@ namespace MapEditor
 				Rotation = new Ped(v).Rotation,
 				Type = ObjectTypes.Ped,
 				Action = ActiveScenarios[v],
-				Relationship = ActiveRelationships[v],
+                Id = (Identifications.ContainsKey(v) && !string.IsNullOrWhiteSpace(Identifications[v])) ? Identifications[v] : null,
+                Relationship = ActiveRelationships[v],
 				Weapon = ActiveWeapons[v],
 			}));
 			return outList.ToArray();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Xml.Serialization;
 using GTA;
 using GTA.Math;
 using GTA.Native;
@@ -19,13 +20,19 @@ namespace MapEditor
 		public string Action;
 		public string Relationship;
 		public WeaponHash? Weapon;
-
+	    
 		// Vehicle stuff
 		public bool SirensActive;
 
-		[NonSerialized]
-		public int Id = -1;
+        [XmlAttribute("Id")]
+		public string Id;
 	}
+
+    public class PedDrawables
+    {
+        public int[] Drawables;
+        public int[] Textures;
+    }
 
 	public enum ObjectTypes
 	{
