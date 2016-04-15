@@ -93,8 +93,8 @@ namespace MapEditor
         {
             Tick += OnTick;
             KeyDown += OnKeyDown;
-
-			ObjectDatabase.SetupRelationships();
+            
+            ObjectDatabase.SetupRelationships();
 			LoadSettings();
 		    try
 		    {
@@ -255,15 +255,19 @@ namespace MapEditor
 							SaveMap(filename, MapSerializer.Format.SimpleTrainer);
 							break;
 						case 2: // C#
-							SaveMap(filename, MapSerializer.Format.CSharpCode);
+                            if (!filename.EndsWith(".cs")) filename += ".cs";
+                            SaveMap(filename, MapSerializer.Format.CSharpCode);
 							break;
 						case 3: // Raw
-							SaveMap(filename, MapSerializer.Format.Raw);
+                            if (!filename.EndsWith(".txt")) filename += ".txt";
+                            SaveMap(filename, MapSerializer.Format.Raw);
 							break;
                         case 4: // SpoonerLegacy
+                            if (!filename.EndsWith(".SP00N")) filename += ".SP00N";
                             SaveMap(filename, MapSerializer.Format.SpoonerLegacy);
 			                break;
                         case 5: // Menyoo
+                            if (!filename.EndsWith(".xml")) filename += ".xml";
                             SaveMap(filename, MapSerializer.Format.Menyoo);
                             break;
                     }
@@ -543,8 +547,20 @@ namespace MapEditor
 					LoadMap(filename + ".ini", MapSerializer.Format.SimpleTrainer);
 					return;
 				}
-					
-				UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("The filename was empty or the file does not exist!"));
+
+                if (File.Exists(filename + ".xml") && format == MapSerializer.Format.Menyoo)
+                {
+                    LoadMap(filename + ".xml", MapSerializer.Format.Menyoo);
+                    return;
+                }
+
+                if (File.Exists(filename + ".SP00N") && format == MapSerializer.Format.SpoonerLegacy)
+                {
+                    LoadMap(filename + ".SP00N", MapSerializer.Format.SpoonerLegacy);
+                    return;
+                }
+
+                UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("The filename was empty or the file does not exist!"));
 				return;
 			}
             var handles = new List<int>();
@@ -667,6 +683,8 @@ namespace MapEditor
 			    foreach (Marker marker in map2Load.Markers)
 			    {
 				    if(marker == null) continue;
+			        _markerCounter++;
+			        marker.Id = _markerCounter;
 					PropStreamer.Markers.Add(marker);
 					AddItemToEntityMenu(marker);
 			    }
@@ -693,6 +711,7 @@ namespace MapEditor
 				UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("The filename was empty!"));
 				return;
 			}
+
 			var ser = new MapSerializer();
 			var tmpmap = new Map();
 			try
@@ -2366,7 +2385,7 @@ namespace MapEditor
 		private void RedrawObjectInfoMenu(Marker ent, bool refreshIndex)
 		{
 			if (ent == null) return;
-			string name = ent.Type.ToString();
+			string name = ent.Type.ToString() + " #" + ent.Id;
 
 			_objectInfoMenu.Subtitle.Caption = "~b~" + name;
 			_objectInfoMenu.Clear();
@@ -2420,6 +2439,30 @@ namespace MapEditor
 			var colorB = new UIMenuListItem(Translation.Translate("Blue Color"), possibleColors, ent.Blue);
 			var colorA = new UIMenuListItem(Translation.Translate("Transparency"), possibleColors, ent.Alpha);
 
+		    var targetId = 0;
+
+		    if (ent.TeleportTarget.HasValue)
+		    {
+		        var ourMarkers =
+		            PropStreamer.Markers.Where(m => (m.Position - ent.TeleportTarget.Value).Length() < 1f)
+		                .OrderBy(m => (m.Position - ent.TeleportTarget.Value).Length());
+		        if (ourMarkers.Any())
+		            targetId = ourMarkers.First().Id + 1;
+		    }
+
+		    var targetPos = new UIMenuListItem(Translation.Translate("Teleport Marker Target"),
+		        Enumerable.Range(-1, _markerCounter + 1).Select(n => (dynamic) n).ToList(), targetId);
+		    targetPos.OnListChanged += (sender, index) =>
+		    {
+		        if (index == 0)
+		        {
+		            ent.TeleportTarget = null;
+                    return;
+		        }
+
+		        ent.TeleportTarget = PropStreamer.Markers.FirstOrDefault(n => n.Id == index-1)?.Position;
+		    };
+
 			_objectInfoMenu.AddItem(type);
 			_objectInfoMenu.AddItem(posXitem);
 			_objectInfoMenu.AddItem(posYitem);
@@ -2436,9 +2479,10 @@ namespace MapEditor
 			_objectInfoMenu.AddItem(colorA);
 			_objectInfoMenu.AddItem(dynamic);
 			_objectInfoMenu.AddItem(faceCam);
+            _objectInfoMenu.AddItem(targetPos);
 
 
-			posXitem.OnListChanged += (item, index) => ent.Position = new Vector3((float)item.IndexToItem(index), ent.Position.Y, ent.Position.Z);
+            posXitem.OnListChanged += (item, index) => ent.Position = new Vector3((float)item.IndexToItem(index), ent.Position.Y, ent.Position.Z);
 			posYitem.OnListChanged += (item, index) => ent.Position = new Vector3(ent.Position.X, (float)item.IndexToItem(index), ent.Position.Z);
 			posZitem.OnListChanged += (item, index) => ent.Position = new Vector3(ent.Position.X, ent.Position.Y, (float)item.IndexToItem(index));
 

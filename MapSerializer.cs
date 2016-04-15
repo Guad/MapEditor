@@ -236,15 +236,20 @@ namespace MapEditor
                     File.WriteAllText(path, main);
                     break;
 				case Format.CSharpCode:
-					string output = "";
+			        string vehicles = "";
+			        string peds = "";
+			        string props = "";
+			        string markers = "";
+			        string pickups = "";
+			        string removedFromWorld = "            Prop returnedProp;\r\n";
+
 					foreach (var prop in map.Objects)
 					{
 						if (prop.Position == new Vector3(0, 0, 0)) continue;
-						string cmd = "";
-
+                        
 						if (prop.Type == ObjectTypes.Vehicle)
 						{
-							cmd = String.Format("GTA.World.CreateVehicle(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);",
+							vehicles += String.Format("               GTA.World.CreateVehicle(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);\r\n",
 								prop.Hash,
 								prop.Position.X,
 								prop.Position.Y,
@@ -252,9 +257,9 @@ namespace MapEditor
 								prop.Rotation.Z
 							);
 						}
-						if (prop.Type == ObjectTypes.Ped)
+						else if (prop.Type == ObjectTypes.Ped)
 						{
-							cmd = String.Format("GTA.World.CreatePed(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);",
+							peds += String.Format("               GTA.World.CreatePed(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);\r\n",
 								prop.Hash,
 								prop.Position.X,
 								prop.Position.Y,
@@ -262,9 +267,9 @@ namespace MapEditor
 								prop.Rotation.Z
 							);
 						}
-						if (prop.Type == ObjectTypes.Prop)
+						else if (prop.Type == ObjectTypes.Prop)
 						{
-							cmd = String.Format("GTA.World.CreateProp(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), new GTA.Math.Vector3({4}f, {5}f, {6}f), false, false);",
+							props += String.Format("               Props.Add(GTA.World.CreateProp(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), new GTA.Math.Vector3({4}f, {5}f, {6}f), false, false));\r\n",
 								prop.Hash,
 								prop.Position.X,
 								prop.Position.Y,
@@ -274,10 +279,87 @@ namespace MapEditor
 								prop.Rotation.Z
 							);
 						}
-						output += cmd + "\r\n";
+                        else if (prop.Type == ObjectTypes.Pickup)
+                        {
+                            pickups += string.Format("              Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, {0}, {1}f, {2}f, {3}f, 0, 0, 0, 515, {4}, 0, false, 0);\r\n",
+                                prop.Hash,
+                                prop.Position.X,
+                                prop.Position.Y,
+                                prop.Position.Z,
+                                prop.Amount);
+                        }
 					}
-					File.WriteAllText(path, output);
-					break;
+
+			        foreach (var marker in map.Markers)
+			        {
+			            markers += string.Format("            Function.Call(Hash.DRAW_MARKER, {0}," +
+			                                     "{1}f, {2}f, {3}f, " +
+			                                     "0f, 0f, 0f, {4}f, {5}f, {6}f, " +
+			                                     "{7}f, {8}f, {9}f, " +
+			                                     "{10}, {11}, {12}, {13}, " +
+			                                     "{14}, {15}, 2, false, false, false);\r\n",
+
+			                (int)marker.Type, marker.Position.X, marker.Position.Y, marker.Position.Z, marker.Rotation.X,
+			                marker.Rotation.Y, marker.Rotation.Z, marker.Scale.X, marker.Scale.Y, marker.Scale.Z, marker.Red,
+			                marker.Green, marker.Blue, marker.Alpha, marker.BobUpAndDown.ToString().ToLower(),
+			                marker.RotateToCamera.ToString().ToLower());
+			        }
+
+			        foreach (var o in map.RemoveFromWorld)
+			        {
+			            removedFromWorld += string.Format(
+                            @"            returnedProp = Function.Call<Prop>(Hash.GET_CLOSEST_OBJECT_OF_TYPE, {0}f, {1}f, {2}f, 1f, {3}, 0);
+            if (returnedProp != null && returnedProp.Handle != 0 && !Props.Any(p => p.Handle == returnedProp.Handle))
+                returnedProp.Delete();" + "\r\n",
+                            o.Position.X, o.Position.Y, o.Position.Z, o.Hash);
+			        }
+
+			        string finalOutput = string.Format(@"using System;
+using System.Linq;
+using System.Collections.Generic;
+using GTA;
+using GTA.Math;
+using GTA.Native;
+
+
+public class MapEditorGeneratedMap : GTA.Script
+{{
+    public MapEditorGeneratedMap()
+    {{
+        List<Prop> Props = new List<Prop>();
+        bool Initialized = false;
+        base.Tick += delegate (object sender, EventArgs args)
+        {{
+            if (!Initialized)
+            {{
+                /* PROPS */
+{0}
+
+                /* VEHICLES */
+{1}
+
+                /* PEDS */
+{2}
+
+                /* PICKUPS */
+{4}
+                Initialized = true;
+            }}
+
+            /* MARKERS */
+{3}
+
+            /* WORLD */
+{5}
+        }};
+    }}
+}}", props, vehicles, peds, markers, pickups, removedFromWorld);
+
+                    using (var stream = new StreamWriter(new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.CreateNew)))
+                    {
+                        stream.Write(finalOutput);
+                    }
+                        break;
 				case Format.Raw:
 					string flush = "";
 					foreach (var prop in map.Objects)

@@ -398,7 +398,8 @@ namespace MapEditor
 			MemoryObjects.Remove(prop);
 		}
 
-	
+
+	    private static bool _justTeleported;
 		public static void Tick()
 		{
 			foreach (MapObject o in RemovedObjects)
@@ -413,7 +414,24 @@ namespace MapEditor
 				Function.Call(Hash.DRAW_MARKER, (int) marker.Type, marker.Position.X, marker.Position.Y, marker.Position.Z, 0f, 0f, 0f,
 				 marker.Rotation.X, marker.Rotation.Y, marker.Rotation.Z, marker.Scale.X, marker.Scale.Y, marker.Scale.Z,
 				 marker.Red, marker.Green, marker.Blue, marker.Alpha, marker.BobUpAndDown, marker.RotateToCamera, 2, false, false, false);
+
+			    if (marker.TeleportTarget.HasValue && Game.Player.Character.IsInRangeOf(marker.Position, Math.Max(2f, marker.Scale.X)) && !_justTeleported)
+			    {
+			        Game.Player.Character.Position = marker.TeleportTarget.Value;
+			        _justTeleported = true;
+			    }
 			}
+
+		    if (_justTeleported)
+		    {
+		        var isInRangeOfAny = Markers.Any(m =>
+		        {
+		            if (!m.TeleportTarget.HasValue) return false;
+		            return Game.Player.Character.IsInRangeOf(m.Position, Math.Max(2f, m.Scale.X));
+		        });
+
+		        if (!isInRangeOfAny) _justTeleported = false;
+		    }
 
 		    foreach (DynamicPickup pickup in Pickups)
 		    {
