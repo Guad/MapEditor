@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Xml.Serialization;
 using GTA;
 using GTA.Math;
@@ -24,6 +25,11 @@ namespace MapEditor
 		// Vehicle stuff
 		public bool SirensActive;
 
+        // Pickup stuff
+	    public int Amount;
+	    public int RespawnTimer;
+	    public int Flag;
+
         [XmlAttribute("Id")]
 		public string Id;
 	}
@@ -34,11 +40,151 @@ namespace MapEditor
         public int[] Textures;
     }
 
+    public class DynamicPickup
+    {
+        public DynamicPickup(int handle)
+        {
+            PickupHandle = handle;
+        }
+
+        private int _timeout = -1;
+        private bool _dynamic = true;
+
+        public bool Dynamic
+        {
+            get { return _dynamic; }
+            set
+            {
+                _dynamic = value;
+                new Prop(ObjectHandle).FreezePosition = !value;
+            }
+        }
+
+        public string PickupName
+        {
+            get
+            {
+                if (Enum.IsDefined(typeof (ObjectDatabase.PickupHash), PickupHash))
+                    return ((ObjectDatabase.PickupHash) PickupHash).ToString();
+                return "";
+            }
+        }
+
+        public int UID { get; set; }
+        public int PickupHash { get; set; }
+        public int PickupHandle { get; set; }
+        public int Amount { get; set; }
+        public int Flag { get; set; }
+
+        public bool PickedUp { get; set; }
+        public DateTime LastPickup { get; set; }
+        
+        public int ObjectHandle => Function.Call<int>((Hash) 0x5099BC55630B25AE, PickupHandle);
+        //public Vector3 Position => Function.Call<Vector3>(Hash.GET_PICKUP_COORDS, PickupHandle);
+
+
+        public void UpdatePos()
+        {
+            RealPosition = Position;
+        }
+
+        public Vector3 RealPosition { get; set; }
+
+        public Vector3 Position
+        {
+            get { return new Prop(ObjectHandle).Position; }
+            set
+            {
+                new Prop(ObjectHandle).Position = value;
+                RealPosition = value;
+            }
+        }
+
+        public void SetPickupHash(int newHash)
+        {
+            PickupHash = newHash;
+            ReloadPickup();
+        }
+
+        public void SetPickupFlag(int newFlag)
+        {
+            Flag = newFlag;
+            ReloadPickup();
+        }
+
+        public void SetAmount(int newAmount)
+        {
+            Amount = newAmount;
+            ReloadPickup();
+        }
+
+        private void ReloadPickup()
+        {
+            var newPickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, PickupHash, RealPosition.X, RealPosition.Y, RealPosition.Z, 0, 0, 0, Flag, Amount, 0, false, 0);
+
+            var tmpDyn = new DynamicPickup(newPickup);
+
+            var start = 0;
+            while (tmpDyn.ObjectHandle == -1 && start < 20)
+            {
+                start++;
+                Script.Yield();
+                tmpDyn.Position = RealPosition;
+            }
+
+            tmpDyn.Dynamic = Dynamic;
+            tmpDyn.Timeout = Timeout;
+            new Prop(tmpDyn.ObjectHandle).IsPersistent = true;
+
+            Remove();
+            PickupHandle = newPickup;
+        }
+
+        public int Timeout
+        {
+            get { return _timeout; }
+            set
+            {
+                _timeout = value;
+                //Function.Call(Hash.SET_PICKUP_REGENERATION_TIME, PickupHandle, value);
+            }
+        }
+
+        public bool PickupObjectExists => Function.Call<bool>(Hash.DOES_PICKUP_OBJECT_EXIST, PickupHandle);
+
+        public bool PickupExists => Function.Call<bool>(Hash.DOES_PICKUP_EXIST, PickupHandle);
+
+        public void Remove()
+        {
+            Function.Call(Hash.REMOVE_PICKUP, PickupHandle);
+        }
+        
+        public void Update()
+        {
+            Position = RealPosition;
+            if (!Game.Player.Character.IsInRangeOf(RealPosition, 30f)) return;
+
+            if (!PickupObjectExists && !PickedUp)
+            {
+                PickedUp = true;
+                LastPickup = DateTime.Now;
+                Remove();
+            }
+
+            if (PickedUp && DateTime.Now.Subtract(LastPickup).TotalSeconds > Timeout && Timeout != 0)
+            {
+                PickedUp = false;
+                ReloadPickup();
+            }
+        }
+    }
+
 	public enum ObjectTypes
 	{
 		Prop,
 		Vehicle,
 		Ped,
 		Marker,
+        Pickup,
 	}
 }

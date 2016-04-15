@@ -29,6 +29,8 @@ namespace MapEditor
 		public static List<int> Vehicles = new List<int>();
 
 		public static List<int> Peds = new List<int>();
+
+        public static List<DynamicPickup> Pickups = new List<DynamicPickup>();
         
         public static Dictionary<int, string> Identifications = new Dictionary<int, string>();
 
@@ -126,12 +128,74 @@ namespace MapEditor
             return veh;
 		}
 
-		public static void RemoveVehicle(int handle)
+	    private static int _pickupIds = 0;
+        public static DynamicPickup CreatePickup(Model model, Vector3 position, float heading, int amount, bool dynamic, Quaternion q = null)
+        {
+            var v_4 = 515;
+            var newPickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, model.Hash, position.X, position.Y, position.Z, 0, 0, heading, v_4, amount, 0, false, 0);
+
+            var pcObj = new DynamicPickup(newPickup);
+            pcObj.Flag = v_4;
+            pcObj.Amount = amount;
+
+            var start = 0;
+            while (pcObj.ObjectHandle == -1 && start < 20)
+            {
+                start++;
+                Script.Yield();
+            }
+
+            pcObj.Dynamic = false;
+            new Prop(pcObj.ObjectHandle).IsPersistent = true;
+
+            Pickups.Add(pcObj);
+
+            if (q != null)
+                Quaternion.SetEntityQuaternion(new Prop(pcObj.ObjectHandle), q);
+            
+            pcObj.UpdatePos();
+            pcObj.PickupHash = model.Hash;
+            pcObj.Timeout = 1;
+            pcObj.UID = _pickupIds++;
+            return pcObj;
+        }
+
+	    public static DynamicPickup GetPickup(int objectHandle)
+	    {
+            DynamicPickup pc = null;
+            foreach (var pickup in Pickups)
+            {
+                if (pickup.ObjectHandle == objectHandle)
+                {
+                    pc = pickup;
+                    break;
+                }
+            }
+
+	        return pc;
+	    }
+
+        public static DynamicPickup GetPickupByUID(int uid)
+        {
+            DynamicPickup pc = null;
+            foreach (var pickup in Pickups)
+            {
+                if (pickup.UID == uid)
+                {
+                    pc = pickup;
+                    break;
+                }
+            }
+
+            return pc;
+        }
+
+        public static void RemoveVehicle(int handle)
 		{
 		    UsedModels.Remove(new Vehicle(handle).Model.Hash);
             if(!UsedModels.Contains(new Vehicle(handle).Model.Hash))
                 new Vehicle(handle).Model.MarkAsNoLongerNeeded();
-
+            
 			new Vehicle(handle).Delete();
 			if (Vehicles.Contains(handle)) Vehicles.Remove(handle);
 			if (StaticProps.Contains(handle)) StaticProps.Remove(handle);
@@ -148,7 +212,28 @@ namespace MapEditor
 			if (StaticProps.Contains(handle)) StaticProps.Remove(handle);
         }
 
-		public static void RemoveEntity(int handle)
+	    public static void RemovePickup(int objectHandle)
+	    {
+	        DynamicPickup pc = null;
+	        foreach (var pickup in Pickups)
+	        {
+	            if (pickup.ObjectHandle == objectHandle)
+	            {
+	                pc = pickup;
+                    pc.Remove();
+	                break;
+	            }
+	        }
+
+	        if (pc != null) Pickups.Remove(pc);   
+	    }
+
+	    public static bool IsPickup(int entity)
+	    {
+	        return Pickups.Any(pickup => pickup.ObjectHandle == entity);
+	    }
+
+	    public static void RemoveEntity(int handle)
 		{
 		    if (handle != 0 && new Prop(handle).Model != null)
 		    {
@@ -156,8 +241,17 @@ namespace MapEditor
 		        if (!UsedModels.Contains(new Prop(handle).Model.Hash))
 		            new Prop(handle).Model.MarkAsNoLongerNeeded();
 		    }
-		    new Prop(handle).Delete();
-            if (Peds.Contains(handle)) Peds.Remove(handle);
+	        if (IsPickup(handle))
+	        {
+	            var ourPickup = GetPickup(handle);
+	            if (Pickups.Contains(ourPickup)) Pickups.Remove(ourPickup);
+                ourPickup.Remove();
+	        }
+	        else
+	        {
+	            new Prop(handle).Delete();
+	        }
+	        if (Peds.Contains(handle)) Peds.Remove(handle);
 			if (Vehicles.Contains(handle)) Vehicles.Remove(handle);
 			if (StreamedInHandles.Contains(handle)) StreamedInHandles.Remove(handle);
 		}
@@ -191,8 +285,10 @@ namespace MapEditor
 			StaticProps.Clear();
 			Vehicles.ForEach(v => new Vehicle(v).Delete());
 			Peds.ForEach(v => new Ped(v).Delete());
+            Pickups.ForEach(p => p.Remove());
 			Vehicles.Clear();
 			Peds.Clear();
+            Pickups.Clear();
 		}
 
 		public static MapObject[] GetAllEntities()
@@ -239,6 +335,20 @@ namespace MapEditor
                 Relationship = ActiveRelationships[v],
 				Weapon = ActiveWeapons[v],
 			}));
+
+            Pickups.ForEach(p => outList.Add(new MapObject()
+            {
+                Dynamic = p.Dynamic,
+                Hash = p.PickupHash,
+                Position = p.RealPosition,
+                Quaternion = Quaternion.GetEntityQuaternion(new Prop(p.ObjectHandle)),
+                Rotation = new Prop(p.ObjectHandle).Rotation,
+                Type = ObjectTypes.Pickup,
+                Amount = p.Amount,
+                RespawnTimer = p.Timeout,
+                Flag = p.Flag,
+            }));
+
 			return outList.ToArray();
 		}
 
@@ -248,6 +358,7 @@ namespace MapEditor
 			outHandles.AddRange(StreamedInHandles);
 			outHandles.AddRange(Vehicles);
 			outHandles.AddRange(Peds);
+            outHandles.AddRange(Pickups.Select(p => p.ObjectHandle));
 			return outHandles.ToArray();
 		}
 
@@ -303,6 +414,11 @@ namespace MapEditor
 				 marker.Rotation.X, marker.Rotation.Y, marker.Rotation.Z, marker.Scale.X, marker.Scale.Y, marker.Scale.Z,
 				 marker.Red, marker.Green, marker.Blue, marker.Alpha, marker.BobUpAndDown, marker.RotateToCamera, 2, false, false, false);
 			}
+
+		    foreach (DynamicPickup pickup in Pickups)
+		    {
+		        pickup.Update();
+		    }
 
 			/*
 			if(_lastPos == Game.Player.Character.Position)

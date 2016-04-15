@@ -7,6 +7,91 @@ namespace MapEditor
 {
     public static class VectorExtensions
     {
+        public static float Denormalize(this float h)
+        {
+            return h < 0f ? h + 360f : h;
+        }
+
+        public static Vector3 Denormalize(this Vector3 v)
+        {
+            return new Vector3(v.X.Denormalize(), v.Y.Denormalize(), v.Z.Denormalize());
+        }
+
+        public static float ToRadians(this float val)
+        {
+            return (float)(Math.PI / 180) * val;
+        }
+
+        public static float ToDegrees(this float val)
+        {
+            return (float) (val*(180/Math.PI));
+        }
+
+        public static Vector3 TransformVector(this Vector3 i, Func<float, float> method)
+        {
+            return new Vector3()
+            {
+                X = method(i.X),
+                Y = method(i.Y),
+                Z = method(i.Z),
+            };
+        }
+
+        public static Vector3 ToEuler(this GTA.Math.Quaternion q)
+        {
+            var pitchYawRoll = new Vector3();
+
+            double sqw = q.W * q.W;
+            double sqx = q.X * q.X;
+            double sqy = q.Y * q.Y;
+            double sqz = q.Z * q.Z;
+
+            pitchYawRoll.Y = (float)Math.Atan2(2f * q.X * q.W + 2f * q.Y * q.Z, 1 - 2f * (sqz + sqw));     // Yaw 
+            pitchYawRoll.X = (float)Math.Asin(2f * (q.X * q.Z - q.W * q.Y));                             // Pitch 
+            pitchYawRoll.Z = (float)Math.Atan2(2f * q.X * q.Y + 2f * q.Z * q.W, 1 - 2f * (sqy + sqz));
+
+            pitchYawRoll = pitchYawRoll.TransformVector(ToDegrees);
+            
+            pitchYawRoll = pitchYawRoll.Denormalize();
+
+            pitchYawRoll = new Vector3()
+            {
+                Y = pitchYawRoll.Y * -1f + 180f,
+                X = pitchYawRoll.X,
+                Z = pitchYawRoll.Z,
+            };
+
+            return pitchYawRoll;
+        }
+
+        public static GTA.Math.Quaternion ToQuaternion(this Vector3 vect)
+        {
+            vect = new Vector3()
+            {
+                X = vect.X.Denormalize() * -1f,
+                Y = vect.Y.Denormalize() - 180f,
+                Z = vect.Z.Denormalize() - 180f,
+            };
+
+            vect = vect.TransformVector(ToRadians);
+
+            float rollOver2 = vect.Z * 0.5f;
+            float sinRollOver2 = (float)Math.Sin((double)rollOver2);
+            float cosRollOver2 = (float)Math.Cos((double)rollOver2);
+            float pitchOver2 = vect.Y * 0.5f;
+            float sinPitchOver2 = (float)Math.Sin((double)pitchOver2);
+            float cosPitchOver2 = (float)Math.Cos((double)pitchOver2);
+            float yawOver2 = vect.X * 0.5f; // pitch
+            float sinYawOver2 = (float)Math.Sin((double)yawOver2);
+            float cosYawOver2 = (float)Math.Cos((double)yawOver2);
+            GTA.Math.Quaternion result = new GTA.Math.Quaternion();
+            result.X = cosYawOver2 * cosPitchOver2 * cosRollOver2 + sinYawOver2 * sinPitchOver2 * sinRollOver2;
+            result.Y = cosYawOver2 * cosPitchOver2 * sinRollOver2 - sinYawOver2 * sinPitchOver2 * cosRollOver2;
+            result.Z = cosYawOver2 * sinPitchOver2 * cosRollOver2 + sinYawOver2 * cosPitchOver2 * sinRollOver2;
+            result.W = sinYawOver2 * cosPitchOver2 * cosRollOver2 - cosYawOver2 * sinPitchOver2 * sinRollOver2;
+            return result;
+        }
+
         public static Vector3 ForwardVector(this Vector3 vector, float yaw)
         {
             Vector3 right;

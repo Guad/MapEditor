@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using GTA;
+using GTA.Native;
 using NativeUI;
 
 namespace MapEditor
@@ -27,12 +28,20 @@ namespace MapEditor
 		        return null;
 	        }
             globalCounter++;
-			while (!m.IsLoaded && counter < 200)
+            var sc = new Scaleform(0);
+            sc.Load("instructional_buttons");
+            sc.CallFunction("CLEAR_ALL");
+            sc.CallFunction("TOGGLE_MOUSE_BUTTONS", 0);
+            sc.CallFunction("CREATE_CONTAINER");
+            sc.CallFunction("SET_DATA_SLOT", 0, "b_50", Translation.Translate("Loading Model"));
+            sc.CallFunction("DRAW_INSTRUCTIONAL_BUTTONS", -1);
+            while (!m.IsLoaded && counter < 200)
 			{
                 m.Request();
                 Script.Yield();
                 counter++;
-                new UIResText("LOADING . . . " + globalCounter, new Point(wid, hei), 2f, Color.White, GTA.Font.Pricedown, UIResText.Alignment.Centered).Draw();
+                //new UIResText("LOADING . . . " + globalCounter, new Point(wid, hei), 2f, Color.White, GTA.Font.Pricedown, UIResText.Alignment.Centered).Draw();
+                sc.Render2D();
             }
             return m;
         }
