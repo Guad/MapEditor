@@ -42,6 +42,8 @@ namespace MapEditor
 
 		public static Dictionary<int, WeaponHash> ActiveWeapons = new Dictionary<int, WeaponHash>();
 
+        public static List<int> Doors = new List<int>(); 
+
 		public static List<int> ActiveSirens = new List<int>();
 
 		public static int PropCount => StreamedInHandles.Count + MemoryObjects.Count;
@@ -132,28 +134,37 @@ namespace MapEditor
         public static DynamicPickup CreatePickup(Model model, Vector3 position, float heading, int amount, bool dynamic, Quaternion q = null)
         {
             var v_4 = 515;
-            var newPickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, model.Hash, position.X, position.Y, position.Z, 0, 0, heading, v_4, amount, 0, false, 0);
+            int newPickup = -1;
+
+            if (Game.Player.Character.IsInRangeOf(position, 30f))
+            {
+                newPickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, model.Hash, position.X, position.Y,
+                    position.Z, 0, 0, heading, v_4, amount, 0, false, 0);
+            }
 
             var pcObj = new DynamicPickup(newPickup);
             pcObj.Flag = v_4;
             pcObj.Amount = amount;
-
-            var start = 0;
-            while (pcObj.ObjectHandle == -1 && start < 20)
+            pcObj.RealPosition = position;
+            if (newPickup != -1)
             {
-                start++;
-                Script.Yield();
+                var start = 0;
+                while (pcObj.ObjectHandle == -1 && start < 20)
+                {
+                    start++;
+                    Script.Yield();
+                }
+
+                pcObj.Dynamic = false;
+                new Prop(pcObj.ObjectHandle).IsPersistent = true;
+
+
+                if (q != null)
+                    Quaternion.SetEntityQuaternion(new Prop(pcObj.ObjectHandle), q);
+                pcObj.UpdatePos();
             }
-
-            pcObj.Dynamic = false;
-            new Prop(pcObj.ObjectHandle).IsPersistent = true;
-
-            Pickups.Add(pcObj);
-
-            if (q != null)
-                Quaternion.SetEntityQuaternion(new Prop(pcObj.ObjectHandle), q);
             
-            pcObj.UpdatePos();
+            Pickups.Add(pcObj);
             pcObj.PickupHash = model.Hash;
             pcObj.Timeout = 1;
             pcObj.UID = _pickupIds++;
@@ -304,6 +315,7 @@ namespace MapEditor
 							Quaternion = Quaternion.GetEntityQuaternion(new Prop(handle)),
 							Rotation = new Prop(handle).Rotation,
 							Type = ObjectTypes.Prop,
+                            Door = Doors.Contains(handle),
                             Id = (Identifications.ContainsKey(handle) && !string.IsNullOrWhiteSpace(Identifications[handle])) ? Identifications[handle] : null,
                         }).ToList();
 

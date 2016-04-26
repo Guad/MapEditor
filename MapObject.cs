@@ -14,8 +14,10 @@ namespace MapEditor
 		public Vector3 Rotation;
 		public int Hash;
 		public bool Dynamic;
-
 		public Quaternion Quaternion;
+
+        // Prop stuff
+	    public bool Door;
 
 		// Ped stuff
 		public string Action;
@@ -45,10 +47,13 @@ namespace MapEditor
         public DynamicPickup(int handle)
         {
             PickupHandle = handle;
+            IsInRange = handle != -1;
         }
 
         private int _timeout = -1;
         private bool _dynamic = true;
+
+        public bool IsInRange { get; set; }
 
         public bool Dynamic
         {
@@ -136,7 +141,10 @@ namespace MapEditor
             tmpDyn.Timeout = Timeout;
             new Prop(tmpDyn.ObjectHandle).IsPersistent = true;
 
-            Remove();
+            if (PickupHandle != -1)
+                Remove();
+
+
             PickupHandle = newPickup;
         }
 
@@ -161,20 +169,31 @@ namespace MapEditor
         
         public void Update()
         {
-            Position = RealPosition;
-            if (!Game.Player.Character.IsInRangeOf(RealPosition, 30f)) return;
+            var inRange = Game.Player.Character.IsInRangeOf(RealPosition, 20f);
 
-            if (!PickupObjectExists && !PickedUp)
+            if (inRange && PickupHandle == -1)
             {
-                PickedUp = true;
-                LastPickup = DateTime.Now;
-                Remove();
+                ReloadPickup();
             }
 
-            if (PickedUp && DateTime.Now.Subtract(LastPickup).TotalSeconds > Timeout && Timeout != 0)
+            if (PickupHandle != -1)
             {
-                PickedUp = false;
-                ReloadPickup();
+                Position = RealPosition;
+
+                if (!inRange) return;
+
+                if (!PickupObjectExists && !PickedUp)
+                {
+                    PickedUp = true;
+                    LastPickup = DateTime.Now;
+                    Remove();
+                }
+
+                if (PickedUp && DateTime.Now.Subtract(LastPickup).TotalSeconds > Timeout && Timeout != 0)
+                {
+                    PickedUp = false;
+                    ReloadPickup();
+                }
             }
         }
     }

@@ -19,8 +19,10 @@ namespace MapEditor
 	        AutosaveInterval = 5;
 	        DrawDistance = -1;
 	        LoadScripts = true;
+	        Translation = "Auto";
 	    }
 
+	    public string Translation;
 		public bool Gamepad;
 		public MapEditor.CrosshairType CrosshairType;
 		public int CameraSensivity;

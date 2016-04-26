@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 using GTA;
@@ -7,55 +9,101 @@ namespace MapEditor
 {
     public static class Translation
     {
-        private static List<TranslatedString> _stringList;
+        public static List<TranslationRoot> Translations;
+        public static string CurrentTranslation { get; set; }
 
-        public static void Load(string path)
+        private static TranslationRoot _currenTranslationFile;
+        private static List<StringPair> _stringList;
+
+        public static void Load(string folder, string translation)
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(TranslationFile));
-            using (var stream = System.IO.File.OpenRead(path))
-                _stringList = ((TranslationFile)serializer.Deserialize(stream)).Translations;
+            Translations = new List<TranslationRoot>();
+            XmlSerializer serializer = new XmlSerializer(typeof (TranslationRoot));
+
+            foreach (var path in Directory.GetFiles(folder, "*.xml"))
+            {
+                try
+                {
+                    using (var stream = System.IO.File.OpenRead(path))
+                    {
+                        var trans = (TranslationRoot) serializer.Deserialize(stream);
+                        if (trans == null) throw new NullReferenceException();
+                        trans.SetPath(path);
+                        Translations.Add(trans);
+                    }
+                }
+                catch (Exception) { }
+            }
+
+            SetLanguage(translation);
         }
 
-        public static void Save(string path)
+        public static void SetLanguage(string newLanguage)
         {
-            System.Xml.Serialization.XmlSerializer serializer = new System.Xml.Serialization.XmlSerializer(typeof(TranslationFile));
-            using (var stream = System.IO.File.OpenWrite(path))
-                serializer.Serialize(stream, new TranslationFile() { Translations = new List<TranslatedString>(_stringList) });
+            if (newLanguage == "Auto")
+            {
+                CurrentTranslation = Game.Language.ToString();
+                _currenTranslationFile = Translations.FirstOrDefault(t => t.Language == newLanguage);
+            }
+            else
+            {
+                CurrentTranslation = newLanguage;
+                _currenTranslationFile = Translations.FirstOrDefault(t => t.Language == newLanguage);
+            }
+        }
+
+        public static void Save()
+        {
+            System.Xml.Serialization.XmlSerializer serializer = new System.Xml.Serialization.XmlSerializer(typeof (TranslationRoot));
+            foreach (var trans in Translations)
+            {
+                using (var stream = File.OpenWrite(trans.GetPath()))
+                    serializer.Serialize(stream, trans);
+            }
         }
 
         public static string Translate(string original)
         {
-            if (_stringList == null) return original;
-            Language currentLanguage = Game.Language;
-            if (_stringList.All(ts => ts.Original != original))
+            if (_currenTranslationFile == null) return original;
+            
+            if (_currenTranslationFile.Translations.All(ts => ts.Original != original))
             {
-                _stringList.Add(new TranslatedString()
+                _currenTranslationFile.Translations.Add(new StringPair()
                 {
                     Original = original,
-                    Translations = new List<TranslatedPair>()
+                    Translation = original,
                 });
-                Save("scripts\\MapEditor_Translation.xml");
+                Save();
                 return original;
             }
-            var ourTs = _stringList.First(ts => ts.Original == original).Translations;
-            return ourTs.FirstOrDefault(pair => pair.Language == currentLanguage)?.String.Replace("~n~", "\n") ?? original;
+
+            return _currenTranslationFile.Translations.First(ts => ts.Original == original).Translation.Replace("~n~", "\n");
         }
     }
 
-    public class TranslationFile
+    public class TranslationRoot
     {
-        public List<TranslatedString> Translations { get; set; }
+        private string _path;
+
+        internal void SetPath(string path)
+        {
+            _path = path;
+        }
+
+        internal string GetPath()
+        {
+            return _path;
+        }
+
+        public string Language { get; set; }
+        public string Translator { get; set; }
+
+        public List<StringPair> Translations { get; set; }
     }
 
-    public class TranslatedString
+    public class StringPair
     {
         public string Original { get; set; }
-        public List<TranslatedPair> Translations { get; set; }
-    }
-
-    public class TranslatedPair
-    {
-        public Language Language { get; set; }
-        public string String { get; set; }
+        public string Translation { get; set; }
     }
 }

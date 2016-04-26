@@ -259,7 +259,7 @@ namespace MapEditor
 						}
 						else if (prop.Type == ObjectTypes.Ped)
 						{
-							peds += String.Format("               GTA.World.CreatePed(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);\r\n",
+							peds += String.Format("                GTA.World.CreatePed(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);\r\n",
 								prop.Hash,
 								prop.Position.X,
 								prop.Position.Y,
@@ -269,14 +269,15 @@ namespace MapEditor
 						}
 						else if (prop.Type == ObjectTypes.Prop)
 						{
-							props += String.Format("               Props.Add(GTA.World.CreateProp(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), new GTA.Math.Vector3({4}f, {5}f, {6}f), false, false));\r\n",
+							props += String.Format("                Props.Add(createProp({0}, new GTA.Math.Vector3({1}f, {2}f, {3}f), new GTA.Math.Vector3({4}f, {5}f, {6}f), {7}));\r\n",
 								prop.Hash,
 								prop.Position.X,
 								prop.Position.Y,
 								prop.Position.Z,
 								prop.Rotation.X,
 								prop.Rotation.Y,
-								prop.Rotation.Z
+								prop.Rotation.Z,
+                                prop.Dynamic.ToString().ToLower()
 							);
 						}
                         else if (prop.Type == ObjectTypes.Pickup)
@@ -309,13 +310,14 @@ namespace MapEditor
 			        {
 			            removedFromWorld += string.Format(
                             @"            returnedProp = Function.Call<Prop>(Hash.GET_CLOSEST_OBJECT_OF_TYPE, {0}f, {1}f, {2}f, 1f, {3}, 0);
-            if (returnedProp != null && returnedProp.Handle != 0 && !Props.Any(p => p.Handle == returnedProp.Handle))
+            if (returnedProp != null && returnedProp.Handle != 0 && !Props.Contains(returnedProp.Handle))
                 returnedProp.Delete();" + "\r\n",
                             o.Position.X, o.Position.Y, o.Position.Z, o.Hash);
 			        }
 
+                    
+
 			        string finalOutput = string.Format(@"using System;
-using System.Linq;
 using System.Collections.Generic;
 using GTA;
 using GTA.Math;
@@ -326,8 +328,24 @@ public class MapEditorGeneratedMap : GTA.Script
 {{
     public MapEditorGeneratedMap()
     {{
-        List<Prop> Props = new List<Prop>();
+        List<int> Props = new List<int>();
+        int LodDistance = 3000;            
+
+        Func<int, Vector3, Vector3, bool, int> createProp = new Func<int, Vector3, Vector3, bool, int>(delegate(int hash, Vector3 pos, Vector3 rot, bool dynamic)
+	    {{
+		    Model model = new Model(hash);
+		    model.Request(10000);
+		    Prop prop = GTA.World.CreateProp(model, pos, rot, dynamic, false);
+		    prop.Position = pos;
+            prop.LodDistance = LodDistance;
+            if (!dynamic)
+                prop.FreezePosition = true;
+		    return prop.Handle;
+	    }});
+
         bool Initialized = false;
+
+
         base.Tick += delegate (object sender, EventArgs args)
         {{
             if (!Initialized)

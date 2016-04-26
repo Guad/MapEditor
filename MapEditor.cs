@@ -93,12 +93,16 @@ namespace MapEditor
         {
             Tick += OnTick;
             KeyDown += OnKeyDown;
-            
+
+            if (!Directory.Exists("scripts\\MapEditor"))
+                Directory.CreateDirectory("scripts\\MapEditor");
+
             ObjectDatabase.SetupRelationships();
 			LoadSettings();
-		    try
+
+            try
 		    {
-		        Translation.Load("scripts\\MapEditor_Translation.xml");
+		        Translation.Load("scripts\\MapEditor", _settings.Translation);
 		    }
 		    catch (Exception e) 
 		    {
@@ -119,15 +123,23 @@ namespace MapEditor
 			ModManager.InitMenu();
 
 			_objectsMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("PLACE OBJECT"));
-
+		    
             ObjectDatabase.LoadFromFile("scripts\\ObjectList.ini", ref ObjectDatabase.MainDb);
 			ObjectDatabase.LoadInvalidHashes();
 			ObjectDatabase.LoadFromFile("scripts\\PedList.ini", ref ObjectDatabase.PedDb);
             ObjectDatabase.LoadFromFile("scripts\\VehicleList.ini", ref ObjectDatabase.VehicleDb);
-			
-			_crosshairPath = Sprite.WriteFileFromResources(Assembly.GetExecutingAssembly(), "MapEditor.crosshair.png");
-			_crosshairBluePath = Sprite.WriteFileFromResources(Assembly.GetExecutingAssembly(), "MapEditor.crosshair_blue.png");
-			_crosshairYellowPath = Sprite.WriteFileFromResources(Assembly.GetExecutingAssembly(), "MapEditor.crosshair_yellow.png");
+
+
+		    _crosshairPath = Path.GetFullPath("scripts\\MapEditor\\crosshair.png");
+            _crosshairBluePath = Path.GetFullPath("scripts\\MapEditor\\crosshair_blue.png");
+            _crosshairYellowPath = Path.GetFullPath("scripts\\MapEditor\\crosshair_yellow.png");
+
+            if (!File.Exists("scripts\\MapEditor\\crosshair.png"))
+			    _crosshairPath = Sprite.WriteFileFromResources(Assembly.GetExecutingAssembly(), "MapEditor.crosshair.png", "scripts\\MapEditor\\crosshair.png");
+            if (!File.Exists("scripts\\MapEditor\\crosshair_blue.png"))
+                _crosshairBluePath = Sprite.WriteFileFromResources(Assembly.GetExecutingAssembly(), "MapEditor.crosshair_blue.png", "scripts\\MapEditor\\crosshair_blue.png");
+            if (!File.Exists("scripts\\MapEditor\\crosshair_yellow.png"))
+                _crosshairYellowPath = Sprite.WriteFileFromResources(Assembly.GetExecutingAssembly(), "MapEditor.crosshair_yellow.png", "scripts\\MapEditor\\crosshair_yellow.png");
 
 
 			RedrawObjectsMenu();
@@ -195,6 +207,7 @@ namespace MapEditor
 						PropStreamer.ActiveScenarios.Clear();
 						PropStreamer.ActiveRelationships.Clear();
 						PropStreamer.ActiveWeapons.Clear();
+                        PropStreamer.Doors.Clear();
 						ModManager.CurrentMod?.ModDisconnectInvoker();
 						ModManager.CurrentMod = null;
 		                foreach (MapObject o in PropStreamer.RemovedObjects)
@@ -307,6 +320,31 @@ namespace MapEditor
 			{
 				_possibleRoll.Add(i * 0.01);
 			}
+
+		    var possibleLangauges = new List<string>
+		    {
+                "Auto"
+		    };
+            possibleLangauges.AddRange(Translation.Translations.Select(t => t.Language).ToList());
+
+		    var language = new UIMenuListItem(Translation.Translate("Language"),
+		        possibleLangauges.Select(t => (dynamic) t).ToList(), possibleLangauges.IndexOf(_settings.Translation));
+
+            language.OnListChanged += (sender, index) =>
+		    {
+		        var newLanguage = sender.IndexToItem(index).ToString();
+                Translation.SetLanguage(newLanguage);
+		        _settings.Translation = newLanguage;
+                SaveSettings();
+		        if (newLanguage == "Auto")
+		        {
+		            language.Description = "Use your game's language settings.";
+		            return;
+		        }
+		        var descFile = Translation.Translations.FirstOrDefault(t => t.Language == newLanguage);
+		        if (descFile == null) return;
+		        language.Description = "~h~" + Translation.Translate("Translator") + ":~h~ " + descFile.Translator;
+		    };
 
 			var checkem = new UIMenuListItem(Translation.Translate("Marker"), new List<dynamic>(Enum.GetNames(typeof(CrosshairType))), Enum.GetNames(typeof(CrosshairType)).ToList().FindIndex(x => x == _settings.CrosshairType.ToString()));
 			checkem.OnListChanged += (i, indx) =>
@@ -435,6 +473,7 @@ namespace MapEditor
 				PropStreamer.Peds.ForEach(ped => ObjectDatabase.SetPedRelationshipGroup(new Ped(ped), "Companion"));
 			};
 
+            _settingsMenu.AddItem(language);
 			_settingsMenu.AddItem(gamepadItem);
             _settingsMenu.AddItem(drawDistanceItem);
             _settingsMenu.AddItem(autosaveItem);
@@ -577,9 +616,16 @@ namespace MapEditor
 				    {
 					    case ObjectTypes.Prop:
 				            var newProp = PropStreamer.CreateProp(ObjectPreview.LoadObject(o.Hash), o.Position, o.Rotation,
-				                o.Dynamic, o.Quaternion == new Quaternion() {X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion,
+				                o.Dynamic && !o.Door, o.Quaternion == new Quaternion() {X = 0, Y = 0, Z = 0, W = 0} ? null : o.Quaternion,
 				                drawDistance: _settings.DrawDistance);
                             AddItemToEntityMenu(newProp);
+
+				            if (o.Door)
+				            {
+				                PropStreamer.Doors.Add(newProp.Handle);
+				                newProp.FreezePosition = false;
+				            }
+
 				            if (o.Id != null && !PropStreamer.Identifications.ContainsKey(newProp.Handle))
 				            {
 				                PropStreamer.Identifications.Add(newProp.Handle, o.Id);
@@ -800,8 +846,6 @@ namespace MapEditor
 			if(_settings.InstructionalButtons && !_objectsMenu.Visible)
                 Function.Call(Hash._0x0DF606929C105BE1, _scaleform.Handle, 255, 255, 255, 255, 0);
             
-            // _scaleform.Render2D(); // SHDN bug
-
             Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.CharacterWheel);
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.SelectWeapon);
 			Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.FrontendPause);
@@ -1321,7 +1365,15 @@ namespace MapEditor
 						        _snappedProp = new Prop(newPickup.ObjectHandle);
 						    }
 							else if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt.Handle))
-								AddItemToEntityMenu(_snappedProp = PropStreamer.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, !PropStreamer.StaticProps.Contains(hitEnt.Handle), force: true, drawDistance: _settings.DrawDistance));
+							{
+							    var isDoor = PropStreamer.Doors.Contains(hitEnt.Handle);
+                                AddItemToEntityMenu(_snappedProp = PropStreamer.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, (!PropStreamer.StaticProps.Contains(hitEnt.Handle) && !isDoor), force: true, drawDistance: _settings.DrawDistance));
+							    if (isDoor)
+							    {
+							        _snappedProp.FreezePosition = false;
+                                    PropStreamer.Doors.Add(_snappedProp.Handle);
+							    }
+							}
 							else if (Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, hitEnt.Handle))
 								AddItemToEntityMenu(_snappedProp = PropStreamer.CreateVehicle(hitEnt.Model, hitEnt.Position, hitEnt.Rotation.Z, !PropStreamer.StaticProps.Contains(hitEnt.Handle), drawDistance: _settings.DrawDistance));
 							else if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, hitEnt.Handle))
@@ -1623,7 +1675,15 @@ namespace MapEditor
                         mainProp = new Prop(newPickup.ObjectHandle);
                     }
 					else if (_selectedProp is Prop)
-						AddItemToEntityMenu(mainProp = PropStreamer.CreateProp(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation, !PropStreamer.StaticProps.Contains(_selectedProp.Handle), force: true, drawDistance: _settings.DrawDistance));
+					{
+                        var isDoor = PropStreamer.Doors.Contains(_selectedProp.Handle);
+                        AddItemToEntityMenu(mainProp = PropStreamer.CreateProp(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation, (!PropStreamer.StaticProps.Contains(_selectedProp.Handle) && !isDoor), force: true, drawDistance: _settings.DrawDistance));
+                        if (isDoor)
+                        {
+                            mainProp.FreezePosition = false;
+                            PropStreamer.Doors.Add(mainProp.Handle);
+                        }
+                    }
 					else if (_selectedProp is Vehicle)
 						AddItemToEntityMenu(mainProp = PropStreamer.CreateVehicle(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation.Z, !PropStreamer.StaticProps.Contains(_selectedProp.Handle), drawDistance: _settings.DrawDistance));
 					else if (_selectedProp is Ped)
@@ -2090,6 +2150,7 @@ namespace MapEditor
 	    {
 			if(ent == null) return;
 		    string name = "";
+
 		    if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, ent.Handle))
 		    {
 			    name = ObjectDatabase.MainDb.ContainsValue(ent.Model.Hash) ? ObjectDatabase.MainDb.First(x => x.Value == ent.Model.Hash).Key.ToUpper() : "Unknown Prop";
@@ -2166,6 +2227,7 @@ namespace MapEditor
 	            }
 	        };
 
+
 			_objectInfoMenu.AddItem(posXitem);
 			_objectInfoMenu.AddItem(posYitem);
 			_objectInfoMenu.AddItem(posZitem);
@@ -2174,6 +2236,28 @@ namespace MapEditor
 			_objectInfoMenu.AddItem(rotZitem);
 			_objectInfoMenu.AddItem(dynamic);
             _objectInfoMenu.AddItem(ident);
+
+	        if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, ent.Handle))
+	        {
+	            var doorItem = new UIMenuCheckboxItem("Door", PropStreamer.Doors.Contains(ent.Handle), Translation.Translate("This option overrides the \"Dynamic\" setting."));
+	            doorItem.CheckboxEvent += (sender, @checked) =>
+	            {
+	                if (@checked)
+	                {
+	                    PropStreamer.Doors.Add(ent.Handle);
+	                    Function.Call(Hash.SET_ENTITY_DYNAMIC, ent.Handle, false);
+	                    ent.FreezePosition = false;
+	                }
+	                else
+	                {
+	                    PropStreamer.Doors.Remove(ent.Handle);
+	                    var isDynamic = !PropStreamer.StaticProps.Contains(ent.Handle);
+                        Function.Call(Hash.SET_ENTITY_DYNAMIC, ent.Handle, isDynamic);
+	                    ent.FreezePosition = !isDynamic;
+	                }
+	            };
+                _objectInfoMenu.AddItem(doorItem);
+	        }
 
             if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent.Handle))
 		    {
