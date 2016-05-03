@@ -15,9 +15,9 @@ namespace MapEditor
         {
             int counter = 0;
             var res = UIMenu.GetScreenResolutionMantainRatio();
-            var wid = Convert.ToInt32(res.Width)/2;
-            var hei = Convert.ToInt32(res.Height)/2;
+            
             var m = new Model(hash);
+
 	        if (!m.IsValid || !m.IsInCdImage)
 	        {
 		        if (!ObjectDatabase.InvalidHashes.Contains(hash))
@@ -40,7 +40,6 @@ namespace MapEditor
                 m.Request();
                 Script.Yield();
                 counter++;
-                //new UIResText("LOADING . . . " + globalCounter, new Point(wid, hei), 2f, Color.White, GTA.Font.Pricedown, UIResText.Alignment.Centered).Draw();
                 sc.Render2D();
             }
             return m;

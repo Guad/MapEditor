@@ -20,6 +20,7 @@ namespace MapEditor
 	        DrawDistance = -1;
 	        LoadScripts = true;
 	        Translation = "Auto";
+	        OmitInvalidObjects = true;
 	    }
 
 	    public string Translation;
@@ -37,5 +38,6 @@ namespace MapEditor
 	    public int DrawDistance;
 	    public bool LoadScripts;
 	    public bool? BoundingBox;
+	    public bool OmitInvalidObjects;
 	}
 }

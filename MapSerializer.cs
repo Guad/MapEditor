@@ -23,6 +23,11 @@ namespace MapEditor
 			Raw,
 		}
 
+	    public float Parse(string floatVal)
+	    {
+	        return float.Parse(floatVal, CultureInfo.InvariantCulture);
+	    }
+
 		internal Map Deserialize(string path, Format format)
 		{
 			string tip = "";
@@ -91,10 +96,10 @@ namespace MapEditor
 			                Vector3 rot = new Vector3(float.Parse(tmpData["qz"]), float.Parse(tmpData["qw"]), float.Parse(tmpData["h"]));
 			                Quaternion q = new Quaternion()
 			                {
-			                    X = float.Parse(tmpData["qx"]),
-			                    Y = float.Parse(tmpData["qy"]),
-			                    Z = float.Parse(tmpData["qz"]),
-			                    W = float.Parse(tmpData["qw"]),
+			                    X = Parse(tmpData["qx"]),
+			                    Y = Parse(tmpData["qy"]),
+			                    Z = Parse(tmpData["qz"]),
+			                    W = Parse(tmpData["qw"]),
 			                };
 			                int mod = Convert.ToInt32(tmpData["Model"], CultureInfo.InvariantCulture);
 			                int dyn = Convert.ToInt32(tmpData["Dynamic"], CultureInfo.InvariantCulture);
@@ -118,10 +123,10 @@ namespace MapEditor
 			        Vector3 lastRot = new Vector3(float.Parse(tmpData["qz"]), float.Parse(tmpData["qw"]), float.Parse(tmpData["h"]));
 			        Quaternion lastQ = new Quaternion()
 			        {
-			            X = float.Parse(tmpData["qx"]),
-			            Y = float.Parse(tmpData["qy"]),
-			            Z = float.Parse(tmpData["qz"]),
-			            W = float.Parse(tmpData["qw"]),
+			            X = Parse(tmpData["qx"]),
+			            Y = Parse(tmpData["qy"]),
+			            Z = Parse(tmpData["qz"]),
+			            W = Parse(tmpData["qw"]),
 			        };
 			        int lastMod = Convert.ToInt32(tmpData["Model"], CultureInfo.InvariantCulture);
 			        int lastDyn = Convert.ToInt32(tmpData["Dynamic"], CultureInfo.InvariantCulture);
@@ -251,32 +256,32 @@ namespace MapEditor
 						{
 							vehicles += String.Format("               GTA.World.CreateVehicle(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);\r\n",
 								prop.Hash,
-								prop.Position.X,
-								prop.Position.Y,
-								prop.Position.Z,
-								prop.Rotation.Z
-							);
+								prop.Position.X.ToString(CultureInfo.InvariantCulture),
+								prop.Position.Y.ToString(CultureInfo.InvariantCulture),
+								prop.Position.Z.ToString(CultureInfo.InvariantCulture),
+								prop.Rotation.Z.ToString(CultureInfo.InvariantCulture)
+                            );
 						}
 						else if (prop.Type == ObjectTypes.Ped)
 						{
 							peds += String.Format("                GTA.World.CreatePed(new Model({0}), new GTA.Math.Vector3({1}f, {2}f, {3}f), {4}f);\r\n",
 								prop.Hash,
-								prop.Position.X,
-								prop.Position.Y,
-								prop.Position.Z,
-								prop.Rotation.Z
-							);
+								prop.Position.X.ToString(CultureInfo.InvariantCulture),
+								prop.Position.Y.ToString(CultureInfo.InvariantCulture),
+								prop.Position.Z.ToString(CultureInfo.InvariantCulture),
+								prop.Rotation.Z.ToString(CultureInfo.InvariantCulture)
+                            );
 						}
 						else if (prop.Type == ObjectTypes.Prop)
 						{
 							props += String.Format("                Props.Add(createProp({0}, new GTA.Math.Vector3({1}f, {2}f, {3}f), new GTA.Math.Vector3({4}f, {5}f, {6}f), {7}));\r\n",
 								prop.Hash,
-								prop.Position.X,
-								prop.Position.Y,
-								prop.Position.Z,
-								prop.Rotation.X,
-								prop.Rotation.Y,
-								prop.Rotation.Z,
+								prop.Position.X.ToString(CultureInfo.InvariantCulture),
+								prop.Position.Y.ToString(CultureInfo.InvariantCulture),
+								prop.Position.Z.ToString(CultureInfo.InvariantCulture),
+								prop.Rotation.X.ToString(CultureInfo.InvariantCulture),
+								prop.Rotation.Y.ToString(CultureInfo.InvariantCulture),
+								prop.Rotation.Z.ToString(CultureInfo.InvariantCulture),
                                 prop.Dynamic.ToString().ToLower()
 							);
 						}
@@ -284,9 +289,9 @@ namespace MapEditor
                         {
                             pickups += string.Format("              Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, {0}, {1}f, {2}f, {3}f, 0, 0, 0, 515, {4}, 0, false, 0);\r\n",
                                 prop.Hash,
-                                prop.Position.X,
-                                prop.Position.Y,
-                                prop.Position.Z,
+                                prop.Position.X.ToString(CultureInfo.InvariantCulture),
+                                prop.Position.Y.ToString(CultureInfo.InvariantCulture),
+                                prop.Position.Z.ToString(CultureInfo.InvariantCulture),
                                 prop.Amount);
                         }
 					}
@@ -300,8 +305,8 @@ namespace MapEditor
 			                                     "{10}, {11}, {12}, {13}, " +
 			                                     "{14}, {15}, 2, false, false, false);\r\n",
 
-			                (int)marker.Type, marker.Position.X, marker.Position.Y, marker.Position.Z, marker.Rotation.X,
-			                marker.Rotation.Y, marker.Rotation.Z, marker.Scale.X, marker.Scale.Y, marker.Scale.Z, marker.Red,
+			                (int)marker.Type, marker.Position.X.ToString(CultureInfo.InvariantCulture), marker.Position.Y.ToString(CultureInfo.InvariantCulture), marker.Position.Z.ToString(CultureInfo.InvariantCulture), marker.Rotation.X.ToString(CultureInfo.InvariantCulture),
+			                marker.Rotation.Y.ToString(CultureInfo.InvariantCulture), marker.Rotation.Z.ToString(CultureInfo.InvariantCulture), marker.Scale.X.ToString(CultureInfo.InvariantCulture), marker.Scale.Y.ToString(CultureInfo.InvariantCulture), marker.Scale.Z.ToString(CultureInfo.InvariantCulture), marker.Red,
 			                marker.Green, marker.Blue, marker.Alpha, marker.BobUpAndDown.ToString().ToLower(),
 			                marker.RotateToCamera.ToString().ToLower());
 			        }
@@ -312,7 +317,7 @@ namespace MapEditor
                             @"            returnedProp = Function.Call<Prop>(Hash.GET_CLOSEST_OBJECT_OF_TYPE, {0}f, {1}f, {2}f, 1f, {3}, 0);
             if (returnedProp != null && returnedProp.Handle != 0 && !Props.Contains(returnedProp.Handle))
                 returnedProp.Delete();" + "\r\n",
-                            o.Position.X, o.Position.Y, o.Position.Z, o.Hash);
+                            o.Position.X.ToString(CultureInfo.InvariantCulture), o.Position.Y.ToString(CultureInfo.InvariantCulture), o.Position.Z.ToString(CultureInfo.InvariantCulture), o.Hash);
 			        }
 
                     

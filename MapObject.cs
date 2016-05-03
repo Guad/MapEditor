@@ -26,6 +26,8 @@ namespace MapEditor
 	    
 		// Vehicle stuff
 		public bool SirensActive;
+	    public int PrimaryColor;
+	    public int SecondaryColor;
 
         // Pickup stuff
 	    public int Amount;
@@ -34,6 +36,57 @@ namespace MapEditor
 
         [XmlAttribute("Id")]
 		public string Id;
+
+        // XML Stuff
+	    public bool ShouldSerializeDoor()
+	    {
+	        return Type == ObjectTypes.Prop;
+	    }
+
+	    public bool ShouldSerializeAction()
+	    {
+	        return Type == ObjectTypes.Ped;
+	    }
+
+	    public bool ShouldSerializeRelationship()
+	    {
+            return Type == ObjectTypes.Ped;
+        }
+
+	    public bool ShouldSerializeWeapon()
+	    {
+            return Type == ObjectTypes.Ped;
+        }
+
+	    public bool ShouldSerializeSirensActive()
+	    {
+            return Type == ObjectTypes.Vehicle;
+        }
+
+	    public bool ShouldSerializePrimaryColor()
+	    {
+            return Type == ObjectTypes.Vehicle;
+        }
+
+	    public bool ShouldSerializeSecondaryColor()
+	    {
+            return Type == ObjectTypes.Vehicle;
+        }
+
+	    public bool ShouldSerializeAmount()
+	    {
+            return Type == ObjectTypes.Pickup;
+        }
+
+	    public bool ShouldSerializeRespawnTimer()
+	    {
+            return Type == ObjectTypes.Pickup;
+        }
+
+	    public bool ShouldSerializeFlag()
+	    {
+            return Type == ObjectTypes.Pickup;
+        }
 	}
 
     public class PedDrawables

@@ -331,8 +331,10 @@ namespace MapEditor
 						Rotation = new Vehicle(v).Rotation,
 						Type = ObjectTypes.Vehicle,
                         Id = (Identifications.ContainsKey(v) && !string.IsNullOrWhiteSpace(Identifications[v])) ? Identifications[v] : null,
-                        SirensActive = ActiveSirens.Contains(v)
-					}));
+                        SirensActive = ActiveSirens.Contains(v),
+                        PrimaryColor = (int)new Vehicle(v).PrimaryColor,
+                        SecondaryColor = (int)new Vehicle(v).SecondaryColor,
+                    }));
 
 			Peds.ForEach(v => outList.Add(new MapObject()
 			{
@@ -429,7 +431,10 @@ namespace MapEditor
 
 			    if (marker.TeleportTarget.HasValue && Game.Player.Character.IsInRangeOf(marker.Position, Math.Max(2f, marker.Scale.X)) && !_justTeleported)
 			    {
-			        Game.Player.Character.Position = marker.TeleportTarget.Value;
+			        if (!Game.Player.Character.IsInVehicle())
+			            Game.Player.Character.Position = marker.TeleportTarget.Value;
+			        else
+			            Game.Player.Character.CurrentVehicle.Position = marker.TeleportTarget.Value;
 			        _justTeleported = true;
 			    }
 			}
