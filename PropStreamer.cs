@@ -51,6 +51,8 @@ namespace MapEditor
 		public static int EntityCount => StreamedInHandles.Count + MemoryObjects.Count + Vehicles.Count + Peds.Count;
 
 		public static List<MapObject> RemovedObjects = new List<MapObject>();
+
+	    public static MapMetadata CurrentMapMetadata = new MapMetadata();
         
         public static Prop CreateProp(Model model, Vector3 position, Vector3 rotation, bool dynamic, Quaternion q = null, bool force = false, int drawDistance = -1)
 		{
@@ -63,8 +65,8 @@ namespace MapEditor
             if (PropCount > 0 && PropCount % 249 == 0)
                 Script.Wait(100);
 
-			var prop = World.CreateProp(model, position, rotation, dynamic, false);
-			if (prop == null) return null;
+			var prop = new Prop(Function.Call<int>(Hash.CREATE_OBJECT_NO_OFFSET, model.Hash, position.X, position.Y, position.Z, true, true, dynamic));
+            //var prop = World.CreateProp(model, position, rotation, dynamic, false);
 			StreamedInHandles.Add(prop.Handle);
 			if (!dynamic)
 			{
@@ -425,6 +427,7 @@ namespace MapEditor
             
             foreach (Marker marker in Markers)
 			{
+                if (!marker.OnlyVisibleInEditor || marker.OnlyVisibleInEditor && MapEditor.IsInFreecam)
 				Function.Call(Hash.DRAW_MARKER, (int) marker.Type, marker.Position.X, marker.Position.Y, marker.Position.Z, 0f, 0f, 0f,
 				 marker.Rotation.X, marker.Rotation.Y, marker.Rotation.Z, marker.Scale.X, marker.Scale.Y, marker.Scale.Z,
 				 marker.Red, marker.Green, marker.Blue, marker.Alpha, marker.BobUpAndDown, marker.RotateToCamera, 2, false, false, false);

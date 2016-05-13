@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API\ModManager.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="JavascriptHook.cs" />
     <Compile Include="Map.cs" />
     <Compile Include="MapEditor.cs" />

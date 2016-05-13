@@ -21,7 +21,7 @@ namespace MapEditor
 {
     public class MapEditor : Script
     {
-        private bool _isInFreecam;
+        public static bool IsInFreecam;
         private bool _isChoosingObject;
         private bool _searchResultsOn;
 
@@ -29,9 +29,11 @@ namespace MapEditor
         private readonly UIMenu _searchMenu;
         private readonly UIMenu _mainMenu;
 	    private readonly UIMenu _formatMenu;
+        private readonly UIMenu _metadataMenu;
 	    private readonly UIMenu _objectInfoMenu;
 	    private readonly UIMenu _settingsMenu;
 	    private readonly UIMenu _currentObjectsMenu;
+        private readonly UIMenu _filepicker;
 
 	    private UIMenuItem _currentEntitiesItem;
 
@@ -179,16 +181,27 @@ namespace MapEditor
 	        RedrawFormatMenu();
 			_menuPool.Add(_formatMenu);
 
+            _metadataMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("SAVE MAP"));
+            _metadataMenu.DisableInstructionalButtons(true);
+		    _metadataMenu.ParentMenu = _formatMenu;
+		    RedrawMetadataMenu();
+            _menuPool.Add(_metadataMenu);
+
+            _filepicker = new UIMenu("Map Editor", "~b~" + Translation.Translate("PICK FILE"));
+            _filepicker.DisableInstructionalButtons(true);
+		    _filepicker.ParentMenu = _formatMenu;
+            _menuPool.Add(_filepicker);
+
             _mainMenu.OnItemSelect += (m, it, i) =>
             {
                 switch (i)
                 {
-                    case 0:
-                        _isInFreecam = !_isInFreecam;
-                        Game.Player.Character.FreezePosition = _isInFreecam;
-		                Game.Player.Character.IsVisible = !_isInFreecam;
+                    case 0: // Enter/Exit Map Editor
+                        IsInFreecam = !IsInFreecam;
+                        Game.Player.Character.FreezePosition = IsInFreecam;
+		                Game.Player.Character.IsVisible = !IsInFreecam;
                         World.RenderingCamera = null;
-		                if (!_isInFreecam)
+		                if (!IsInFreecam)
 		                {
 							Game.Player.Character.Position -= new Vector3(0f, 0f, Game.Player.Character.HeightAboveGround - 1f);
 			                return;
@@ -198,7 +211,7 @@ namespace MapEditor
 						_objectPreviewCamera = World.CreateCamera(new Vector3(1200.016f, 3980.998f, 86.05062f), new Vector3(0f, 0f, 0f), 60f);
 						World.RenderingCamera = _mainCamera;
                         break;
-                    case 1:
+                    case 1: // New Map
                         JavascriptHook.StopAllScripts();
 						PropStreamer.RemoveAll();
 						PropStreamer.Markers.Clear();
@@ -208,6 +221,7 @@ namespace MapEditor
 						PropStreamer.ActiveRelationships.Clear();
 						PropStreamer.ActiveWeapons.Clear();
                         PropStreamer.Doors.Clear();
+                        PropStreamer.CurrentMapMetadata = new MapMetadata();
 						ModManager.CurrentMod?.ModDisconnectInvoker();
 						ModManager.CurrentMod = null;
 		                foreach (MapObject o in PropStreamer.RemovedObjects)
@@ -256,12 +270,17 @@ namespace MapEditor
 	        {
 		        if (_savingMap)
 		        {
-					string filename = Game.GetUserInput(255);
-			        switch (indx)
+			        string filename = "";
+                    if (indx != 0)
+                        filename = Game.GetUserInput(255);
+
+                    switch (indx)
 			        {
 						case 0: // XML
-					        if (!filename.EndsWith(".xml")) filename += ".xml";
-							SaveMap(filename, MapSerializer.Format.NormalXml);
+                            // TODO: Send to another menu
+			                _formatMenu.Visible = false;
+                            RedrawMetadataMenu();
+			                _metadataMenu.Visible = true;
 					        break;
 						case 1: // Objects.ini
 							if (!filename.EndsWith(".ini")) filename += ".ini";
@@ -287,8 +306,11 @@ namespace MapEditor
 				}
 		        else
 		        {
-					string filename = Game.GetUserInput(255);
-			        MapSerializer.Format tmpFor = MapSerializer.Format.NormalXml;
+		            string filename = "";
+                    if (indx != 4)
+                        filename = Game.GetUserInput(255);
+
+                    MapSerializer.Format tmpFor = MapSerializer.Format.NormalXml;
 			        switch (indx)
 			        {
 						case 0: // XML
@@ -303,7 +325,12 @@ namespace MapEditor
                         case 3: // Spooner
                             tmpFor = MapSerializer.Format.Menyoo;
                             break;
-                    }
+                        case 4: // File picker
+                            _formatMenu.Visible = false;
+			                RedrawFilepickerMenu();
+			                _filepicker.Visible = true;
+                            return;
+			        }
 					LoadMap(filename, tmpFor);
 				}
 		        _formatMenu.Visible = false;
@@ -634,6 +661,13 @@ namespace MapEditor
 		    {
 			    var map2Load = des.Deserialize(filename, format);
 			    if (map2Load == null) return;
+
+		        if (map2Load.Metadata != null && map2Load.Metadata.LoadingPoint.HasValue)
+		        {
+		            Game.Player.Character.Position = map2Load.Metadata.LoadingPoint.Value;
+                    Wait(500);
+		        }
+
 			    foreach (MapObject o in map2Load.Objects)
 			    {
 				    if(o == null) continue;
@@ -688,6 +722,8 @@ namespace MapEditor
 								else if(o.Action == "Any - Warp")
 									Function.Call(Hash.TASK_USE_NEAREST_SCENARIO_TO_COORD_WARP, pedid.Handle, pedid.Position.X, pedid.Position.Y,
 											pedid.Position.Z, 100f, -1);
+                                else if (o.Action == "Wander")
+                                    pedid.Task.WanderAround();
 								else
 								{
 									Function.Call(Hash.TASK_START_SCENARIO_IN_PLACE, pedid.Handle, ObjectDatabase.ScrenarioDatabase[o.Action], 0, 0);
@@ -768,6 +804,15 @@ namespace MapEditor
 		        {
                     JavascriptHook.StartScript(File.ReadAllText(new FileInfo(filename).Directory.FullName + "\\" + Path.GetFileNameWithoutExtension(filename) + ".js"), handles);
 		        }
+
+		        if (map2Load.Metadata != null && map2Load.Metadata.TeleportPoint.HasValue)
+		        {
+		            Game.Player.Character.Position = map2Load.Metadata.TeleportPoint.Value;
+		        }
+
+		        PropStreamer.CurrentMapMetadata = map2Load.Metadata ?? new MapMetadata();
+
+		        PropStreamer.CurrentMapMetadata.Filename = filename;
                 
 			    UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("Loaded map") + " ~h~" + filename + "~h~.");
 		    }
@@ -775,6 +820,8 @@ namespace MapEditor
 		    {
 				UI.Notify("~r~~h~Map Editor~h~~w~~n~" + Translation.Translate("Map failed to load, see error below."));
 				UI.Notify(e.Message);
+
+                File.AppendAllText("scripts\\MapEditor.log", DateTime.Now + " MAP FAILED TO LOAD:\r\n" + e.ToString() + "\r\n");
 			}
 	    }
 
@@ -795,6 +842,8 @@ namespace MapEditor
 					: PropStreamer.GetAllEntities());
 				tmpmap.RemoveFromWorld.AddRange(PropStreamer.RemovedObjects);
 				tmpmap.Markers.AddRange(PropStreamer.Markers);
+			    tmpmap.Metadata = PropStreamer.CurrentMapMetadata;
+                
 				ser.Serialize(filename, tmpmap, format);
 				UI.Notify("~b~~h~Map Editor~h~~w~~n~" + Translation.Translate("Saved current map as") + " ~h~" + filename + "~h~.");
 			    _changesMade = 0;
@@ -870,7 +919,7 @@ namespace MapEditor
             // BELOW ONLY WHEN MAP EDITOR IS ACTIVE
             //
 
-            if (!_isInFreecam) return;
+            if (!IsInFreecam) return;
 			if(_settings.InstructionalButtons && !_objectsMenu.Visible)
                 Function.Call(Hash._0x0DF606929C105BE1, _scaleform.Handle, 255, 255, 255, 255, 0);
             
@@ -2026,7 +2075,7 @@ namespace MapEditor
 					requestedHash = ObjectDatabase.PedDb[sender.MenuItems[index].Text];
 			        break;
 	        }
-            if ((_previewProp == null || _previewProp.Model.Hash != requestedHash) && (!ObjectDatabase.InvalidHashes.Contains(requestedHash) && _settings.OmitInvalidObjects))
+            if ((_previewProp == null || _previewProp.Model.Hash != requestedHash) && ((!ObjectDatabase.InvalidHashes.Contains(requestedHash) && _settings.OmitInvalidObjects) || !_settings.OmitInvalidObjects))
             {
 				_previewProp?.Delete();
                 Model tmpModel = ObjectPreview.LoadObject(requestedHash);
@@ -2123,13 +2172,34 @@ namespace MapEditor
             _objectsMenu.RefreshIndex();
         }
 
+        private bool ApplySearchQuery(string searchQuery, string modelName)
+        {
+            var q = searchQuery.ToLower();
+            if (q.Contains(" or "))
+            {
+                var queries = Regex.Split(q, "\\s+or\\s+");
+                return queries.Aggregate(false, (current, query) => current || ApplySearchQuery(query, modelName));
+            }
+
+            if (q.Contains(" and "))
+            {
+                var queries = Regex.Split(q, "\\s+and\\s+");
+                return queries.Aggregate(true, (current, query) => current && ApplySearchQuery(query, modelName));
+            }
+
+
+            return modelName.ToLower().Contains(q);
+        }
+
         private void RedrawSearchMenu(string searchQuery, ObjectTypes type = ObjectTypes.Prop)
         {
             _searchMenu.Clear();
+
+
             switch (type)
             {
                 case ObjectTypes.Prop:
-                    foreach (var u in ObjectDatabase.MainDb.Where(pair => CultureInfo.InvariantCulture.CompareInfo.IndexOf(pair.Key, searchQuery, CompareOptions.IgnoreCase) >= 0))
+                    foreach (var u in ObjectDatabase.MainDb.Where(pair => ApplySearchQuery(searchQuery, pair.Key)))
                     {
                         var object1 = new UIMenuItem(u.Key);
                         if (ObjectDatabase.InvalidHashes.Contains(u.Value))
@@ -2138,14 +2208,14 @@ namespace MapEditor
                     }
                     break;
                 case ObjectTypes.Vehicle:
-                    foreach (var u in ObjectDatabase.VehicleDb.Where(pair => CultureInfo.InvariantCulture.CompareInfo.IndexOf(pair.Key, searchQuery, CompareOptions.IgnoreCase) >= 0))
+                    foreach (var u in ObjectDatabase.VehicleDb.Where(pair => ApplySearchQuery(searchQuery, pair.Key)))
                     {
                         var object1 = new UIMenuItem(u.Key);
                         _searchMenu.AddItem(object1);
                     }
                     break;
                 case ObjectTypes.Ped:
-                    foreach (var u in ObjectDatabase.PedDb.Where(pair => CultureInfo.InvariantCulture.CompareInfo.IndexOf(pair.Key, searchQuery, CompareOptions.IgnoreCase) >= 0))
+                    foreach (var u in ObjectDatabase.PedDb.Where(pair => ApplySearchQuery(searchQuery, pair.Key)))
                     {
                         var object1 = new UIMenuItem(u.Key);
                         _searchMenu.AddItem(object1);
@@ -2153,6 +2223,258 @@ namespace MapEditor
                     break;
             }
             _searchMenu.RefreshIndex();
+        }
+
+        private string GetSafeShortReverseString(string input, int limit)
+        {
+            if (input == null) return null;
+            if (input.Length > limit)
+            {
+                return "..." + input.Substring(input.Length - limit, limit);
+            }
+
+            return input;
+        }
+
+        private string GetSafeShortString(string input, int limit)
+        {
+            if (input == null) return null;
+            if (input.Length > limit)
+            {
+                return input.Substring(0, limit) + "...";
+            }
+
+            return input;
+        }
+
+        private string FormatDescription(string input)
+        {
+            int maxPixelsPerLine = 425;
+            int aggregatePixels = 0;
+            string output = "";
+            string[] words = input.Split(' ');
+            foreach (string word in words)
+            {
+                int offset = StringMeasurer.MeasureString(word);
+                aggregatePixels += offset;
+                if (aggregatePixels > maxPixelsPerLine)
+                {
+                    output += "\n" + word + " ";
+                    aggregatePixels = offset + StringMeasurer.MeasureString(" ");
+                }
+                else
+                {
+                    output += word + " ";
+                    aggregatePixels += StringMeasurer.MeasureString(" ");
+                }
+            }
+            return output;
+        }
+
+        private void RedrawFilepickerMenu(string folder = null)
+        {
+            if (folder == null) folder = Directory.GetCurrentDirectory();
+            _filepicker.Clear();
+            _filepicker.Subtitle.Caption = "~b~" + GetSafeShortReverseString(folder, 30);
+
+            var backup = new UIMenuItem("..");
+            backup.SetLeftBadge(UIMenuItem.BadgeStyle.Franklin);
+            backup.Activated += (sender, item) =>
+            {
+                RedrawFilepickerMenu(Directory.GetParent(folder).ToString());
+            };
+
+            if (Directory.GetParent(folder) == null)
+                backup.Enabled = false;
+
+            _filepicker.AddItem(backup);
+
+            foreach (var directory in Directory.EnumerateDirectories(folder))
+            {
+                var dirItem = new UIMenuItem(GetSafeShortString(Path.GetFileName(directory), 40));
+                dirItem.SetLeftBadge(UIMenuItem.BadgeStyle.Franklin);
+                dirItem.Activated += (sender, item) =>
+                {
+                    RedrawFilepickerMenu(directory);
+                };
+
+                _filepicker.AddItem(dirItem);
+            }
+
+            foreach (var file in Directory.EnumerateFiles(folder))
+            {
+                var item = new UIMenuItem(GetSafeShortString(Path.GetFileName(file), 40));
+                _filepicker.FormatDescriptions = false;
+
+                MapSerializer.Format mapFormat = MapSerializer.Format.NormalXml;
+                string description = "";
+
+                if (file.EndsWith(".ini"))
+                {
+                    mapFormat = MapSerializer.Format.SimpleTrainer;
+                }
+                else if (file.EndsWith(".SP00N"))
+                {
+                    mapFormat = MapSerializer.Format.SpoonerLegacy;
+                }
+                else if (file.EndsWith(".xml"))
+                {
+                    mapFormat = MapSerializer.Format.NormalXml;
+                    Map map = null;
+
+                    try
+                    {
+                        var ser = new XmlSerializer(typeof(Map));
+                        using (var stream = File.OpenRead(file))
+                            map = (Map) ser.Deserialize(stream);
+                    }
+                    catch (Exception) {}
+
+                    if (map == null)
+                    {
+                        try
+                        {
+                            var spReader = new XmlSerializer(typeof(MenyooCompatibility.SpoonerPlacements));
+                            MenyooCompatibility.SpoonerPlacements newMap = null;
+                            using (var stream = File.OpenRead(file))
+                                newMap = (MenyooCompatibility.SpoonerPlacements)spReader.Deserialize(stream);
+
+                            if (newMap != null)
+                            {
+                                description = "~h~Format:~h~ Menyoo Trainer";
+                                mapFormat = MapSerializer.Format.Menyoo;
+                            }
+                        }
+                        catch (Exception) { }
+                    }
+
+                    if (map != null && map.Metadata != null)
+                    {
+                        description = "~h~Format:~h~ Map Editor\n~h~Name:~h~ " + map.Metadata.Name + "\n~h~Author:~h~ " +
+                                      map.Metadata.Creator + "\n" + FormatDescription("~h~Description:~h~ " + map.Metadata.Description);
+                    }
+                }
+                else
+                {
+                    continue;
+                }
+
+                item.Description = description;
+
+                item.Activated += (sender, selectedItem) =>
+                {
+                    _filepicker.Visible = false;
+                    LoadMap(file, mapFormat);
+                };
+
+                _filepicker.AddItem(item);
+            }
+
+            _filepicker.RefreshIndex();
+        }
+
+        private void RedrawMetadataMenu()
+        {
+            _metadataMenu.Clear();
+
+            var saveItem = new UIMenuItem(Translation.Translate("Save Map"));
+
+            saveItem.Activated += (sender, item) =>
+            {
+                SaveMap(PropStreamer.CurrentMapMetadata.Filename, MapSerializer.Format.NormalXml);
+                _metadataMenu.Visible = false;
+            };
+
+            if (string.IsNullOrWhiteSpace(PropStreamer.CurrentMapMetadata.Filename))
+            {
+                saveItem.Enabled = false;
+            }
+
+            {
+                var filenameItem = new UIMenuItem(Translation.Translate("File Path"));
+
+                if (string.IsNullOrWhiteSpace(PropStreamer.CurrentMapMetadata.Filename))
+                    filenameItem.SetRightBadge(UIMenuItem.BadgeStyle.Alert);
+                else
+                    filenameItem.SetRightLabel(GetSafeShortReverseString(PropStreamer.CurrentMapMetadata.Filename, 20));
+                
+
+                filenameItem.Activated += (sender, item) =>
+                {
+                    var newName = Game.GetUserInput(PropStreamer.CurrentMapMetadata.Filename ?? "", 255);
+                    if (string.IsNullOrWhiteSpace(newName)) return;
+                    if (!newName.EndsWith(".xml")) newName += ".xml";
+                    PropStreamer.CurrentMapMetadata.Filename = newName;
+                    saveItem.Enabled = true;
+
+                    filenameItem.SetRightBadge(UIMenuItem.BadgeStyle.None);
+                    filenameItem.SetRightLabel(GetSafeShortReverseString(newName, 20));
+                };
+
+                _metadataMenu.AddItem(filenameItem);
+            }
+
+            {
+                var filenameItem = new UIMenuItem(Translation.Translate("Map Name"));
+
+                if (!string.IsNullOrWhiteSpace(PropStreamer.CurrentMapMetadata.Name))
+                    filenameItem.SetRightLabel(GetSafeShortString(PropStreamer.CurrentMapMetadata.Name, 20));
+
+
+                filenameItem.Activated += (sender, item) =>
+                {
+                    var newName = Game.GetUserInput(PropStreamer.CurrentMapMetadata.Name ?? "", 30);
+                    if (string.IsNullOrWhiteSpace(newName)) return;
+                    PropStreamer.CurrentMapMetadata.Name = newName;
+                    
+                    filenameItem.SetRightLabel(GetSafeShortString(newName, 20));
+                };
+
+                _metadataMenu.AddItem(filenameItem);
+            }
+
+            {
+                var filenameItem = new UIMenuItem(Translation.Translate("Author"));
+
+                if (!string.IsNullOrWhiteSpace(PropStreamer.CurrentMapMetadata.Creator))
+                    filenameItem.SetRightLabel(GetSafeShortString(PropStreamer.CurrentMapMetadata.Creator, 20));
+
+
+                filenameItem.Activated += (sender, item) =>
+                {
+                    var newName = Game.GetUserInput(PropStreamer.CurrentMapMetadata.Creator ?? "", 30);
+                    if (string.IsNullOrWhiteSpace(newName)) return;
+                    PropStreamer.CurrentMapMetadata.Creator = newName;
+
+                    filenameItem.SetRightLabel(GetSafeShortString(newName, 20));
+                };
+
+                _metadataMenu.AddItem(filenameItem);
+            }
+
+            {
+                var filenameItem = new UIMenuItem(Translation.Translate("Description"));
+
+                if (!string.IsNullOrWhiteSpace(PropStreamer.CurrentMapMetadata.Description))
+                    filenameItem.Description = PropStreamer.CurrentMapMetadata.Description;
+
+
+                filenameItem.Activated += (sender, item) =>
+                {
+                    var newName = Game.GetUserInput(PropStreamer.CurrentMapMetadata.Description ?? "", 255);
+                    if (string.IsNullOrWhiteSpace(newName)) return;
+                    PropStreamer.CurrentMapMetadata.Description = newName;
+                    filenameItem.Description = newName;
+                };
+
+                _metadataMenu.AddItem(filenameItem);
+            }
+
+            _metadataMenu.AddItem(saveItem);
+            _metadataMenu.RefreshIndex();
+
+            if (saveItem.Enabled)
+                _metadataMenu.CurrentSelection = 4; // TODO: Change this when adding items.
         }
 
         private void RedrawFormatMenu()
@@ -2171,6 +2493,12 @@ namespace MapEditor
             _formatMenu.AddItem(new UIMenuItem("Spooner (Legacy)",
                 Translation.Translate("Format used in Object Spooner mod (.SP00N).")));
             _formatMenu.AddItem(new UIMenuItem("Menyoo", Translation.Translate("Format used in Meynoo mod (.xml).")));
+
+            if (!_savingMap)
+            {
+                _formatMenu.AddItem(new UIMenuItem(Translation.Translate("File Chooser...")));
+            }
+            
             _formatMenu.RefreshIndex();
 		}
 
@@ -2345,7 +2673,7 @@ namespace MapEditor
 
             if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent.Handle))
 		    {
-				List<dynamic> actions = new List<dynamic> {"None", "Any - Walk", "Any - Warp"};
+				List<dynamic> actions = new List<dynamic> {"None", "Any - Walk", "Any - Warp", "Wander"};
 				actions.AddRange(ObjectDatabase.ScrenarioDatabase.Keys);
 			    var scenarioItem = new UIMenuListItem(Translation.Translate("Idle Action"), actions, actions.IndexOf(PropStreamer.ActiveScenarios[ent.Handle]));
 			    scenarioItem.OnListChanged += (item, index) =>
@@ -2370,6 +2698,11 @@ namespace MapEditor
 						Function.Call(Hash.TASK_USE_NEAREST_SCENARIO_TO_COORD_WARP, ent.Handle, ent.Position.X, ent.Position.Y, ent.Position.Z, 100f, -1);
 						return;
 					}
+			        if (PropStreamer.ActiveScenarios[ent.Handle] == "Wander")
+			        {
+			            Function.Call(Hash.TASK_WANDER_STANDARD, ent.Handle, 0, 0);
+			            return;
+			        }
 					string scenario = ObjectDatabase.ScrenarioDatabase[PropStreamer.ActiveScenarios[ent.Handle]];
 				    if (Function.Call<bool>(Hash.IS_PED_USING_SCENARIO, ent.Handle, scenario))
 					    ((Ped) ent).Task.ClearAll();
@@ -2492,6 +2825,8 @@ namespace MapEditor
                 (sender, item) =>
                     SetObjectVector(ent, posZitem, ent.Position.X, ent.Position.Y, GetSafeFloat(Game.GetUserInput(ent.Position.Z.ToString(CultureInfo.InvariantCulture), 10), ent.Position.Z));
 
+
+
             posXitem.OnListChanged += (item, index) =>
 	        {
                 if (!IsProp(ent) )
@@ -2533,7 +2868,32 @@ namespace MapEditor
                 _changesMade++;
             };
 
-		    rotYitem.OnListChanged += (item, index) =>
+            rotXitem.Activated +=
+                (sender, item) =>
+                {
+                    var rot = ent.Quaternion.ToEuler();
+                    SetObjectRotation(ent,
+                        GetSafeFloat(Game.GetUserInput(rot.X.ToString(CultureInfo.InvariantCulture).Limit(10), 10),
+                            rot.X), rot.Y, rot.Z);
+                };
+            rotYitem.Activated +=
+                (sender, item) =>
+                {
+                    var rot = ent.Quaternion.ToEuler();
+                    SetObjectRotation(ent, rot.X,
+                        GetSafeFloat(Game.GetUserInput(rot.Y.ToString(CultureInfo.InvariantCulture).Limit(10), 10),
+                            rot.Y), rot.Z);
+                };
+            rotZitem.Activated +=
+                (sender, item) =>
+                {
+                    var rot = ent.Quaternion.ToEuler();
+                    SetObjectRotation(ent, rot.X, rot.Y,
+                        GetSafeFloat(Game.GetUserInput(rot.Z.ToString(CultureInfo.InvariantCulture).Limit(10), 10),
+                            rot.Z));
+                };
+
+            rotYitem.OnListChanged += (item, index) =>
 		    {
 			    var change = (float)item.IndexToItem(index);
 				ent.Quaternion = new Vector3(change, ent.Rotation.Y, ent.Rotation.Z).ToQuaternion();
@@ -2573,10 +2933,38 @@ namespace MapEditor
                 PropStreamer.GetPickup(ent.Handle).UpdatePos();
             }
             _changesMade++;
+            RedrawObjectInfoMenu(ent, false);
             //return vect;
         }
 
-		private void RedrawObjectInfoMenu(Marker ent, bool refreshIndex)
+        public void SetObjectRotation(Entity ent, float x, float y, float z)
+        {
+            ent.Quaternion = new Vector3(x,y,z).ToQuaternion();
+            
+            _changesMade++;
+            RedrawObjectInfoMenu(ent, false);
+            //return vect;
+        }
+
+        public void SetMarkerVector(Marker ent, float x, float y, float z)
+        {
+            ent.Position = new Vector3(x, y, z);
+            RedrawObjectInfoMenu(ent, false);
+        }
+
+        public void SetMarkerRotation(Marker ent, float x, float y, float z)
+        {
+            ent.Rotation = new Vector3(x, y, z);
+            RedrawObjectInfoMenu(ent, false);
+        }
+
+        public void SetMarkerScale(Marker ent, float x, float y, float z)
+        {
+            ent.Scale = new Vector3(x, y, z);
+            RedrawObjectInfoMenu(ent, false);
+        }
+
+        private void RedrawObjectInfoMenu(Marker ent, bool refreshIndex)
 		{
 			if (ent == null) return;
 			string name = ent.Type.ToString() + " #" + ent.Id;
@@ -2657,7 +3045,44 @@ namespace MapEditor
 		        ent.TeleportTarget = PropStreamer.Markers.FirstOrDefault(n => n.Id == index-1)?.Position;
 		    };
 
-			_objectInfoMenu.AddItem(type);
+            var loadPointItem = new UIMenuCheckboxItem(Translation.Translate("Mark as Loading Point"),
+                PropStreamer.CurrentMapMetadata.LoadingPoint.HasValue &&
+                (PropStreamer.CurrentMapMetadata.LoadingPoint.Value - ent.Position).Length() < 1f, Translation.Translate("Player will be teleported here BEFORE starting to load the map."));
+            loadPointItem.CheckboxEvent += (sender, @checked) =>
+            {
+                if (@checked)
+                {
+                    PropStreamer.CurrentMapMetadata.LoadingPoint = ent.Position;
+                }
+                else
+                {
+                    PropStreamer.CurrentMapMetadata.LoadingPoint = null;
+                }
+            };
+
+            var loadTeleportItem = new UIMenuCheckboxItem(Translation.Translate("Mark as Starting Point"),
+                PropStreamer.CurrentMapMetadata.TeleportPoint.HasValue &&
+                (PropStreamer.CurrentMapMetadata.TeleportPoint.Value - ent.Position).Length() < 1f, Translation.Translate("Player will be teleported here AFTER starting to load the map."));
+            loadTeleportItem.CheckboxEvent += (sender, @checked) =>
+            {
+                if (@checked)
+                {
+                    PropStreamer.CurrentMapMetadata.TeleportPoint = ent.Position;
+                }
+                else
+                {
+                    PropStreamer.CurrentMapMetadata.TeleportPoint = null;
+                }
+            };
+
+            var visiblityItem = new UIMenuCheckboxItem(Translation.Translate("Only Visible In Editor"), ent.OnlyVisibleInEditor);
+            visiblityItem.CheckboxEvent += (sender, @checked) =>
+            {
+                ent.OnlyVisibleInEditor = @checked;
+            };
+
+
+            _objectInfoMenu.AddItem(type);
 			_objectInfoMenu.AddItem(posXitem);
 			_objectInfoMenu.AddItem(posYitem);
 			_objectInfoMenu.AddItem(posZitem);
@@ -2674,6 +3099,9 @@ namespace MapEditor
 			_objectInfoMenu.AddItem(dynamic);
 			_objectInfoMenu.AddItem(faceCam);
             _objectInfoMenu.AddItem(targetPos);
+            _objectInfoMenu.AddItem(loadPointItem);
+            _objectInfoMenu.AddItem(loadTeleportItem);
+            _objectInfoMenu.AddItem(visiblityItem);
 
 
             posXitem.OnListChanged += (item, index) => ent.Position = new Vector3((float)item.IndexToItem(index), ent.Position.Y, ent.Position.Z);
@@ -2682,23 +3110,43 @@ namespace MapEditor
 
 		    posXitem.Activated +=
 		        (sender, item) =>
-		            ent.Position = new Vector3(GetSafeFloat(Game.GetUserInput(ent.Position.X.ToString(CultureInfo.InvariantCulture), 10), ent.Position.X), ent.Position.Y, ent.Position.Z);
+                    SetMarkerVector(ent, GetSafeFloat(Game.GetUserInput(ent.Position.X.ToString(CultureInfo.InvariantCulture), 10), ent.Position.X), ent.Position.Y, ent.Position.Z);
             posYitem.Activated +=
                 (sender, item) =>
-                    ent.Position = new Vector3(ent.Position.X, GetSafeFloat(Game.GetUserInput(ent.Position.Y.ToString(CultureInfo.InvariantCulture), 10), ent.Position.Y), ent.Position.Z);
+                    SetMarkerVector(ent, ent.Position.X, GetSafeFloat(Game.GetUserInput(ent.Position.Y.ToString(CultureInfo.InvariantCulture), 10), ent.Position.Y), ent.Position.Z);
             posZitem.Activated +=
                 (sender, item) =>
-                    ent.Position = new Vector3(ent.Position.X, ent.Position.Y, GetSafeFloat(Game.GetUserInput(ent.Position.Z.ToString(CultureInfo.InvariantCulture), 10), ent.Position.Z));
+                    SetMarkerVector(ent, ent.Position.X, ent.Position.Y, GetSafeFloat(Game.GetUserInput(ent.Position.Z.ToString(CultureInfo.InvariantCulture), 10), ent.Position.Z));
 
             rotXitem.OnListChanged += (item, index) => ent.Rotation = new Vector3((float)item.IndexToItem(index), ent.Rotation.Y, ent.Rotation.Z);
 			rotYitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, (float)item.IndexToItem(index), ent.Rotation.Z);
 			rotZitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, ent.Rotation.Y, (float)item.IndexToItem(index));
 
-			scaleXitem.OnListChanged += (item, index) => ent.Scale = new Vector3((float)item.IndexToItem(index), ent.Scale.Y, ent.Scale.Z);
-			scaleXitem.OnListChanged += (item, index) => ent.Scale = new Vector3(ent.Scale.X, (float)item.IndexToItem(index), ent.Scale.Z);
-			scaleXitem.OnListChanged += (item, index) => ent.Scale = new Vector3(ent.Scale.X, ent.Scale.Y, (float)item.IndexToItem(index));
+            rotXitem.Activated +=
+                (sender, item) =>
+                    SetMarkerRotation(ent, GetSafeFloat(Game.GetUserInput(ent.Rotation.X.ToString(CultureInfo.InvariantCulture), 10), ent.Rotation.X), ent.Rotation.Y, ent.Rotation.Z);
+            rotYitem.Activated +=
+                (sender, item) =>
+                    SetMarkerRotation(ent, ent.Rotation.X, GetSafeFloat(Game.GetUserInput(ent.Rotation.Y.ToString(CultureInfo.InvariantCulture), 10), ent.Rotation.Y), ent.Rotation.Z);
+            rotZitem.Activated +=
+                (sender, item) =>
+                    SetMarkerRotation(ent, ent.Rotation.X, ent.Rotation.Y, GetSafeFloat(Game.GetUserInput(ent.Rotation.Z.ToString(CultureInfo.InvariantCulture), 10), ent.Rotation.Z));
 
-			colorR.OnListChanged += (item, index) => ent.Red = index;
+            scaleXitem.OnListChanged += (item, index) => ent.Scale = new Vector3((float)item.IndexToItem(index), ent.Scale.Y, ent.Scale.Z);
+			scaleYitem.OnListChanged += (item, index) => ent.Scale = new Vector3(ent.Scale.X, (float)item.IndexToItem(index), ent.Scale.Z);
+			scaleZitem.OnListChanged += (item, index) => ent.Scale = new Vector3(ent.Scale.X, ent.Scale.Y, (float)item.IndexToItem(index));
+
+            scaleXitem.Activated +=
+                (sender, item) =>
+                    SetMarkerScale(ent, GetSafeFloat(Game.GetUserInput(ent.Scale.X.ToString(CultureInfo.InvariantCulture), 10), ent.Scale.X), ent.Scale.Y, ent.Scale.Z);
+            scaleYitem.Activated +=
+                (sender, item) =>
+                    SetMarkerScale(ent, ent.Scale.X, GetSafeFloat(Game.GetUserInput(ent.Scale.Y.ToString(CultureInfo.InvariantCulture), 10), ent.Scale.Y), ent.Scale.Z);
+            scaleZitem.Activated +=
+                (sender, item) =>
+                    SetMarkerScale(ent, ent.Scale.X, ent.Scale.Y, GetSafeFloat(Game.GetUserInput(ent.Scale.Z.ToString(CultureInfo.InvariantCulture), 10), ent.Scale.Z));
+
+            colorR.OnListChanged += (item, index) => ent.Red = index;
 			colorG.OnListChanged += (item, index) => ent.Green = index;
 			colorB.OnListChanged += (item, index) => ent.Blue = index;
 			colorA.OnListChanged += (item, index) => ent.Alpha = index;
@@ -2710,7 +3158,7 @@ namespace MapEditor
         public static float GetSafeFloat(string input, float lastFloat)
         {
             float output;
-            if (!float.TryParse(input, out output))
+            if (!float.TryParse(input, NumberStyles.Any,  CultureInfo.InvariantCulture, out output))
             {
                 return lastFloat;
             }
@@ -2858,7 +3306,7 @@ namespace MapEditor
 
 		public void OnEntityTeleport(UIMenu menu, UIMenuItem item, int index)
 	    {
-            if (!_isInFreecam) return;
+            if (!IsInFreecam) return;
 		    if (item.Text.StartsWith("~h~[PICKUP]~h~"))
 		    {
 		        var uid = int.Parse(item.Description.Substring(7));

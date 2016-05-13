@@ -17,6 +17,7 @@ namespace MapEditor
 		public int Alpha;
 		public bool BobUpAndDown;
 		public bool RotateToCamera;
+	    public bool OnlyVisibleInEditor;
 		public int Id;
 	}
 }
