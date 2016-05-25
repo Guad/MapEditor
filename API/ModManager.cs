@@ -14,11 +14,13 @@ namespace MapEditor.API
 	{
 		internal static List<ModListener> Mods = new List<ModListener>();
 		internal static ModListener CurrentMod;
-		internal static UIMenu ModMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("EXTERNAL MODS"));
+	    internal static UIMenu ModMenu;
 
 		internal static void InitMenu()
 		{
-			ModMenu.DisableInstructionalButtons(true);
+		    ModMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("EXTERNAL MODS"));
+
+            ModMenu.DisableInstructionalButtons(true);
 			ModMenu.OnItemSelect += (menu, item, index) =>
 			{
 				var tmpMod = Mods[index];

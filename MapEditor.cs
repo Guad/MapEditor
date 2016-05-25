@@ -395,7 +395,7 @@ namespace MapEditor
             autosaveItem.OnListChanged += (item, index) =>
             {
                 var sel = item.IndexToItem(index);
-                _settings.AutosaveInterval = (sel as string) == Translation.Translate("Disable") ? -1 : Convert.ToInt32(item.IndexToItem(index));
+                _settings.AutosaveInterval = (sel as string) == Translation.Translate("Disable") ? -1 : Convert.ToInt32(item.IndexToItem(index), CultureInfo.InvariantCulture);
                 SaveSettings();
             };
 
@@ -411,7 +411,7 @@ namespace MapEditor
             drawDistanceItem.OnListChanged += (item, index) =>
             {
                 var sel = item.IndexToItem(index);
-                _settings.DrawDistance = (sel as string) == Translation.Translate("Default") ? -1 : Convert.ToInt32(item.IndexToItem(index));
+                _settings.DrawDistance = (sel as string) == Translation.Translate("Default") ? -1 : Convert.ToInt32(item.IndexToItem(index), CultureInfo.InvariantCulture);
                 SaveSettings();
             };
 
@@ -1147,33 +1147,33 @@ namespace MapEditor
 			{
 				const int interval = 45;
 
-                new UIResText(Translation.Translate("PICKUPS"), new Point(Convert.ToInt32(res.Width) - safe.X - 90, Convert.ToInt32(res.Height) - safe.Y - (90 + (5 * interval))), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-                new UIResText(PropStreamer.Pickups.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (5 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-                new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (5 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
+                new UIResText(Translation.Translate("PICKUPS"), new Point((int)(res.Width) - safe.X - 90, (int)(res.Height) - safe.Y - (90 + (5 * interval))), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+                new UIResText(PropStreamer.Pickups.Count.ToString(), new Point((int)(res.Width) - safe.X - 20, (int)(res.Height) - safe.Y - (102 + (5 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+                new Sprite("timerbars", "all_black_bg", new Point((int)(res.Width) - safe.X - 248, (int)(res.Height) - safe.Y - (100 + (5 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 
-                new UIResText(Translation.Translate("MARKERS"), new Point(Convert.ToInt32(res.Width) - safe.X - 90, Convert.ToInt32(res.Height) - safe.Y - (90 + (4 * interval))), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new UIResText(PropStreamer.Markers.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (4 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (4 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
+                new UIResText(Translation.Translate("MARKERS"), new Point((int)(res.Width) - safe.X - 90, (int)(res.Height) - safe.Y - (90 + (4 * interval))), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new UIResText(PropStreamer.Markers.Count.ToString(), new Point((int)(res.Width) - safe.X - 20, (int)(res.Height) - safe.Y - (102 + (4 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point((int)(res.Width) - safe.X - 248, (int)(res.Height) - safe.Y - (100 + (4 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 
-				new UIResText(Translation.Translate("WORLD"), new Point(Convert.ToInt32(res.Width) - safe.X - 90, Convert.ToInt32(res.Height) - safe.Y - (90 + (3 * interval))), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new UIResText(PropStreamer.RemovedObjects.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (3 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (3 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
+				new UIResText(Translation.Translate("WORLD"), new Point((int)(res.Width) - safe.X - 90, (int)(res.Height) - safe.Y - (90 + (3 * interval))), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new UIResText(PropStreamer.RemovedObjects.Count.ToString(), new Point((int)(res.Width) - safe.X - 20, (int)(res.Height) - safe.Y - (102 + (3 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point((int)(res.Width) - safe.X - 248, (int)(res.Height) - safe.Y - (100 + (3 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 
-				new UIResText(Translation.Translate("PROPS"), new Point(Convert.ToInt32(res.Width) - safe.X - 90, Convert.ToInt32(res.Height) - safe.Y - (90 + (2*interval))), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new UIResText(PropStreamer.PropCount.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + (2 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + (2 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
+				new UIResText(Translation.Translate("PROPS"), new Point((int)(res.Width) - safe.X - 90, (int)(res.Height) - safe.Y - (90 + (2*interval))), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new UIResText(PropStreamer.PropCount.ToString(), new Point((int)(res.Width) - safe.X - 20, (int)(res.Height) - safe.Y - (102 + (2 * interval))), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point((int)(res.Width) - safe.X - 248, (int)(res.Height) - safe.Y - (100 + (2 * interval))), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 
-				new UIResText(Translation.Translate("VEHICLES"), new Point(Convert.ToInt32(res.Width) - safe.X - 90, Convert.ToInt32(res.Height) - safe.Y - (90 + interval)), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new UIResText(PropStreamer.Vehicles.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - (102 + interval)), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - (100 + interval)), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
+				new UIResText(Translation.Translate("VEHICLES"), new Point((int)(res.Width) - safe.X - 90, (int)(res.Height) - safe.Y - (90 + interval)), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new UIResText(PropStreamer.Vehicles.Count.ToString(), new Point((int)(res.Width) - safe.X - 20, (int)(res.Height) - safe.Y - (102 + interval)), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point((int)(res.Width) - safe.X - 248, (int)(res.Height) - safe.Y - (100 + interval)), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 				
-				new UIResText(Translation.Translate("PEDS"), new Point(Convert.ToInt32(res.Width) - safe.X - 90, Convert.ToInt32(res.Height) - safe.Y - 90), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new UIResText(PropStreamer.Peds.Count.ToString(), new Point(Convert.ToInt32(res.Width) - safe.X - 20, Convert.ToInt32(res.Height) - safe.Y - 102), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
-				new Sprite("timerbars", "all_black_bg", new Point(Convert.ToInt32(res.Width) - safe.X - 248, Convert.ToInt32(res.Height) - safe.Y - 100), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
+				new UIResText(Translation.Translate("PEDS"), new Point((int)(res.Width) - safe.X - 90, (int)(res.Height) - safe.Y - 90), 0.3f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new UIResText(PropStreamer.Peds.Count.ToString(), new Point((int)(res.Width) - safe.X - 20, (int)(res.Height) - safe.Y - 102), 0.5f, Color.White, Font.ChaletLondon, UIResText.Alignment.Right).Draw();
+				new Sprite("timerbars", "all_black_bg", new Point((int)(res.Width) - safe.X - 248, (int)(res.Height) - safe.Y - 100), new Size(250, 37), 0f, Color.FromArgb(180, 255, 255, 255)).Draw();
 			}
 
-			int wi = Convert.ToInt32(res.Width*0.5);
-			int he = Convert.ToInt32(res.Height * 0.5);
+			int wi = (int)(res.Width*0.5);
+			int he = (int)(res.Height * 0.5);
 			
 			Entity hitEnt = VectorExtensions.RaycastEntity(new Vector2(0f, 0f), _mainCamera.Position, _mainCamera.Rotation);
 
@@ -1442,7 +1442,7 @@ namespace MapEditor
 							else if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, hitEnt.Handle))
 							{
 							    var isDoor = PropStreamer.Doors.Contains(hitEnt.Handle);
-                                AddItemToEntityMenu(_snappedProp = PropStreamer.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, (!PropStreamer.StaticProps.Contains(hitEnt.Handle) && !isDoor), force: true, drawDistance: _settings.DrawDistance));
+                                AddItemToEntityMenu(_snappedProp = PropStreamer.CreateProp(hitEnt.Model, hitEnt.Position, hitEnt.Rotation, (!PropStreamer.StaticProps.Contains(hitEnt.Handle) && !isDoor), q: Quaternion.GetEntityQuaternion(hitEnt), force: true, drawDistance: _settings.DrawDistance));
 							    if (isDoor)
 							    {
 							        _snappedProp.FreezePosition = false;
@@ -1752,7 +1752,7 @@ namespace MapEditor
 					else if (_selectedProp is Prop)
 					{
                         var isDoor = PropStreamer.Doors.Contains(_selectedProp.Handle);
-                        AddItemToEntityMenu(mainProp = PropStreamer.CreateProp(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation, (!PropStreamer.StaticProps.Contains(_selectedProp.Handle) && !isDoor), force: true, drawDistance: _settings.DrawDistance));
+                        AddItemToEntityMenu(mainProp = PropStreamer.CreateProp(_selectedProp.Model, _selectedProp.Position, _selectedProp.Rotation, (!PropStreamer.StaticProps.Contains(_selectedProp.Handle) && !isDoor), force: true, q: Quaternion.GetEntityQuaternion(_selectedProp), drawDistance: _settings.DrawDistance));
                         if (isDoor)
                         {
                             mainProp.FreezePosition = false;
@@ -2576,9 +2576,9 @@ namespace MapEditor
 			_objectInfoMenu.Clear();
 			
 			
-			var posXitem = new UIMenuListItem(Translation.Translate("Position X"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 100) + _possibleRange)));
-			var posYitem = new UIMenuListItem(Translation.Translate("Position Y"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 100) + _possibleRange)));
-			var posZitem = new UIMenuListItem(Translation.Translate("Position Z"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 100) + _possibleRange)));
+			var posXitem = new UIMenuListItem(Translation.Translate("Position X"), _possiblePositions, (int)(Math.Round((ent.Position.X * 100) + _possibleRange)));
+			var posYitem = new UIMenuListItem(Translation.Translate("Position Y"), _possiblePositions, (int)(Math.Round((ent.Position.Y * 100) + _possibleRange)));
+			var posZitem = new UIMenuListItem(Translation.Translate("Position Z"), _possiblePositions, (int)(Math.Round((ent.Position.Z * 100) + _possibleRange)));
 
 	        var itemRot = ent.Quaternion.ToEuler();
 
@@ -2984,13 +2984,13 @@ namespace MapEditor
 				possibleColors.Add(i);
 			}
 
-			var posXitem = new UIMenuListItem(Translation.Translate("Position X"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.X * 100) + _possibleRange)));
-			var posYitem = new UIMenuListItem(Translation.Translate("Position Y"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Y * 100) + _possibleRange)));
-			var posZitem = new UIMenuListItem(Translation.Translate("Position Z"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Position.Z * 100) + _possibleRange)));
+			var posXitem = new UIMenuListItem(Translation.Translate("Position X"), _possiblePositions, (int)(Math.Round((ent.Position.X * 100) + _possibleRange)));
+			var posYitem = new UIMenuListItem(Translation.Translate("Position Y"), _possiblePositions, (int)(Math.Round((ent.Position.Y * 100) + _possibleRange)));
+			var posZitem = new UIMenuListItem(Translation.Translate("Position Z"), _possiblePositions, (int)(Math.Round((ent.Position.Z * 100) + _possibleRange)));
 
-			var rotXitem = new UIMenuListItem(Translation.Translate("Rotation X"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.X * 100) + _possibleRange)));
-			var rotYitem = new UIMenuListItem(Translation.Translate("Rotation Y"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Y * 100) + _possibleRange)));
-			var rotZitem = new UIMenuListItem(Translation.Translate("Rotation Z"), _possiblePositions, Convert.ToInt32(Math.Round((ent.Rotation.Z * 100) + _possibleRange)));
+			var rotXitem = new UIMenuListItem(Translation.Translate("Rotation X"), _possiblePositions, (int)(Math.Round((ent.Rotation.X * 100) + _possibleRange)));
+			var rotYitem = new UIMenuListItem(Translation.Translate("Rotation Y"), _possiblePositions, (int)(Math.Round((ent.Rotation.Y * 100) + _possibleRange)));
+			var rotZitem = new UIMenuListItem(Translation.Translate("Rotation Z"), _possiblePositions, (int)(Math.Round((ent.Rotation.Z * 100) + _possibleRange)));
 
 			var dynamic = new UIMenuCheckboxItem(Translation.Translate("Bop Up And Down"), ent.BobUpAndDown);
 			dynamic.CheckboxEvent += (ite, checkd) =>
@@ -3012,9 +3012,9 @@ namespace MapEditor
 				ent.Type = hash;
 			};
 
-			var scaleXitem = new UIMenuListItem(Translation.Translate("Scale X"), possbileScale, Convert.ToInt32(Math.Round((ent.Scale.X * 100))));
-			var scaleYitem = new UIMenuListItem(Translation.Translate("Scale Y"), possbileScale, Convert.ToInt32(Math.Round((ent.Scale.Y * 100))));
-			var scaleZitem = new UIMenuListItem(Translation.Translate("Scale Z"), possbileScale, Convert.ToInt32(Math.Round((ent.Scale.Z * 100))));
+			var scaleXitem = new UIMenuListItem(Translation.Translate("Scale X"), possbileScale, (int)(Math.Round((ent.Scale.X * 100))));
+			var scaleYitem = new UIMenuListItem(Translation.Translate("Scale Y"), possbileScale, (int)(Math.Round((ent.Scale.Y * 100))));
+			var scaleZitem = new UIMenuListItem(Translation.Translate("Scale Z"), possbileScale, (int)(Math.Round((ent.Scale.Z * 100))));
 
 			var colorR = new UIMenuListItem(Translation.Translate("Red Color"), possibleColors, ent.Red);
 			var colorG = new UIMenuListItem(Translation.Translate("Green Color"), possibleColors, ent.Green);

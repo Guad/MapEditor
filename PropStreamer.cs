@@ -66,7 +66,7 @@ namespace MapEditor
                 Script.Wait(100);
 
 			var prop = new Prop(Function.Call<int>(Hash.CREATE_OBJECT_NO_OFFSET, model.Hash, position.X, position.Y, position.Z, true, true, dynamic));
-            //var prop = World.CreateProp(model, position, rotation, dynamic, false);
+            prop.Rotation = rotation;
 			StreamedInHandles.Add(prop.Handle);
 			if (!dynamic)
 			{

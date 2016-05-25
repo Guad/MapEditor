@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -147,7 +148,7 @@ namespace MapEditor
                 }
                 else
                 {
-                    int val = Convert.ToInt32(s[1]);
+                    int val = Convert.ToInt32(s[1], CultureInfo.InvariantCulture);
                     dictToLoadto.Add(s[0], val);
                 }
             }
@@ -177,7 +178,7 @@ namespace MapEditor
 		    string[] lines = File.ReadAllLines("scripts\\InvalidObjects.ini");
 		    foreach (string line in lines)
 		    {
-			    int val = Convert.ToInt32(line);
+			    int val = Convert.ToInt32(line, CultureInfo.InvariantCulture);
 				InvalidHashes.Add(val);
 		    }
 	    }
