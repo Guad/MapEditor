@@ -73,7 +73,8 @@ namespace MapEditor
                         obj.Hash = Convert.ToInt32(placement.ModelHash, 16);
                         obj.Position = new Vector3(placement.PositionRotation.X, placement.PositionRotation.Y, placement.PositionRotation.Z);
                         obj.Rotation = new Vector3(placement.PositionRotation.Pitch, placement.PositionRotation.Roll, placement.PositionRotation.Yaw);
-                        outputMap.Objects.Add(obj);
+						obj.Texture = placement.ObjectProperties.TextureVariation;
+						outputMap.Objects.Add(obj);
                     }
 			        return outputMap;
 				case Format.SimpleTrainer:
@@ -176,7 +177,6 @@ namespace MapEditor
                         }
                         return tmpMap;
                     }
-			        break;
 				default:
 					throw new NotImplementedException("This is not implemented yet.");
 			}
@@ -440,6 +440,10 @@ public class MapEditorGeneratedMap : GTA.Script
                             Roll = o.Rotation.Y,
                             Yaw = o.Rotation.Z,
                         };
+						pl.ObjectProperties = new MenyooCompatibility.ObjectProperties()
+						{
+							TextureVariation = o.Texture
+						};
                         menObj.Placement.Add(pl);
 			        }
 

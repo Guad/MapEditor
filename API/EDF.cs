@@ -78,6 +78,9 @@ namespace MapEditor.API
 
         [XmlAttribute("model")]
         public int Model;
+
+        [XmlAttribute("texture")]
+        public int Texture;
     }
 
     public class EDFRepresentationVehicle

@@ -42,7 +42,9 @@ namespace MapEditor
 
 		public static Dictionary<int, WeaponHash> ActiveWeapons = new Dictionary<int, WeaponHash>();
 
-        public static List<int> Doors = new List<int>(); 
+        public static List<int> Doors = new List<int>();
+
+		public static Dictionary<int, int> Textures = new Dictionary<int, int>();
 
 		public static List<int> ActiveSirens = new List<int>();
 
@@ -318,6 +320,7 @@ namespace MapEditor
 							Rotation = new Prop(handle).Rotation,
 							Type = ObjectTypes.Prop,
                             Door = Doors.Contains(handle),
+							Texture = Textures.ContainsKey(handle) ? Textures[handle] : 0,
                             Id = (Identifications.ContainsKey(handle) && !string.IsNullOrWhiteSpace(Identifications[handle])) ? Identifications[handle] : null,
                         }).ToList();
 

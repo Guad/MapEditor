@@ -86,6 +86,8 @@ namespace MapEditor
             public PedProperties PedProperties { get; set; }
             [XmlElement(ElementName = "VehicleProperties")]
             public VehicleProperties VehicleProperties { get; set; }
+            [XmlElement(ElementName = "ObjectProperties")]
+            public ObjectProperties ObjectProperties { get; set; }
 
             public Placement()
             {
@@ -473,6 +475,13 @@ namespace MapEditor
 
 
             }
+        }
+
+        [XmlRoot(ElementName = "ObjectProperties")]
+        public class ObjectProperties
+        {
+            [XmlElement(ElementName = "TextureVariation")]
+            public int TextureVariation { get; set; }
         }
     }
 }

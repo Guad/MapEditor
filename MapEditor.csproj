@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MapEditor</RootNamespace>
     <AssemblyName>MapEditor</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -35,14 +35,15 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ClearScript">
-      <HintPath>..\..\..\..\..\Program Files\Rockstar Games\Grand Theft Auto V\scripts\ClearScript.dll</HintPath>
+      <HintPath>D:\Grand Theft Auto V\Scripts\ClearScript.dll</HintPath>
     </Reference>
-    <Reference Include="NativeUI">
-      <HintPath>..\..\..\..\..\Program Files\Rockstar Games\Grand Theft Auto V\scripts\NativeUI.dll</HintPath>
-    </Reference>
-    <Reference Include="ScriptHookVDotNet, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="NativeUI, Version=1.9.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>bin\Release\ScriptHookVDotNet.dll</HintPath>
+      <HintPath>D:\Grand Theft Auto V\Scripts\NativeUI.dll</HintPath>
+    </Reference>
+    <Reference Include="ScriptHookVDotNet2, Version=2.10.14.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>D:\Grand Theft Auto V\ScriptHookVDotNet2.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -87,7 +88,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /Y "$(TargetPath)" "A:\Program Files\Rockstar Games\Grand Theft Auto V\scripts\$(TargetFileName)"</PostBuildEvent>
+    <PostBuildEvent>copy /Y "$(TargetPath)" "D:\Grand Theft Auto V\scripts\$(TargetFileName)"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

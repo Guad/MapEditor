@@ -112,8 +112,7 @@ namespace MapEditor
 		        UI.Notify(e.Message);
 		    }
 
-		    _scaleform = new Scaleform(0);
-			_scaleform.Load("instructional_buttons");
+		    _scaleform = new Scaleform("instructional_buttons");
 
 			_objectInfoMenu = new UIMenu("", "~b~" + Translation.Translate("PROPERTIES"), new Point(0, -107));
 			_objectInfoMenu.ResetKey(UIMenu.MenuControls.Back);
@@ -121,8 +120,6 @@ namespace MapEditor
 			_objectInfoMenu.SetBannerType(new UIResRectangle(new Point(), new Size()));
 			_menuPool.Add(_objectInfoMenu);
 
-
-			ModManager.InitMenu();
 
 			_objectsMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("PLACE OBJECT"));
 		    
@@ -359,7 +356,7 @@ namespace MapEditor
 
             language.OnListChanged += (sender, index) =>
 		    {
-		        var newLanguage = sender.IndexToItem(index).ToString();
+		        var newLanguage = sender.Items[index].ToString();
                 Translation.SetLanguage(newLanguage);
 		        _settings.Translation = newLanguage;
                 SaveSettings();
@@ -377,7 +374,7 @@ namespace MapEditor
 			checkem.OnListChanged += (i, indx) =>
 			{
 				CrosshairType outHash;
-				Enum.TryParse(i.IndexToItem(indx).ToString(), out outHash);
+				Enum.TryParse(i.Items[indx].ToString(), out outHash);
 				_settings.CrosshairType = outHash;
 				SaveSettings();
 			};
@@ -394,8 +391,8 @@ namespace MapEditor
             var autosaveItem = new UIMenuListItem(Translation.Translate("Autosave Interval"), autosaveList, aIndex, Translation.Translate("Interval in minutes between automatic autosaves."));
             autosaveItem.OnListChanged += (item, index) =>
             {
-                var sel = item.IndexToItem(index);
-                _settings.AutosaveInterval = (sel as string) == Translation.Translate("Disable") ? -1 : Convert.ToInt32(item.IndexToItem(index), CultureInfo.InvariantCulture);
+                var sel = item.Items[index];
+                _settings.AutosaveInterval = (sel as string) == Translation.Translate("Disable") ? -1 : Convert.ToInt32(item.Items[index], CultureInfo.InvariantCulture);
                 SaveSettings();
             };
 
@@ -410,8 +407,8 @@ namespace MapEditor
             var drawDistanceItem = new UIMenuListItem(Translation.Translate("Draw Distance"), possibleDrawDistances, dIndex, Translation.Translate("Draw distance for props, vehicles and peds. Reload the map for changes to take effect."));
             drawDistanceItem.OnListChanged += (item, index) =>
             {
-                var sel = item.IndexToItem(index);
-                _settings.DrawDistance = (sel as string) == Translation.Translate("Default") ? -1 : Convert.ToInt32(item.IndexToItem(index), CultureInfo.InvariantCulture);
+                var sel = item.Items[index];
+                _settings.DrawDistance = (sel as string) == Translation.Translate("Default") ? -1 : Convert.ToInt32(item.Items[index], CultureInfo.InvariantCulture);
                 SaveSettings();
             };
 
@@ -686,7 +683,16 @@ namespace MapEditor
 				                newProp.FreezePosition = false;
 				            }
 
-				            if (o.Id != null && !PropStreamer.Identifications.ContainsKey(newProp.Handle))
+							if (o.Texture > 0)
+                            {
+								if (PropStreamer.Textures.ContainsKey(newProp.Handle))
+									PropStreamer.Textures[newProp.Handle] = o.Texture;
+								else
+									PropStreamer.Textures.Add(newProp.Handle, o.Texture);
+								Function.Call((Hash)0x971DA0055324D033, newProp.Handle, o.Texture);
+							}
+
+							if (o.Id != null && !PropStreamer.Identifications.ContainsKey(newProp.Handle))
 				            {
 				                PropStreamer.Identifications.Add(newProp.Handle, o.Id);
                                 handles.Add(newProp.Handle);
@@ -1140,7 +1146,7 @@ namespace MapEditor
             }
             World.RenderingCamera = _mainCamera;
 
-	        var res = UIMenu.GetScreenResolutionMantainRatio();
+	        var res = UIMenu.GetScreenResolutionMaintainRatio();
 			var safe = UIMenu.GetSafezoneBounds();
 
 			if (_settings.PropCounterDisplay)
@@ -2597,7 +2603,7 @@ namespace MapEditor
 			    ent.FreezePosition = PropStreamer.StaticProps.Contains(ent.Handle);
 		    };
 
-            var ident = new UIMenuItem("Identification", "Optional identification for easier access during scripting.");
+			var ident = new UIMenuItem("Identification", "Optional identification for easier access during scripting.");
             if (PropStreamer.Identifications.ContainsKey(ent.Handle))
                 ident.SetRightLabel(PropStreamer.Identifications[ent.Handle]);
 
@@ -2647,7 +2653,7 @@ namespace MapEditor
 			_objectInfoMenu.AddItem(rotYitem);
 			_objectInfoMenu.AddItem(rotZitem);
 			_objectInfoMenu.AddItem(dynamic);
-            _objectInfoMenu.AddItem(ident);
+			_objectInfoMenu.AddItem(ident);
 
 	        if (Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, ent.Handle))
 	        {
@@ -2669,16 +2675,30 @@ namespace MapEditor
 	                }
 	            };
                 _objectInfoMenu.AddItem(doorItem);
-	        }
 
-            if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent.Handle))
+				var textures = new List<dynamic>();
+				Enumerable.Range(0, 16).ToList().ForEach(n => textures.Add(n));
+				var selected = PropStreamer.Textures.ContainsKey(ent.Handle) ? PropStreamer.Textures[ent.Handle] : 0;
+				var texture = new UIMenuListItem("Texture", textures, selected);
+				texture.OnListChanged += (item, index) =>
+				{
+					if (PropStreamer.Textures.ContainsKey(ent.Handle))
+						PropStreamer.Textures[ent.Handle] = index;
+					else
+						PropStreamer.Textures.Add(ent.Handle, index);
+					Function.Call((Hash)0x971DA0055324D033, ent.Handle, index);
+				};
+				_objectInfoMenu.AddItem(texture);
+			}
+
+			if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent.Handle))
 		    {
 				List<dynamic> actions = new List<dynamic> {"None", "Any - Walk", "Any - Warp", "Wander"};
 				actions.AddRange(ObjectDatabase.ScrenarioDatabase.Keys);
 			    var scenarioItem = new UIMenuListItem(Translation.Translate("Idle Action"), actions, actions.IndexOf(PropStreamer.ActiveScenarios[ent.Handle]));
 			    scenarioItem.OnListChanged += (item, index) =>
 			    {
-			        PropStreamer.ActiveScenarios[ent.Handle] = item.IndexToItem(index).ToString();
+			        PropStreamer.ActiveScenarios[ent.Handle] = item.Items[index].ToString();
                     _changesMade++;
                 };
 			    scenarioItem.Activated += (item, index) =>
@@ -2718,7 +2738,7 @@ namespace MapEditor
 			    var relItem = new UIMenuListItem(Translation.Translate("Relationship"), rels, rels.IndexOf(PropStreamer.ActiveRelationships[ent.Handle]));
 			    relItem.OnListChanged += (item, index) =>
 			    {
-			        PropStreamer.ActiveRelationships[ent.Handle] = item.IndexToItem(index).ToString();
+			        PropStreamer.ActiveRelationships[ent.Handle] = item.Items[index].ToString();
                     _changesMade++;
                 };
 			    relItem.Activated += (item, index) =>
@@ -2733,7 +2753,7 @@ namespace MapEditor
 				var wepItem = new UIMenuListItem(Translation.Translate("Weapon"), weps, weps.IndexOf(PropStreamer.ActiveWeapons[ent.Handle].ToString()));
 				wepItem.OnListChanged += (item, index) =>
 				{
-					PropStreamer.ActiveWeapons[ent.Handle] = Enum.Parse(typeof(WeaponHash), item.IndexToItem(index).ToString());
+					PropStreamer.ActiveWeapons[ent.Handle] = (WeaponHash)Enum.Parse(typeof(WeaponHash), item.Items[index].ToString());
                     _changesMade++;
                 };
 				wepItem.Activated += (item, index) =>
@@ -2830,9 +2850,9 @@ namespace MapEditor
             posXitem.OnListChanged += (item, index) =>
 	        {
                 if (!IsProp(ent) )
-                    ent.Position = new Vector3((float) item.IndexToItem(index), ent.Position.Y, ent.Position.Z);
+                    ent.Position = new Vector3((float) item.Items[index], ent.Position.Y, ent.Position.Z);
                 else
-                    ent.PositionNoOffset = new Vector3((float)item.IndexToItem(index), ent.Position.Y, ent.Position.Z);
+                    ent.PositionNoOffset = new Vector3((float)item.Items[index], ent.Position.Y, ent.Position.Z);
 
 	            if (PropStreamer.IsPickup(ent.Handle))
 	            {
@@ -2844,9 +2864,9 @@ namespace MapEditor
 			posYitem.OnListChanged += (item, index) =>
 			{
                 if (!IsProp(ent))
-                    ent.Position = new Vector3(ent.Position.X, (float) item.IndexToItem(index), ent.Position.Z);
+                    ent.Position = new Vector3(ent.Position.X, (float) item.Items[index], ent.Position.Z);
                 else
-                    ent.PositionNoOffset = new Vector3(ent.Position.X, (float)item.IndexToItem(index), ent.Position.Z);
+                    ent.PositionNoOffset = new Vector3(ent.Position.X, (float)item.Items[index], ent.Position.Z);
 
                 if (PropStreamer.IsPickup(ent.Handle))
                 {
@@ -2857,9 +2877,9 @@ namespace MapEditor
 			posZitem.OnListChanged += (item, index) =>
 			{
                 if (!IsProp(ent) )
-                    ent.Position = new Vector3(ent.Position.X, ent.Position.Y, (float)item.IndexToItem(index));
+                    ent.Position = new Vector3(ent.Position.X, ent.Position.Y, (float)item.Items[index]);
                 else
-                    ent.PositionNoOffset = new Vector3(ent.Position.X, ent.Position.Y, (float)item.IndexToItem(index));
+                    ent.PositionNoOffset = new Vector3(ent.Position.X, ent.Position.Y, (float)item.Items[index]);
 
                 if (PropStreamer.IsPickup(ent.Handle))
                 {
@@ -2895,21 +2915,21 @@ namespace MapEditor
 
             rotYitem.OnListChanged += (item, index) =>
 		    {
-			    var change = (float)item.IndexToItem(index);
+			    var change = (float)item.Items[index];
 				ent.Quaternion = new Vector3(change, ent.Rotation.Y, ent.Rotation.Z).ToQuaternion();
                 _changesMade++;
             };
 
 		    rotZitem.OnListChanged += (item, index) =>
 		    {
-		        var change = (float) item.IndexToItem(index);
+		        var change = (float) item.Items[index];
                 ent.Quaternion = new Vector3(ent.Rotation.X, ent.Rotation.Y, change).ToQuaternion();
                 _changesMade++;
             };
 			
 			rotXitem.OnListChanged += (item, index) =>
 			{
-				var change = (float)item.IndexToItem(index);
+				var change = (float)item.Items[index];
                 ent.Quaternion = new Vector3(ent.Rotation.X, change, ent.Rotation.Z).ToQuaternion();
                 _changesMade++;
             };
@@ -3008,7 +3028,7 @@ namespace MapEditor
 			type.OnListChanged += (ite, index) =>
 			{
 				MarkerType hash;
-				Enum.TryParse(ite.IndexToItem(index), out hash);
+				Enum.TryParse((string)ite.Items[index], out hash);
 				ent.Type = hash;
 			};
 
@@ -3104,9 +3124,9 @@ namespace MapEditor
             _objectInfoMenu.AddItem(visiblityItem);
 
 
-            posXitem.OnListChanged += (item, index) => ent.Position = new Vector3((float)item.IndexToItem(index), ent.Position.Y, ent.Position.Z);
-			posYitem.OnListChanged += (item, index) => ent.Position = new Vector3(ent.Position.X, (float)item.IndexToItem(index), ent.Position.Z);
-			posZitem.OnListChanged += (item, index) => ent.Position = new Vector3(ent.Position.X, ent.Position.Y, (float)item.IndexToItem(index));
+            posXitem.OnListChanged += (item, index) => ent.Position = new Vector3((float)item.Items[index], ent.Position.Y, ent.Position.Z);
+			posYitem.OnListChanged += (item, index) => ent.Position = new Vector3(ent.Position.X, (float)item.Items[index], ent.Position.Z);
+			posZitem.OnListChanged += (item, index) => ent.Position = new Vector3(ent.Position.X, ent.Position.Y, (float)item.Items[index]);
 
 		    posXitem.Activated +=
 		        (sender, item) =>
@@ -3118,9 +3138,9 @@ namespace MapEditor
                 (sender, item) =>
                     SetMarkerVector(ent, ent.Position.X, ent.Position.Y, GetSafeFloat(Game.GetUserInput(ent.Position.Z.ToString(CultureInfo.InvariantCulture), 10), ent.Position.Z));
 
-            rotXitem.OnListChanged += (item, index) => ent.Rotation = new Vector3((float)item.IndexToItem(index), ent.Rotation.Y, ent.Rotation.Z);
-			rotYitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, (float)item.IndexToItem(index), ent.Rotation.Z);
-			rotZitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, ent.Rotation.Y, (float)item.IndexToItem(index));
+            rotXitem.OnListChanged += (item, index) => ent.Rotation = new Vector3((float)item.Items[index], ent.Rotation.Y, ent.Rotation.Z);
+			rotYitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, (float)item.Items[index], ent.Rotation.Z);
+			rotZitem.OnListChanged += (item, index) => ent.Rotation = new Vector3(ent.Rotation.X, ent.Rotation.Y, (float)item.Items[index]);
 
             rotXitem.Activated +=
                 (sender, item) =>
@@ -3132,9 +3152,9 @@ namespace MapEditor
                 (sender, item) =>
                     SetMarkerRotation(ent, ent.Rotation.X, ent.Rotation.Y, GetSafeFloat(Game.GetUserInput(ent.Rotation.Z.ToString(CultureInfo.InvariantCulture), 10), ent.Rotation.Z));
 
-            scaleXitem.OnListChanged += (item, index) => ent.Scale = new Vector3((float)item.IndexToItem(index), ent.Scale.Y, ent.Scale.Z);
-			scaleYitem.OnListChanged += (item, index) => ent.Scale = new Vector3(ent.Scale.X, (float)item.IndexToItem(index), ent.Scale.Z);
-			scaleZitem.OnListChanged += (item, index) => ent.Scale = new Vector3(ent.Scale.X, ent.Scale.Y, (float)item.IndexToItem(index));
+            scaleXitem.OnListChanged += (item, index) => ent.Scale = new Vector3((float)item.Items[index], ent.Scale.Y, ent.Scale.Z);
+			scaleYitem.OnListChanged += (item, index) => ent.Scale = new Vector3(ent.Scale.X, (float)item.Items[index], ent.Scale.Z);
+			scaleZitem.OnListChanged += (item, index) => ent.Scale = new Vector3(ent.Scale.X, ent.Scale.Y, (float)item.Items[index]);
 
             scaleXitem.Activated +=
                 (sender, item) =>
@@ -3268,16 +3288,16 @@ namespace MapEditor
 	        {
                 var found = _currentObjectsMenu.MenuItems.FirstOrDefault(item => item.Description == "pickup-" + PropStreamer.GetPickup(ent.Handle).UID);
                 if (found == null) return;
-                _currentObjectsMenu.RemoveItemAt(_currentObjectsMenu.MenuItems.IndexOf(found));
-                if (_currentObjectsMenu.Size != 0)
-                    _currentObjectsMenu.RefreshIndex();
+				_currentObjectsMenu.MenuItems.Remove(found);
+				if (_currentObjectsMenu.MenuItems.Count > 0)
+					_currentObjectsMenu.RefreshIndex();
             }
 	        else
 	        {
 	            var found = _currentObjectsMenu.MenuItems.FirstOrDefault(item => item.Description == ent.Handle.ToString());
 	            if (found == null) return;
-	            _currentObjectsMenu.RemoveItemAt(_currentObjectsMenu.MenuItems.IndexOf(found));
-	            if (_currentObjectsMenu.Size != 0)
+				_currentObjectsMenu.MenuItems.Remove(found);
+	            if (_currentObjectsMenu.MenuItems.Count > 0)
 	                _currentObjectsMenu.RefreshIndex(); //TODO: fix this, selected item remains after refresh.
 	        }
 	    }
@@ -3286,8 +3306,8 @@ namespace MapEditor
 	    {
 		    var found = _currentObjectsMenu.MenuItems.FirstOrDefault(item => item.Description == id);
 			if(found == null) return;
-			_currentObjectsMenu.RemoveItemAt(_currentObjectsMenu.MenuItems.IndexOf(found));
-		    if (_currentObjectsMenu.MenuItems.Count > 0)
+			_currentObjectsMenu.MenuItems.Remove(found);
+			if (_currentObjectsMenu.MenuItems.Count > 0)
 			    _currentObjectsMenu.RefreshIndex();
 		    else
 			    _currentObjectsMenu.Visible = false;
@@ -3297,8 +3317,8 @@ namespace MapEditor
 		{
 			var found = _currentObjectsMenu.MenuItems.FirstOrDefault(item => item.Description == "marker-" + id);
 			if (found == null) return;
-			_currentObjectsMenu.RemoveItemAt(_currentObjectsMenu.MenuItems.IndexOf(found));
-			if (_currentObjectsMenu.Size != 0)
+			_currentObjectsMenu.MenuItems.Remove(found);
+			if (_currentObjectsMenu.MenuItems.Count > 0)
 				_currentObjectsMenu.RefreshIndex();
 			else
 				_currentObjectsMenu.Visible = false;

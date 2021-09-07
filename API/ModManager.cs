@@ -42,6 +42,7 @@ namespace MapEditor.API
 		public static void SuscribeMod(ModListener mod)
 		{
 			Mods.Add(mod);
+			InitMenu();
 			ModMenu.AddItem(new UIMenuItem(mod.ButtonString, mod.Description));
 		}
 	}

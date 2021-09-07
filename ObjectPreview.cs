@@ -14,7 +14,7 @@ namespace MapEditor
         public static Model LoadObject(int hash)
         {
             int counter = 0;
-            var res = UIMenu.GetScreenResolutionMantainRatio();
+            var res = UIMenu.GetScreenResolutionMaintainRatio();
             
             var m = new Model(hash);
 
@@ -28,8 +28,7 @@ namespace MapEditor
 		        return null;
 	        }
             globalCounter++;
-            var sc = new Scaleform(0);
-            sc.Load("instructional_buttons");
+            var sc = new Scaleform("instructional_buttons");
             sc.CallFunction("CLEAR_ALL");
             sc.CallFunction("TOGGLE_MOUSE_BUTTONS", 0);
             sc.CallFunction("CREATE_CONTAINER");

@@ -18,6 +18,7 @@ namespace MapEditor
 
         // Prop stuff
 	    public bool Door;
+        public int Texture;
 
 		// Ped stuff
 		public string Action;
