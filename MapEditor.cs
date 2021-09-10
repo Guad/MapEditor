@@ -337,12 +337,12 @@ namespace MapEditor
 
 			for (int i = -_possibleRange; i <= _possibleRange; i++)
 			{
-				_possiblePositions.Add(i * 0.01);
+				_possiblePositions.Add((i * 0.01).ToString(CultureInfo.InvariantCulture));
 			}
 			
-			for (int i = -36000; i <= 36000; i++)
+			for (int i = -18000; i <= 18000; i++)
 			{
-				_possibleRoll.Add(i * 0.01);
+				_possibleRoll.Add((i * 0.01).ToString(CultureInfo.InvariantCulture));
 			}
 
 		    var possibleLangauges = new List<string>
@@ -2586,11 +2586,11 @@ namespace MapEditor
 			var posYitem = new UIMenuListItem(Translation.Translate("Position Y"), _possiblePositions, (int)(Math.Round((ent.Position.Y * 100) + _possibleRange)));
 			var posZitem = new UIMenuListItem(Translation.Translate("Position Z"), _possiblePositions, (int)(Math.Round((ent.Position.Z * 100) + _possibleRange)));
 
-	        var itemRot = ent.Quaternion.ToEuler();
+	        var itemRot = ent.Rotation;
 
-			var rotXitem = new UIMenuListItem(Translation.Translate("Pitch"), _possibleRoll, (int)Math.Round((itemRot.Y * 100 * -1) + 36000));
-			var rotYitem = new UIMenuListItem(Translation.Translate("Roll"), _possibleRoll, (int)Math.Round((itemRot.X * 100) + 36000));
-			var rotZitem = new UIMenuListItem(Translation.Translate("Yaw"), _possibleRoll, (int)Math.Round((itemRot.Z * 100) + 36000));
+			var rotXitem = new UIMenuListItem(Translation.Translate("Pitch"), _possibleRoll, (int)Math.Round(itemRot.X * 100 + 18000));
+			var rotYitem = new UIMenuListItem(Translation.Translate("Roll"), _possibleRoll, (int)Math.Round(itemRot.Y * 100 + 18000));
+			var rotZitem = new UIMenuListItem(Translation.Translate("Yaw"), _possibleRoll, (int)Math.Round(itemRot.Z * 100 + 18000));
 
 			
 
@@ -2849,10 +2849,10 @@ namespace MapEditor
 
             posXitem.OnListChanged += (item, index) =>
 	        {
-                if (!IsProp(ent) )
-                    ent.Position = new Vector3((float) item.Items[index], ent.Position.Y, ent.Position.Z);
+				if (!IsProp(ent) )
+                    ent.Position = new Vector3(GetSafeFloat(item.Items[index].ToString(), ent.Position.X), ent.Position.Y, ent.Position.Z);
                 else
-                    ent.PositionNoOffset = new Vector3((float)item.Items[index], ent.Position.Y, ent.Position.Z);
+                    ent.PositionNoOffset = new Vector3(GetSafeFloat(item.Items[index].ToString(), ent.Position.X), ent.Position.Y, ent.Position.Z);
 
 	            if (PropStreamer.IsPickup(ent.Handle))
 	            {
@@ -2863,10 +2863,10 @@ namespace MapEditor
 	        };
 			posYitem.OnListChanged += (item, index) =>
 			{
-                if (!IsProp(ent))
-                    ent.Position = new Vector3(ent.Position.X, (float) item.Items[index], ent.Position.Z);
+				if (!IsProp(ent))
+                    ent.Position = new Vector3(ent.Position.X, GetSafeFloat(item.Items[index].ToString(), ent.Position.Y), ent.Position.Z);
                 else
-                    ent.PositionNoOffset = new Vector3(ent.Position.X, (float)item.Items[index], ent.Position.Z);
+                    ent.PositionNoOffset = new Vector3(ent.Position.X, GetSafeFloat(item.Items[index].ToString(), ent.Position.Y), ent.Position.Z);
 
                 if (PropStreamer.IsPickup(ent.Handle))
                 {
@@ -2876,10 +2876,10 @@ namespace MapEditor
             };
 			posZitem.OnListChanged += (item, index) =>
 			{
-                if (!IsProp(ent) )
-                    ent.Position = new Vector3(ent.Position.X, ent.Position.Y, (float)item.Items[index]);
+				if (!IsProp(ent) )
+                    ent.Position = new Vector3(ent.Position.X, ent.Position.Y, GetSafeFloat(item.Items[index].ToString(), ent.Position.Z));
                 else
-                    ent.PositionNoOffset = new Vector3(ent.Position.X, ent.Position.Y, (float)item.Items[index]);
+                    ent.PositionNoOffset = new Vector3(ent.Position.X, ent.Position.Y, GetSafeFloat(item.Items[index].ToString(), ent.Position.Z));
 
                 if (PropStreamer.IsPickup(ent.Handle))
                 {
@@ -2891,46 +2891,46 @@ namespace MapEditor
             rotXitem.Activated +=
                 (sender, item) =>
                 {
-                    var rot = ent.Quaternion.ToEuler();
-                    SetObjectRotation(ent,
-                        GetSafeFloat(Game.GetUserInput(rot.X.ToString(CultureInfo.InvariantCulture).Limit(10), 10),
-                            rot.X), rot.Y, rot.Z);
+					var rot = ent.Rotation;
+					SetObjectRotation(ent,
+						GetSafeFloat(Game.GetUserInput(Math.Round(rot.X, 2).ToString(CultureInfo.InvariantCulture), 10),
+						rot.X), rot.Y, rot.Z);
                 };
             rotYitem.Activated +=
                 (sender, item) =>
                 {
-                    var rot = ent.Quaternion.ToEuler();
-                    SetObjectRotation(ent, rot.X,
-                        GetSafeFloat(Game.GetUserInput(rot.Y.ToString(CultureInfo.InvariantCulture).Limit(10), 10),
-                            rot.Y), rot.Z);
-                };
+					var rot = ent.Rotation;
+					SetObjectRotation(ent, rot.X,
+						GetSafeFloat(Game.GetUserInput(Math.Round(rot.Y, 2).ToString(CultureInfo.InvariantCulture), 10),
+						rot.Y), rot.Z);
+				};
             rotZitem.Activated +=
                 (sender, item) =>
                 {
-                    var rot = ent.Quaternion.ToEuler();
-                    SetObjectRotation(ent, rot.X, rot.Y,
-                        GetSafeFloat(Game.GetUserInput(rot.Z.ToString(CultureInfo.InvariantCulture).Limit(10), 10),
-                            rot.Z));
-                };
+					var rot = ent.Rotation;
+					SetObjectRotation(ent, rot.X, rot.Y,
+						GetSafeFloat(Game.GetUserInput(Math.Round(rot.Z, 2).ToString(CultureInfo.InvariantCulture), 10),
+						rot.Z));
+				};
 
-            rotYitem.OnListChanged += (item, index) =>
+            rotXitem.OnListChanged += (item, index) =>
 		    {
-			    var change = (float)item.Items[index];
+				var change = GetSafeFloat(item.Items[index].ToString(), ent.Rotation.X);
 				ent.Quaternion = new Vector3(change, ent.Rotation.Y, ent.Rotation.Z).ToQuaternion();
                 _changesMade++;
             };
 
 		    rotZitem.OnListChanged += (item, index) =>
 		    {
-		        var change = (float) item.Items[index];
-                ent.Quaternion = new Vector3(ent.Rotation.X, ent.Rotation.Y, change).ToQuaternion();
+				var change = GetSafeFloat(item.Items[index].ToString(), ent.Rotation.Z);
+				ent.Quaternion = new Vector3(ent.Rotation.X, ent.Rotation.Y, change).ToQuaternion();
                 _changesMade++;
             };
 			
-			rotXitem.OnListChanged += (item, index) =>
+			rotYitem.OnListChanged += (item, index) =>
 			{
-				var change = (float)item.Items[index];
-                ent.Quaternion = new Vector3(ent.Rotation.X, change, ent.Rotation.Z).ToQuaternion();
+				var change = GetSafeFloat(item.Items[index].ToString(), ent.Rotation.Y);
+				ent.Quaternion = new Vector3(ent.Rotation.X, change, ent.Rotation.Z).ToQuaternion();
                 _changesMade++;
             };
 
