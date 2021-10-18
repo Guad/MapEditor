@@ -121,6 +121,8 @@ namespace MapEditor
 			_menuPool.Add(_objectInfoMenu);
 
 
+			ModManager.InitMenu();
+
 			_objectsMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("PLACE OBJECT"));
 		    
             ObjectDatabase.LoadFromFile("scripts\\ObjectList.ini", ref ObjectDatabase.MainDb);

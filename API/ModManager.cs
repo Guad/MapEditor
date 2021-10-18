@@ -14,12 +14,10 @@ namespace MapEditor.API
 	{
 		internal static List<ModListener> Mods = new List<ModListener>();
 		internal static ModListener CurrentMod;
-	    internal static UIMenu ModMenu;
+	    internal static UIMenu ModMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("EXTERNAL MODS"));
 
 		internal static void InitMenu()
 		{
-		    ModMenu = new UIMenu("Map Editor", "~b~" + Translation.Translate("EXTERNAL MODS"));
-
             ModMenu.DisableInstructionalButtons(true);
 			ModMenu.OnItemSelect += (menu, item, index) =>
 			{
@@ -42,7 +40,6 @@ namespace MapEditor.API
 		public static void SuscribeMod(ModListener mod)
 		{
 			Mods.Add(mod);
-			InitMenu();
 			ModMenu.AddItem(new UIMenuItem(mod.ButtonString, mod.Description));
 		}
 	}
