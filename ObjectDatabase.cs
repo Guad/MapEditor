@@ -148,9 +148,13 @@ namespace MapEditor
                 }
                 else
                 {
-                    int val = Convert.ToInt32(s[1], CultureInfo.InvariantCulture);
-                    dictToLoadto.Add(s[0], val);
-                }
+                    try
+                    {
+						int val = Convert.ToInt32(s[1], CultureInfo.InvariantCulture);
+						dictToLoadto.Add(s[0], val);
+					}
+					catch { }
+				}
             }
         }
 
@@ -178,9 +182,13 @@ namespace MapEditor
 		    string[] lines = File.ReadAllLines("scripts\\InvalidObjects.ini");
 		    foreach (string line in lines)
 		    {
-			    int val = Convert.ToInt32(line, CultureInfo.InvariantCulture);
-				InvalidHashes.Add(val);
-		    }
+                try
+                {
+					int val = Convert.ToInt32(line, CultureInfo.InvariantCulture);
+					InvalidHashes.Add(val);
+				}
+				catch { }
+			}
 	    }
 
 		internal static void SaveInvalidHashes()
