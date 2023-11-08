@@ -136,6 +136,7 @@ namespace MapEditor
 		internal static void LoadFromFile(string path, ref Dictionary<string, int> dictToLoadto)
         {
             dictToLoadto = new Dictionary<string, int>();
+            if (!File.Exists(path)) return;
             string[] lines = File.ReadAllLines(path);
             foreach (string line in lines)
             {

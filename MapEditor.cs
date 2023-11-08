@@ -128,7 +128,13 @@ namespace MapEditor
             ObjectDatabase.LoadFromFile("scripts\\ObjectList.ini", ref ObjectDatabase.MainDb);
             ObjectDatabase.LoadInvalidHashes();
             ObjectDatabase.LoadFromFile("scripts\\PedList.ini", ref ObjectDatabase.PedDb);
+            foreach (string name in Enum.GetNames(typeof(PedHash)))
+                if (!ObjectDatabase.PedDb.ContainsKey(name))
+                    ObjectDatabase.PedDb.Add(name, (int)(PedHash)Enum.Parse(typeof(PedHash), name));
             ObjectDatabase.LoadFromFile("scripts\\VehicleList.ini", ref ObjectDatabase.VehicleDb);
+            foreach (string name in Enum.GetNames(typeof(VehicleHash)))
+                if (!ObjectDatabase.VehicleDb.ContainsKey(name))
+                    ObjectDatabase.VehicleDb.Add(name, (int)(VehicleHash)Enum.Parse(typeof(VehicleHash), name));
 
 
             _crosshairPath = Path.GetFullPath("scripts\\MapEditor\\crosshair.png");
