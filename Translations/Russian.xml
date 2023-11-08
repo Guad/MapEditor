@@ -1,0 +1,523 @@
+<?xml version="1.0"?>
+<TranslationRoot xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Language>Russian</Language>
+  <Translator>MMK_033</Translator>
+  <Translations>
+    <StringPair>
+      <Original>Enter/Exit Map Editor</Original>
+      <Translation>Вход/Выход в Редактор</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Bounding Box</Original>
+      <Translation>Отображать рамку</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>PROPERTIES</Original>
+      <Translation>СВОЙСТВА</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>EXTERNAL MODS</Original>
+      <Translation>ДОПОЛНЕНИЯ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>PLACE OBJECT</Original>
+      <Translation>РАЗМЕСТИТЬ ПРЕДМЕТ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Change Axis</Original>
+      <Translation>Ось поворота</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Zoom</Original>
+      <Translation>Увеличение</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Search</Original>
+      <Translation>Поиск</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>MAIN MENU</Original>
+      <Translation>ГЛАВНОЕ МЕНЮ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>New Map</Original>
+      <Translation>Создать</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Remove all current objects and start a new map.</Original>
+      <Translation>Убрать все созданные предметы и создать~n~новую карту.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Save Map</Original>
+      <Translation>Сохранить</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Save all current objects to a file.</Original>
+      <Translation>Сохранить все данные о созданных~n~предметах в файл.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Load Map</Original>
+      <Translation>Загрузить</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Load objects from a file and add them to the world.</Original>
+      <Translation>Загрузить данные из файла и~n~добавить их в карту.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>SELECT FORMAT</Original>
+      <Translation>ВЫБОР РАСШИРЕНИЯ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Loaded new map.</Original>
+      <Translation>Новая карта создана.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>The filename was empty.</Original>
+      <Translation>Не введено имя файла.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>The filename was empty!</Original>
+      <Translation>Не введено имя файла!</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Saved current map as</Original>
+      <Translation>Рабочая карта сохранена в</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Save all current objects to a file.</Original>
+      <Translation>Сохранить все созданные предметы в файл.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Map sent to external mod for saving.</Original>
+      <Translation>Данные к дополнению успешно сохранены.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>SETTINGS</Original>
+      <Translation>НАСТРОЙКИ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Marker</Original>
+      <Translation>Метка</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Disable</Original>
+      <Translation>Отключено</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Autosave Interval</Original>
+      <Translation>Время самосохранения</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Interval in minutes between automatic autosaves.</Original>
+      <Translation>Время в минутах между~n~самостоятельными сохранениями.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Default</Original>
+      <Translation>Исходно</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Draw Distance</Original>
+      <Translation>Расстояние прорисовки</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>SELECT FORMAT</Original>
+      <Translation>ВЫБОР РАСШИРЕНИЯ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Draw distance for props, vehicles and peds. Reload the map for changes to take effect.</Original>
+      <Translation>Изменение расстояния прорисовки ~n~требует перезапуска.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Mouse Camera Sensitivity</Original>
+      <Translation>Чувствительность мыши</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Gamepad Camera Sensitivity</Original>
+      <Translation>Чувствительность джойстика</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Keyboard Movement Sensitivity</Original>
+      <Translation>Чувствительность движения</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Gamepad Movement Sensitivity</Original>
+      <Translation>Чувствительность движения (дж.)</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Instructional Buttons</Original>
+      <Translation>Подсказки</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Enable Gamepad Shortcut</Original>
+      <Translation>Горячие клавиши (джойстик)</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Entity Counter</Original>
+      <Translation>Счётчик предметов</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Follow Object With Camera</Original>
+      <Translation>Перемещение камеры к предмету</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Validate Object Database</Original>
+      <Translation>Проверить свод данных</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>This will update the current object database, removing any invalid objects. The changes will take effect after you restart the script. It will take a couple of minutes.</Original>
+      <Translation>Проверка и обновление списка ~n~доступных предметов.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Reset Active Relationship Groups</Original>
+      <Translation>Сброс данных о взаимоотношениях</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>This will set all ped's relationship groups to Companion.</Original>
+      <Translation>Сброс данных о взаимоотношениях ~n~живых предметов.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>CURRENT ENTITES</Original>
+      <Translation>СОЗДАННЫЕ ПРЕДМЕТЫ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Settings</Original>
+      <Translation>Настройки</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Current Entities</Original>
+      <Translation>Созданные предметы</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Create Map for External Mod</Original>
+      <Translation>Создать карту для Дополнения</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>The filename was empty or the file does not exist!</Original>
+      <Translation>Не введено имя файла или такой файл не существует!</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Loaded map</Original>
+      <Translation>Загружена карта</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Map failed to load, see error below.</Original>
+      <Translation>Не удалось загрузить карту, смотрите ошибку ниже.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Map failed to save, see error below.</Original>
+      <Translation>Не удалось сохранить карту, смотрите ошибку ниже.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>There are no current entities.</Original>
+      <Translation>Нет созданных предметов.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>PLACE</Original>
+      <Translation>РАЗМЕЩЕНИЕ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>SEARCH RESULTS FOR</Original>
+      <Translation>НАЙДЕНО ПО ЗАПРОСУ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>WORLD</Original>
+      <Translation>УДАЛЁННЫЕ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>MARKERS</Original>
+      <Translation>МЕТКИ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>PROPS</Original>
+      <Translation>ОСНОВНЫЕ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>VEHICLES</Original>
+      <Translation>УПРАВЛЯЕМЫЕ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>PEDS</Original>
+      <Translation>ЖИВЫЕ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Default format for Map Editor. Choose this one if you have no idea. This saves props, vehicles and peds.</Original>
+      <Translation>Основное расширение Редактора.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Format used in Simple Trainer mod (objects.ini). Only saves props.</Original>
+      <Translation>Упрощённое расширение для Simple ~n~Trainer.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>C# Code</Original>
+      <Translation>C# (скриптовое)</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Directly outputs to C# code to spawn your entities. Saves props, vehicles and peds.</Original>
+      <Translation>Данные, перенесённые в скрипт C#.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Raw</Original>
+      <Translation>Сырое</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Writes the entity and their position and rotation. Useful for taking coordinates.</Original>
+      <Translation>Данные в необработанном виде.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Position X</Original>
+      <Translation>Положение X</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Position Y</Original>
+      <Translation>Положение Y</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Position Z</Original>
+      <Translation>Положение Z</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Rotation X</Original>
+      <Translation>Поворот X</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Rotation Y</Original>
+      <Translation>Поворот Y</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Rotation Z</Original>
+      <Translation>Поворот Z</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Dynamic</Original>
+      <Translation>Подвижность</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Idle Action</Original>
+      <Translation>Исходное действие</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Relationship</Original>
+      <Translation>Отношение</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Weapon</Original>
+      <Translation>Оружие</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Siren</Original>
+      <Translation>Мигалка</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Bop Up And Down</Original>
+      <Translation>Отскок вверх и вниз</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Face Camera</Original>
+      <Translation>Поворот к камере</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Type</Original>
+      <Translation>Вид</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Scale X</Original>
+      <Translation>Размер X</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Scale Y</Original>
+      <Translation>Размер Y</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Scale Z</Original>
+      <Translation>Размер Z</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Red Color</Original>
+      <Translation>Уровень красного</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Green Color</Original>
+      <Translation>Уровень зелёного</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Blue Color</Original>
+      <Translation>Уровень синего</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>has been disconnected.</Original>
+      <Translation>- связь отключена.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>has been connected.</Original>
+      <Translation>- связь установлена.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Transparency</Original>
+      <Translation>Непрозрачность</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Spawn Prop</Original>
+      <Translation>Основной</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Spawn Ped</Original>
+      <Translation>Живой</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Spawn Vehicle</Original>
+      <Translation>Управляемый</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Spawn Marker</Original>
+      <Translation>Метка</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Move Entity</Original>
+      <Translation>Управление</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Select Entity</Original>
+      <Translation>Выбрать</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Copy Entity</Original>
+      <Translation>Списать</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Delete Entity</Original>
+      <Translation>Удалить</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Switch to Rotation</Original>
+      <Translation>Перемещение/Вращение</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Accept</Original>
+      <Translation>Применить</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Rotate Entity</Original>
+      <Translation>Вращать</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Format used in Object Spooner mod (.SP00N).</Original>
+      <Translation>Совместимое с Object Spooner (.SP00N).</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Format used in Meynoo mod (.xml).</Original>
+      <Translation>Совместимое с Meynoo (.xml).</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Language</Original>
+      <Translation>Язык</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Execute Scripts</Original>
+      <Translation>Исполнять скрипты</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>File Chooser...</Original>
+      <Translation>Выборщик файлов...</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>SAVE MAP</Original>
+      <Translation>СОХРАНИТЬ КАРТУ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>File Path</Original>
+      <Translation>Путь</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Map Name</Original>
+      <Translation>Имя</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Author</Original>
+      <Translation>Создатель</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Description</Original>
+      <Translation>Описание</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>PICK FILE</Original>
+      <Translation>ВЫБОР ФАЙЛА</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Skip Invalid Objects</Original>
+      <Translation>Пропускать недействительные</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>PICKUPS</Original>
+      <Translation>ПОДБИРАЕМЫЕ</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Spawn Pickup</Original>
+      <Translation>Подбираемый</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Pitch</Original>
+      <Translation>Продольный наклон</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Roll</Original>
+      <Translation>Поперечный наклон</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Yaw</Original>
+      <Translation>Поворот</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>This option overrides the "Dynamic" setting.</Original>
+      <Translation>Данная настройка замещает настройку "Подвижность".</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Amount</Original>
+      <Translation>Количество</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Teleport Marker Target</Original>
+      <Translation>Перемещение к метке</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Mark as Loading Point</Original>
+      <Translation>Точка загрузки</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Player will be teleported here BEFORE starting to load the map.</Original>
+      <Translation>Игрок будет перемещён сюда ДО загрузки карты.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Mark as Starting Point</Original>
+      <Translation>Точка запуска</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Player will be teleported here AFTER starting to load the map.</Original>
+      <Translation>Игрок будет перемещён сюда ПОСЛЕ загрузки карты.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Only Visible In Editor</Original>
+      <Translation>Только в редакторе</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Loading Model</Original>
+      <Translation>Загрузка образа</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Door</Original>
+      <Translation>Является дверью</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Identification</Original>
+      <Translation>Обозначение</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Optional identification for easier access during scripting.</Original>
+      <Translation>Необязательная настройка, упрощает доступ через скрипты.</Translation>
+    </StringPair>
+    <StringPair>
+      <Original>Regeneration Time</Original>
+      <Translation>Время воссоздания</Translation>
+    </StringPair>
+  </Translations>
+</TranslationRoot>
