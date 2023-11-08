@@ -748,7 +748,8 @@ namespace MapEditor
 							    PropStreamer.ActiveRelationships.Add(pedid.Handle, DefaultRelationship.ToString());
 						    else
 						    {
-							    PropStreamer.ActiveRelationships.Add(pedid.Handle, o.Relationship);
+								if (!PropStreamer.ActiveRelationships.ContainsKey(pedid.Handle))
+									PropStreamer.ActiveRelationships.Add(pedid.Handle, o.Relationship);
 							    if (o.Relationship != DefaultRelationship.ToString())
 							    {
 								    ObjectDatabase.SetPedRelationshipGroup(pedid, o.Relationship);
@@ -759,7 +760,8 @@ namespace MapEditor
 							    PropStreamer.ActiveWeapons.Add(pedid.Handle, WeaponHash.Unarmed);
 						    else
 						    {
-							    PropStreamer.ActiveWeapons.Add(pedid.Handle, o.Weapon.Value);
+								if (!PropStreamer.ActiveWeapons.ContainsKey(pedid.Handle))
+								    PropStreamer.ActiveWeapons.Add(pedid.Handle, o.Weapon.Value);
 							    if (o.Weapon != WeaponHash.Unarmed)
 							    {
 								    pedid.Weapons.Give(o.Weapon.Value, 999, true, true);
@@ -1594,7 +1596,7 @@ namespace MapEditor
                     }
 	                else
 	                {
-						_selectedProp.Quaternion = new Vector3(_selectedProp.Rotation.X, _selectedProp.Rotation.Y, _selectedProp.Rotation.Z - (modifier / 4)).ToQuaternion();
+						_selectedProp.Rotation = new Vector3(_selectedProp.Rotation.X, _selectedProp.Rotation.Y, _selectedProp.Rotation.Z - (modifier / 4));
                         if (IsPed(_selectedProp))
                             _selectedProp.Heading = _selectedProp.Rotation.Z;
                     }
@@ -1619,7 +1621,7 @@ namespace MapEditor
                     }
 	                else
 	                {
-                        _selectedProp.Quaternion = new Vector3(_selectedProp.Rotation.X, _selectedProp.Rotation.Y, _selectedProp.Rotation.Z + (modifier / 4)).ToQuaternion();
+                        _selectedProp.Rotation = new Vector3(_selectedProp.Rotation.X, _selectedProp.Rotation.Y, _selectedProp.Rotation.Z + (modifier / 4));
                         if (IsPed(_selectedProp))
 	                        _selectedProp.Heading = _selectedProp.Rotation.Z;
 	                }
@@ -1647,7 +1649,7 @@ namespace MapEditor
                     }
 	                else
 	                {
-                        _selectedProp.Quaternion = new Vector3(_selectedProp.Rotation.X + (modifier / 4), _selectedProp.Rotation.Y, _selectedProp.Rotation.Z).ToQuaternion();
+                        _selectedProp.Rotation = new Vector3(_selectedProp.Rotation.X + (modifier / 4), _selectedProp.Rotation.Y, _selectedProp.Rotation.Z);
                     }
                     _changesMade++;
 
@@ -1671,7 +1673,7 @@ namespace MapEditor
                     }
 	                else
 	                {
-                        _selectedProp.Quaternion = new Vector3(_selectedProp.Rotation.X - (modifier / 4), _selectedProp.Rotation.Y, _selectedProp.Rotation.Z).ToQuaternion();
+                        _selectedProp.Rotation = new Vector3(_selectedProp.Rotation.X - (modifier / 4), _selectedProp.Rotation.Y, _selectedProp.Rotation.Z);
                     }
                     _changesMade++;
 
@@ -1699,7 +1701,7 @@ namespace MapEditor
                     }
 	                else
 	                {
-                        _selectedProp.Quaternion = new Vector3(_selectedProp.Rotation.X, _selectedProp.Rotation.Y + (modifier / 4), _selectedProp.Rotation.Z).ToQuaternion();
+                        _selectedProp.Rotation = new Vector3(_selectedProp.Rotation.X, _selectedProp.Rotation.Y + (modifier / 4), _selectedProp.Rotation.Z);
                     }
                     _changesMade++;
 
@@ -1726,7 +1728,7 @@ namespace MapEditor
                     }
 	                else
 	                {
-                        _selectedProp.Quaternion = new Vector3(_selectedProp.Rotation.X, _selectedProp.Rotation.Y - (modifier / 4), _selectedProp.Rotation.Z).ToQuaternion();
+                        _selectedProp.Rotation = new Vector3(_selectedProp.Rotation.X, _selectedProp.Rotation.Y - (modifier / 4), _selectedProp.Rotation.Z);
                     }
                     _changesMade++;
 
@@ -2961,7 +2963,7 @@ namespace MapEditor
 
         public void SetObjectRotation(Entity ent, float x, float y, float z)
         {
-            ent.Quaternion = new Vector3(x,y,z).ToQuaternion();
+			ent.Rotation = new Vector3(x, y, z);
             
             _changesMade++;
             RedrawObjectInfoMenu(ent, false);
