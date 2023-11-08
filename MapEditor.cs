@@ -128,12 +128,12 @@ namespace MapEditor
             ObjectDatabase.LoadFromFile("scripts\\ObjectList.ini", ref ObjectDatabase.MainDb);
             ObjectDatabase.LoadInvalidHashes();
             ObjectDatabase.LoadFromFile("scripts\\PedList.ini", ref ObjectDatabase.PedDb);
-            foreach (string name in Enum.GetNames(typeof(PedHash)))
-                if (!ObjectDatabase.PedDb.ContainsKey(name))
+            if (ObjectDatabase.PedDb.Count == 0)
+                foreach (string name in Enum.GetNames(typeof(PedHash)))
                     ObjectDatabase.PedDb.Add(name, (int)(PedHash)Enum.Parse(typeof(PedHash), name));
             ObjectDatabase.LoadFromFile("scripts\\VehicleList.ini", ref ObjectDatabase.VehicleDb);
-            foreach (string name in Enum.GetNames(typeof(VehicleHash)))
-                if (!ObjectDatabase.VehicleDb.ContainsKey(name))
+            if (ObjectDatabase.VehicleDb.Count == 0)
+                foreach (string name in Enum.GetNames(typeof(VehicleHash)))
                     ObjectDatabase.VehicleDb.Add(name, (int)(VehicleHash)Enum.Parse(typeof(VehicleHash), name));
 
 
@@ -946,7 +946,7 @@ namespace MapEditor
             Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.Phone);
             Function.Call(Hash.HIDE_HUD_AND_RADAR_THIS_FRAME);
 
-            if (Game.IsControlJustPressed(0, Control.Enter) && !_isChoosingObject)
+            if (Game.IsControlJustPressed(0, Control.Enter) && !_isChoosingObject && ObjectDatabase.MainDb.Count > 0)
             {
                 var oldType = _currentObjectType;
                 _currentObjectType = ObjectTypes.Prop;
